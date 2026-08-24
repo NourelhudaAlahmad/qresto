@@ -1,0 +1,62 @@
+/* Semantic aliases. Product code should reference THESE, not the ramps. */
+:root {
+  /* Surfaces */
+  --surface-page:     var(--ink-25);   /* warm paper — the default canvas */
+  --surface-card:     var(--ink-0);
+  --surface-sunken:   var(--ink-50);
+  --surface-raised:   var(--ink-0);
+  --surface-inverse:  var(--ink-900);
+  --surface-brand:    var(--clay-500);
+  --surface-brand-soft: var(--clay-50);
+  --surface-scrim:    var(--alpha-ink-56);
+  --surface-glass:    var(--alpha-paper-88);
+
+  /* Text */
+  --text-primary:   var(--ink-900);
+  --text-secondary: var(--ink-600);
+  --text-tertiary:  var(--ink-400);
+  --text-inverse:   var(--ink-25);
+  --text-brand:     var(--clay-600);
+  --text-link:      var(--teal-700);
+  --text-link-hover:var(--clay-600);
+  --text-on-brand:  #FFFFFF;
+
+  /* Borders */
+  --border-subtle:  var(--ink-100);
+  --border-default: var(--ink-200);
+  --border-strong:  var(--ink-300);
+  --border-brand:   var(--clay-500);
+  --border-focus-color: var(--clay-500);
+
+  /* Interactive — clay */
+  --action-primary:        var(--clay-500);
+  --action-primary-hover:  var(--clay-600);
+  --action-primary-active: var(--clay-700);
+  --action-secondary:        var(--ink-900);
+  --action-secondary-hover:  var(--ink-800);
+  --action-ghost-hover:      var(--ink-50);
+  --action-disabled-bg:      var(--ink-100);
+  --action-disabled-text:    var(--ink-400);
+
+  /* Feedback */
+  --success-fg: var(--herb-700);  --success-bg: var(--herb-50);  --success-solid: var(--herb-500);
+  --warning-fg: var(--saffron-700); --warning-bg: var(--saffron-50); --warning-solid: var(--saffron-500);
+  --danger-fg:  var(--berry-700);  --danger-bg:  var(--berry-50);  --danger-solid:  var(--berry-500);
+  --info-fg:    var(--teal-700);   --info-bg:    var(--teal-50);   --info-solid:    var(--teal-500);
+
+  /* Order lifecycle — one colour per state, used identically on customer
+     and staff surfaces so a "preparing" chip means the same thing to both. */
+  --status-placed-fg:    var(--ink-700);     --status-placed-bg:    var(--ink-100);
+  --status-pending-fg:   var(--saffron-700); --status-pending-bg:   var(--saffron-50);
+  --status-preparing-fg: var(--teal-700);    --status-preparing-bg: var(--teal-50);
+  --status-ready-fg:     var(--clay-700);    --status-ready-bg:     var(--clay-100);
+  --status-served-fg:    var(--herb-700);    --status-served-bg:    var(--herb-50);
+  --status-paid-fg:      var(--herb-700);    --status-paid-bg:      var(--herb-100);
+  --status-cancelled-fg: var(--berry-700);   --status-cancelled-bg: var(--berry-50);
+
+  /* Table occupancy — waiter floor map */
+  --table-free-fg:    var(--ink-500);     --table-free-bg:    var(--ink-50);
+  --table-seated-fg:  var(--teal-700);    --table-seated-bg:  var(--teal-50);
+  --table-ordered-fg: var(--saffron-700); --table-ordered-bg: var(--saffron-50);
+  --table-bill-fg:    var(--clay-700);    --table-bill-bg:    var(--clay-100);
+}

@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="ds/styles.css" />
+<style>
+body { background: var(--ink-100); }
+.qr-scroll::-webkit-scrollbar { display: none; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; font-family: var(--font-ui); color: var(--text-primary);">
+
+  <header style="position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: var(--space-5); height: var(--topbar-h); padding: 0 var(--gutter-desktop); background: var(--alpha-paper-88); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-subtle);">
+    <span style="display: inline-flex; align-items: baseline; font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: -0.04em; line-height: 1;"><span style="color: var(--clay-500);">Q</span><span>Resto</span></span>
+    <span style="font-size: var(--text-caption); color: var(--text-tertiary); border-left: 1px solid var(--border-default); padding-left: var(--space-4);">Staff &amp; admin · responsive shell</span>
+    <span style="flex: 1;"></span>
+    <nav style="display: flex; align-items: center; gap: var(--space-1);">
+      <a href="01 Foundations.dc.html" style="display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: var(--radius-pill); color: var(--text-secondary); font-size: var(--text-label); font-weight: var(--weight-medium); text-decoration: none;" style-hover="background: var(--action-ghost-hover); color: var(--text-primary);">Foundations</a>
+      <a href="02 Customer Flow.dc.html" style="display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: var(--radius-pill); color: var(--text-secondary); font-size: var(--text-label); font-weight: var(--weight-medium); text-decoration: none;" style-hover="background: var(--action-ghost-hover); color: var(--text-primary);">Customer flow</a>
+      <span style="display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: var(--radius-pill); background: var(--ink-900); color: var(--ink-25); font-size: var(--text-label); font-weight: var(--weight-semibold);">Staff panels</span>
+    </nav>
+  </header>
+
+  <div style="max-width: 1400px; margin: 0 auto; padding: var(--space-8) var(--gutter-desktop) var(--space-16); display: flex; flex-direction: column; gap: var(--space-6);">
+
+    <div style="display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 6px; padding: 5px; background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-pill); box-shadow: var(--shadow-rest);">
+        <sc-for list="{{ roleTabs }}" as="r" hint-placeholder-count="4">
+          <button type="button" onClick="{{ r.go }}" style="{{ r.style }}">{{ r.label }}</button>
+        </sc-for>
+      </div>
+      <span style="flex: 1;"></span>
+      <div style="display: flex; align-items: center; gap: 6px; padding: 5px; background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-pill);">
+        <sc-for list="{{ widthTabs }}" as="w" hint-placeholder-count="3">
+          <button type="button" onClick="{{ w.go }}" style="{{ w.style }}">{{ w.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: var(--space-2);">
+      <sc-for list="{{ screenTabs }}" as="t" hint-placeholder-count="6">
+        <button type="button" onClick="{{ t.go }}" style="{{ t.style }}">{{ t.label }}</button>
+      </sc-for>
+    </div>
+
+    <div style="overflow-x: auto; padding: 2px;">
+    <div style="{{ frameStyle }}">
+      <div style="display: flex; align-items: center; gap: var(--space-3); height: 44px; padding: 0 var(--space-4); background: var(--ink-50); border-bottom: 1px solid var(--border-subtle); flex: 0 0 auto;">
+        <span style="display: flex; gap: 6px;"><span style="width: 10px; height: 10px; border-radius: 50%; background: var(--ink-300);"></span><span style="width: 10px; height: 10px; border-radius: 50%; background: var(--ink-300);"></span><span style="width: 10px; height: 10px; border-radius: 50%; background: var(--ink-300);"></span></span>
+        <span style="flex: 1; max-width: 320px; height: 26px; border-radius: var(--radius-pill); background: var(--surface-card); border: 1px solid var(--border-subtle); display: flex; align-items: center; padding: 0 10px; font-family: var(--font-mono); font-size: var(--text-micro); color: var(--text-tertiary);">{{ urlText }}</span>
+        <span style="font-family: var(--font-mono); font-size: var(--text-micro); color: var(--text-tertiary);">{{ widthLabel }}</span>
+      </div>
+
+      <sc-if value="{{ isAuth }}" hint-placeholder-val="{{ false }}">
+        <div style="flex: 1; display: flex; min-height: 0;">
+          <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-10) var(--space-8); background: var(--surface-page);">
+            <div style="width: 100%; max-width: 380px;">
+              <span style="display: inline-flex; align-items: baseline; font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: -0.04em;"><span style="color: var(--clay-500);">Q</span><span>Resto</span></span>
+              <h1 style="font-family: var(--font-display); font-size: var(--text-display-3); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-display); margin: var(--space-5) 0 var(--space-2);">Staff sign in</h1>
+              <p style="font-size: var(--text-body); color: var(--text-secondary); margin-bottom: var(--space-6);">Al Bustan · Downtown. Your shift starts when you sign in.</p>
+              <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+                <label style="display: flex; flex-direction: column; gap: 6px;">
+                  <span style="font-size: var(--text-label); font-weight: var(--weight-semibold); color: var(--text-secondary);">Work email</span>
+                  <input type="text" value="nadia@albustan.co" style="height: 48px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card); font-family: var(--font-ui); font-size: var(--text-body); outline: none;" style-focus="border-color: var(--border-focus-color); box-shadow: var(--ring-focus);" />
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 6px;">
+                  <span style="display: flex; align-items: baseline; font-size: var(--text-label); font-weight: var(--weight-semibold); color: var(--text-secondary);"><span style="flex: 1;">Password</span><a href="#reset" style="font-size: var(--text-caption); font-weight: var(--weight-medium); text-decoration: none;">Forgot it?</a></span>
+                  <span style="display: flex; align-items: center; gap: var(--space-2); height: 48px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card);">
+                    <input type="password" value="unbroken-lantern" style="flex: 1; border: none; outline: none; background: transparent; font-family: var(--font-ui); font-size: var(--text-body);" />
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>
+                  </span>
+                </label>
+                <label style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-body); color: var(--text-secondary); cursor: pointer;">
+                  <span style="width: 20px; height: 20px; border-radius: var(--radius-xs); background: var(--clay-500); display: grid; place-items: center;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span>
+                  Keep me signed in on this device
+                </label>
+                <button type="button" onClick="{{ signIn }}" style="height: 48px; border: none; border-radius: var(--radius-pill); background: var(--action-primary); color: var(--text-on-brand); font-family: var(--font-ui); font-size: var(--text-body); font-weight: var(--weight-semibold); box-shadow: var(--shadow-rest); cursor: pointer;" style-hover="background: var(--action-primary-hover);" style-active="transform: scale(0.975);">Sign in</button>
+                <div style="display: flex; align-items: center; gap: var(--space-3);"><span style="flex: 1; height: 1px; background: var(--border-subtle);"></span><span style="font-size: var(--text-caption); color: var(--text-tertiary);">or</span><span style="flex: 1; height: 1px; background: var(--border-subtle);"></span></div>
+                <button type="button" style="height: 48px; border: 1px solid var(--border-default); border-radius: var(--radius-pill); background: var(--surface-card); font-family: var(--font-ui); font-size: var(--text-body); font-weight: var(--weight-semibold); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;" style-hover="background: var(--ink-50);">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--clay-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1" /><rect width="5" height="5" x="16" y="3" rx="1" /><rect width="5" height="5" x="3" y="16" rx="1" /><path d="M21 16h-3a2 2 0 0 0-2 2v3" /></svg>
+                  Sign in with the shift QR at the pass
+                </button>
+                <p style="font-size: var(--text-caption); color: var(--text-tertiary); line-height: var(--leading-normal);">Three wrong attempts locks the account for ten minutes and notifies the manager on shift. Reset links expire in 30 minutes.</p>
+              </div>
+            </div>
+          </div>
+          <div style="{{ authArtStyle }}">
+            <div style="position: absolute; inset: 0; background: var(--scrim-bottom);"></div>
+            <div style="position: relative; padding: var(--space-8); align-self: flex-end;">
+              <div style="font-size: var(--text-micro); letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: rgba(255, 255, 255, 0.8);">Tonight · 8 tables · 3 on the floor</div>
+              <div style="font-family: var(--font-display); font-size: var(--text-display-2); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-display); line-height: var(--leading-tight); color: #fff; margin-top: var(--space-3);">Service starts<br />in 40 minutes.</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isApp }}" hint-placeholder-val="{{ true }}">
+        <div style="flex: 1; display: flex; min-height: 0; background: var(--surface-page);">
+
+          <sc-if value="{{ showSidebar }}" hint-placeholder-val="{{ true }}">
+            <aside style="width: var(--sidebar-w); flex: 0 0 auto; background: var(--ink-900); display: flex; flex-direction: column; padding: var(--space-5) var(--space-3) var(--space-4);">
+              <div style="display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-3) var(--space-5);">
+                <span style="display: inline-flex; align-items: baseline; font-family: var(--font-display); font-weight: 700; font-size: 19px; letter-spacing: -0.04em; color: var(--ink-25);"><span style="color: var(--clay-300);">Q</span><span>Resto</span></span>
+                <span style="font-size: var(--text-micro); color: var(--ink-500); border: 1px solid var(--ink-700); border-radius: var(--radius-pill); padding: 2px 7px;">{{ roleLabel }}</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 2px; flex: 1;">
+                <sc-for list="{{ nav }}" as="n" hint-placeholder-count="6">
+                  <button type="button" onClick="{{ n.go }}" style="{{ n.style }}">
+                    <span style="{{ n.dotStyle }}"></span>
+                    <span style="flex: 1; text-align: left;">{{ n.label }}</span>
+                    <span style="{{ n.badgeStyle }}">{{ n.badge }}</span>
+                  </button>
+                </sc-for>
+              </div>
+              <div style="display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3); border-top: 1px solid var(--ink-800);">
+                <span style="width: 32px; height: 32px; border-radius: 50%; background: var(--teal-700); color: var(--ink-25); display: grid; place-items: center; font-family: var(--font-display); font-size: var(--text-caption); font-weight: 600;">{{ userInitials }}</span>
+                <span style="flex: 1; min-width: 0;">
+                  <span style="display: block; font-size: var(--text-caption); color: var(--ink-200); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ userName }}</span>
+                  <span style="display: block; font-size: var(--text-micro); color: var(--ink-500);">Al Bustan</span>
+                </span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--ink-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>
+              </div>
+            </aside>
+          </sc-if>
+
+          <main class="qr-scroll" style="flex: 1; min-width: 0; display: flex; flex-direction: column; overflow-y: auto;">
+            <div style="position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: var(--space-4); min-height: var(--topbar-h); padding: 0 var(--space-6); background: var(--alpha-paper-88); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-subtle);">
+              <div style="min-width: 0;">
+                <h1 style="font-family: var(--font-display); font-size: var(--text-title-1); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-title); margin: 0; white-space: nowrap;">{{ pageTitle }}</h1>
+                <div style="font-size: var(--text-caption); color: var(--text-tertiary);">{{ pageSub }}</div>
+              </div>
+              <span style="flex: 1;"></span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: var(--radius-pill); background: var(--success-bg); color: var(--success-fg); font-size: var(--text-caption); font-weight: var(--weight-semibold);"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--herb-500); animation: qr-pulse 1.6s ease-in-out infinite;"></span>Live</span>
+              <button type="button" onClick="{{ fireToast }}" style="position: relative; width: 44px; height: 44px; border: 1px solid var(--border-default); border-radius: 50%; background: var(--surface-card); display: grid; place-items: center; cursor: pointer;" style-hover="background: var(--ink-50);">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--ink-800)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
+                <span style="position: absolute; top: -2px; right: -2px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: var(--radius-pill); background: var(--clay-500); color: #fff; font-family: var(--font-mono); font-size: 10px; display: grid; place-items: center;">2</span>
+              </button>
+              <span style="width: 36px; height: 36px; border-radius: 50%; background: var(--clay-100); color: var(--clay-700); display: grid; place-items: center; font-family: var(--font-display); font-size: var(--text-caption); font-weight: 600;">{{ userInitials }}</span>
+            </div>
+
+            <div style="{{ contentPadStyle }}">
+
+              <sc-if value="{{ isWaiter }}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; flex-direction: column; gap: var(--space-5);">
+                  <div style="display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;">
+                    <span style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: var(--radius-pill); background: var(--ink-900); color: var(--ink-25); font-size: var(--text-label); font-weight: var(--weight-semibold);">Kanban</span>
+                    <span style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: var(--radius-pill); border: 1px solid var(--border-default); color: var(--text-secondary); font-size: var(--text-label); font-weight: var(--weight-medium); cursor: pointer;" style-hover="background: var(--ink-50);">List</span>
+                    <span style="flex: 1;"></span>
+                    <span style="font-family: var(--font-mono); font-size: var(--text-caption); color: var(--text-tertiary);">4 open · 2 waiting on the kitchen · oldest 14 min</span>
+                  </div>
+                  <div style="{{ kanbanStyle }}">
+                    <sc-for list="{{ columns }}" as="col" hint-placeholder-count="4">
+                      <div style="display: flex; flex-direction: column; gap: var(--space-3); min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: var(--space-2); padding-bottom: var(--space-2); border-bottom: 2px solid var(--border-subtle);">
+                          <span style="{{ col.dotStyle }}"></span>
+                          <span style="font-size: var(--text-label); font-weight: var(--weight-semibold);">{{ col.label }}</span>
+                          <span style="font-family: var(--font-mono); font-size: var(--text-caption); color: var(--text-tertiary);">{{ col.count }}</span>
+                        </div>
+                        <sc-for list="{{ col.orders }}" as="o" hint-placeholder-count="2">
+                          <div style="{{ o.cardStyle }}">
+                            <div style="display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-3) var(--space-2);">
+                              <span style="font-family: var(--font-mono); font-size: var(--text-title-3); font-weight: 500; white-space: nowrap;">{{ o.code }}</span>
+                              <span style="flex: 1;"></span>
+                              <span style="{{ o.timeStyle }}">{{ o.elapsed }}</span>
+                            </div>
+                            <div style="padding: 0 var(--space-3); font-size: var(--text-caption); color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18" /><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M3 9h18" /></svg>
+                              {{ o.table }} · {{ o.guest }}
+                            </div>
+                            <div style="padding: var(--space-2) var(--space-3) var(--space-3); display: flex; flex-direction: column; gap: 4px;">
+                              <sc-for list="{{ o.items }}" as="it" hint-placeholder-count="2">
+                                <div style="display: flex; gap: var(--space-2); font-size: var(--text-body);">
+                                  <span style="font-family: var(--font-mono); color: var(--text-tertiary);">{{ it.qty }}</span>
+                                  <span style="flex: 1; min-width: 0;">{{ it.name }}</span>
+                                </div>
+                                <span style="{{ it.noteStyle }}">{{ it.note }}</span>
+                              </sc-for>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--surface-sunken); border-top: 1px solid var(--border-subtle);">
+                              <span style="{{ o.payStyle }}">{{ o.payLabel }}</span>
+                              <span style="flex: 1;"></span>
+                              <span style="font-family: var(--font-mono); font-size: var(--text-body); font-weight: 500;">{{ o.total }}</span>
+                            </div>
+                            <div style="display: flex; gap: var(--space-2); padding: var(--space-3);">
+                              <button type="button" onClick="{{ o.advance }}" style="{{ o.primaryStyle }}">{{ o.primaryLabel }}</button>
+                              <button type="button" onClick="{{ o.void }}" style="width: 44px; height: 44px; flex: 0 0 auto; border: 1px solid var(--border-default); border-radius: var(--radius-pill); background: var(--surface-card); display: grid; place-items: center; cursor: pointer;" style-hover="background: var(--danger-bg); border-color: var(--berry-300);">
+                                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="var(--text-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg>
+                              </button>
+                            </div>
+                          </div>
+                        </sc-for>
+                        <sc-if value="{{ col.empty }}" hint-placeholder-val="{{ false }}">
+                          <div style="border: 1px dashed var(--border-default); border-radius: var(--radius-lg); padding: var(--space-5); text-align: center; font-size: var(--text-caption); color: var(--text-tertiary);">Nothing here right now</div>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isFloor }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; flex-direction: column; gap: var(--space-5);">
+                  <div style="display: flex; flex-wrap: wrap; gap: var(--space-3);">
+                    <span style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: var(--radius-pill); background: var(--table-free-bg); color: var(--table-free-fg); font-size: var(--text-caption); font-weight: var(--weight-semibold);">Free 5</span>
+                    <span style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: var(--radius-pill); background: var(--table-seated-bg); color: var(--table-seated-fg); font-size: var(--text-caption); font-weight: var(--weight-semibold);">Seated 3</span>
+                    <span style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: var(--radius-pill); background: var(--table-ordered-bg); color: var(--table-ordered-fg); font-size: var(--text-caption); font-weight: var(--weight-semibold);">Ordered 2</span>
+                    <span style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: var(--radius-pill); background: var(--table-bill-bg); color: var(--table-bill-fg); font-size: var(--text-caption); font-weight: var(--weight-semibold);">Bill 1</span>
+                    <span style="flex: 1;"></span>
+                    <span style="font-family: var(--font-mono); font-size: var(--text-caption); color: var(--text-tertiary);">Tap a table to open its bill</span>
+                  </div>
+                  <div style="{{ floorStyle }}">
+                    <sc-for list="{{ tables }}" as="tb" hint-placeholder-count="12">
+                      <button type="button" onClick="{{ tb.open }}" style="{{ tb.style }}">
+                        <span style="display: flex; align-items: baseline; gap: var(--space-2);">
+                          <span style="font-family: var(--font-mono); font-size: var(--text-display-3); line-height: 1;">{{ tb.n }}</span>
+                          <span style="font-size: var(--text-micro); opacity: 0.7;">{{ tb.seats }}</span>
+                        </span>
+                        <span style="font-size: var(--text-caption); font-weight: var(--weight-semibold);">{{ tb.state }}</span>
+                        <span style="font-family: var(--font-mono); font-size: var(--text-caption); opacity: 0.8;">{{ tb.meta }}</span>
+                      </button>
+                    </sc-for>
+                  </div>
+                  <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden;">
+                    <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border-subtle);">
+                      <h2 style="font-family: var(--font-display); font-size: var(--text-title-2); font-weight: var(--weight-semibold); margin: 0;">Table 07 · checkout</h2>
+                      <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: var(--radius-pill); background: var(--status-pending-bg); color: var(--status-pending-fg); font-size: var(--text-micro); font-weight: var(--weight-semibold);">Bill requested</span>
+                      <span style="flex: 1;"></span>
+                      <span style="font-family: var(--font-mono); font-size: var(--text-caption); color: var(--text-tertiary);">6 covers · 26 min</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);">
+                      <div style="padding: var(--space-4) var(--space-5); display: flex; flex-direction: column; gap: 6px; border-right: 1px solid var(--border-subtle);">
+                        <div style="display: flex; font-size: var(--text-body);"><span style="font-family: var(--font-mono); color: var(--text-tertiary); width: 32px;">3×</span><span style="flex: 1;">Lamb kofta</span><span style="font-family: var(--font-mono);">$58.50</span></div>
+                        <div style="display: flex; font-size: var(--text-body);"><span style="font-family: var(--font-mono); color: var(--text-tertiary); width: 32px;">2×</span><span style="flex: 1;">Knafeh, orange blossom</span><span style="font-family: var(--font-mono);">$19.00</span></div>
+                        <div style="display: flex; font-size: var(--text-body);"><span style="font-family: var(--font-mono); color: var(--text-tertiary); width: 32px;">2×</span><span style="flex: 1;">Cardamom coffee</span><span style="font-family: var(--font-mono);">$9.00</span></div>
+                        <div style="font-size: var(--text-caption); color: var(--saffron-700); background: var(--saffron-50); border-radius: var(--radius-xs); padding: 3px 8px; align-self: flex-start; margin-top: 4px;">birthday candle on the knafeh</div>
+                      </div>
+                      <div style="padding: var(--space-4) var(--space-5); display: flex; flex-direction: column; gap: var(--space-3);">
+                        <div style="display: flex; align-items: baseline;"><span style="flex: 1; font-size: var(--text-body); color: var(--text-secondary);">Total due</span><span style="font-family: var(--font-mono); font-size: var(--text-title-1); font-weight: 500;">$92.20</span></div>
+                        <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+                          <button type="button" onClick="{{ markPaid }}" style="height: 44px; border: none; border-radius: var(--radius-pill); background: var(--action-primary); color: var(--text-on-brand); font-family: var(--font-ui); font-size: var(--text-body); font-weight: var(--weight-semibold); cursor: pointer;" style-hover="background: var(--action-primary-hover);">Take card at table</button>
+                          <button type="button" onClick="{{ markPaid }}" style="height: 44px; border: 1px solid var(--border-default); border-radius: var(--radius-pill); background: var(--surface-card); font-family: var(--font-ui); font-size: var(--text-body); font-weight: var(--weight-semibold); cursor: pointer;" style-hover="background: var(--ink-50);">Mark cash received</button>
+                          <button type="button" style="height: 44px; border: none; border-radius: var(--radius-pill); background: transparent; color: var(--text-secondary); font-family: var(--font-ui); font-size: var(--text-body); font-weight: var(--weight-medium); cursor: pointer;" style-hover="background: var(--action-ghost-hover);">Split · print · email</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isManager }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+                  <div style="{{ statGridStyle }}">
+                    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-rest);">
+                      <div style="font-size: var(--text-caption); color: var(--text-tertiary);">Covers tonight</div>
+                      <div style="font-family: var(--font-mono); font-size: var(--text-display-3); line-height: 1.1;">64</div>
+                      <div style="font-size: var(--text-caption); color: var(--herb-700); display: flex; align-items: center; gap: 4px;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /><polyline points="16 7 22 7 22 13" /></svg>+12% vs last Friday</div>
+                    </div>
+                    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-rest);">
+                      <div style="font-size: var(--text-caption); color: var(--text-tertiary);">Net sales</div>
+                      <div style="font-family: var(--font-mono); font-size: var(--text-display-3); line-height: 1.1;">$2,418</div>
+                      <div style="font-size: var(--text-caption); color: var(--text-secondary);">$37.78 average per cover</div>
+                    </div>
+                    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-rest);">
+                      <div style="font-size: var(--text-caption); color: var(--text-tertiary);">Kitchen time, median</div>
+                      <div style="font-family: var(--font-mono); font-size: var(--text-display-3); line-height: 1.1;">16m</div>
+                      <div style="font-size: var(--text-caption); color: var(--saffron-700);">3 orders over 25 min</div>
+                    </div>
+                    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-rest);">
+                      <div style="font-size: var(--text-caption); color: var(--text-tertiary);">Unpaid at table</div>
+                      <div style="font-family: var(--font-mono); font-size: var(--text-display-3); line-height: 1.1;">$167</div>
+                      <div style="font-size: var(--text-caption); color: var(--text-secondary);">4 open bills, oldest 26 min</div>
+                    </div>
+                  </div>
+
+                  <div style="{{ managerSplitStyle }}">
+                    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden;">
+                      <div style="display: flex; align-items: baseline; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border-subtle);">
+                        <h2 style="font-family: var(--font-display); font-size: var(--text-title-2); font-weight: var(--weight-semibold); margin: 0;">All active orders</h2>
+                        <span style="font-family: var(--font-mono); font-size: var(--text-caption); color: var(--text-tertiary);">live</span>
+                        <span style="flex: 1;"></span>
+                        <button type="button" style="height: 34px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-pill); background: var(--surface-card); font-family: var(--font-ui); font-size: var(--text-label); font-weight: var(--weight-semibold); cursor: pointer;" style-hover="background: var(--ink-50);">Reassign</button>
+                      </div>
+                      <div style="display: grid; grid-template-columns: 90px 1fr 96px 92px 74px; gap: var(--space-3); padding: var(--space-2) var(--space-5); background: var(--surface-sunken); border-bottom: 1px solid var(--border-subtle); font-size: var(--text-label); font-weight: var(--weight-semibold); color: var(--text-secondary);">
+                        <span>Order</span><span>Table · waiter</span><span>Status</span><span style="text-align: right;">Total</span><span style="text-align: right;">Age</span>
+                      </div>
+                      <sc-for list="{{ allOrders }}" as="o" hint-placeholder-count="5">
+                        <div style="display: grid; grid-template-columns: 90px 1fr 96px 92px 74px; gap: var(--space-3); padding: var(--space-3) var(--space-5); border-bottom: 1px solid var(--border-subtle); align-items: center;">
+                          <span style="font-family: var(--font-mono); font-size: var(--text-body);">{{ o.code }}</span>
+                          <span style="font-size: var(--text-body);">{{ o.table }} · <span style="color: var(--text-secondary);">{{ o.waiter }}</span></span>
+                          <span style="{{ o.pillStyle }}">{{ o.status }}</span>
+                          <span style="font-family: var(--font-mono); font-size: var(--text-body); text-align: right;">{{ o.total }}</span>
+                          <span style="{{ o.ageStyle }}">{{ o.elapsed }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+
+                    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden; align-self: start;">
+                      <div style="display: flex; align-items: baseline; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border-subtle);">
+                        <h2 style="font-family: var(--font-display); font-size: var(--text-title-2); font-weight: var(--weight-semibold); margin: 0;">Floor team</h2>
+                        <span style="flex: 1;"></span>
+                        <button type="button" onClick="{{ openDrawer }}" style="display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border: none; border-radius: var(--radius-pill); background: var(--action-primary); color: var(--text-on-brand); font-family: var(--font-ui); font-size: var(--text-label); font-weight: var(--weight-semibold); cursor: pointer;" style-hover="background: var(--action-primary-hover);">
+                          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>Add waiter
+                        </button>
+                      </div>
+                      <sc-for list="{{ staff }}" as="p" hint-placeholder-count="4">
+                        <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-5); border-bottom: 1px solid var(--border-subtle);">
+                          <span style="{{ p.avatarStyle }}">{{ p.initials }}</span>
+                          <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: var(--text-body); font-weight: var(--weight-medium);">{{ p.name }}</div>
+                            <div style="font-family: var(--font-mono); font-size: var(--text-micro); color: var(--text-tertiary);">{{ p.meta }}</div>
+                          </div>
+                          <span style="{{ p.shiftStyle }}">{{ p.status }}</span>
+                          <button type="button" style="width: 44px; height: 44px; border: none; background: transparent; border-radius: 50%; display: grid; place-items: center; cursor: pointer;" style-hover="background: var(--action-ghost-hover);">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" /></svg>
+                          </button>
+                        </div>
+                      </sc-for>
+                      <div style="padding: var(--space-3) var(--space-5); font-size: var(--text-caption); color: var(--text-tertiary);">Deleting a waiter keeps their order history and releases their tables to the pool.</div>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+                  <div style="{{ statGridStyle }}">
+                    <div style="background: var(--ink-900); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-card);">
+                      <div style="font-size: var(--text-caption); color: var(--ink-400);">Month to date</div>
+                      <div style="font-family: var(--font-mono); font-size: var(--text-display-3); line-height: 1.05; color: var(--ink-25); white-space: nowrap;">$68,240</div>
+                      <div style="font-size: var(--text-caption); color: var(--clay-300);">net of refunds and gateway fees</div>
+                    </div>
+                    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-rest);">
+                      <div style="font-size: var(--text-caption); color: var(--text-tertiary);">Paid in app</div>
+                      <div style="font-family: var(--font-mono); font-size: var(--text-display-3); line-height: 1.1;">71%</div>
+                      <div style="height: 8px; border-radius: var(--radius-pill); background: var(--ink-100); margin-top: var(--space-2); overflow: hidden;"><span style="display: block; width: 71%; height: 100%; background: var(--clay-500);"></span></div>
+                    </div>
+                    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-rest);">
+                      <div style="font-size: var(--text-caption); color: var(--text-tertiary);">Menu items live</div>
+                      <div style="font-family: var(--font-mono); font-size: var(--text-display-3); line-height: 1.1;">42</div>
+                      <div style="font-size: var(--text-caption); color: var(--text-secondary);">3 sold out · 1 scheduled</div>
+                    </div>
+                    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-rest);">
+                      <div style="font-size: var(--text-caption); color: var(--text-tertiary);">Failed payments</div>
+                      <div style="font-family: var(--font-mono); font-size: var(--text-display-3); line-height: 1.1; color: var(--danger-fg);">4</div>
+                      <div style="font-size: var(--text-caption); color: var(--text-secondary);">all recovered at the table</div>
+                    </div>
+                  </div>
+
+                  <div style="{{ adminSplitStyle }}">
+                    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden;">
+                      <div style="padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border-subtle);">
+                        <h2 style="font-family: var(--font-display); font-size: var(--text-title-2); font-weight: var(--weight-semibold); margin: 0;">Roles &amp; permissions</h2>
+                        <p style="font-size: var(--text-caption); color: var(--text-tertiary); margin-top: 2px;">Six roles. A permission granted here appears in that role's sidebar on their next sign-in.</p>
+                      </div>
+                      <div style="display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(4, 62px); gap: var(--space-2); padding: var(--space-2) var(--space-5); background: var(--surface-sunken); border-bottom: 1px solid var(--border-subtle); font-size: var(--text-label); font-weight: var(--weight-semibold); color: var(--text-secondary);">
+                        <span>Capability</span><span style="text-align: center;">Waiter</span><span style="text-align: center;">Kitchen</span><span style="text-align: center;">Manager</span><span style="text-align: center;">Admin</span>
+                      </div>
+                      <sc-for list="{{ matrix }}" as="row" hint-placeholder-count="6">
+                        <div style="display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(4, 62px); gap: var(--space-2); padding: var(--space-3) var(--space-5); border-bottom: 1px solid var(--border-subtle); align-items: center; font-size: var(--text-body);">
+                          <span>{{ row.cap }}</span>
+                          <span style="{{ row.aStyle }}">{{ row.a }}</span>
+                          <span style="{{ row.bStyle }}">{{ row.b }}</span>
+                          <span style="{{ row.cStyle }}">{{ row.c }}</span>
+                          <span style="{{ row.dStyle }}">{{ row.d }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+                      <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-rest);">
+                        <h2 style="font-family: var(--font-display); font-size: var(--text-title-2); font-weight: var(--weight-semibold); margin: 0 0 var(--space-4);">Restaurant</h2>
+                        <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+                          <div style="display: flex; align-items: baseline; font-size: var(--text-body);"><span style="flex: 1; color: var(--text-secondary);">Name</span><span>Al Bustan</span></div>
+                          <div style="display: flex; align-items: baseline; font-size: var(--text-body);"><span style="flex: 1; color: var(--text-secondary);">Service charge</span><span style="font-family: var(--font-mono);">12.5%</span></div>
+                          <div style="display: flex; align-items: baseline; font-size: var(--text-body);"><span style="flex: 1; color: var(--text-secondary);">Currency</span><span style="font-family: var(--font-mono);">USD $</span></div>
+                          <div style="display: flex; align-items: baseline; font-size: var(--text-body);"><span style="flex: 1; color: var(--text-secondary);">Languages</span><span>English · العربية</span></div>
+                          <div style="display: flex; align-items: baseline; font-size: var(--text-body);"><span style="flex: 1; color: var(--text-secondary);">Tables · QR codes</span><span style="font-family: var(--font-mono);">12 · 12 printed</span></div>
+                        </div>
+                        <button type="button" style="width: 100%; height: 44px; margin-top: var(--space-4); border: 1px solid var(--border-default); border-radius: var(--radius-pill); background: var(--surface-card); font-family: var(--font-ui); font-size: var(--text-body); font-weight: var(--weight-semibold); cursor: pointer;" style-hover="background: var(--ink-50);">Edit details · reprint QR codes</button>
+                      </div>
+                      <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-rest);">
+                        <h2 style="font-family: var(--font-display); font-size: var(--text-title-2); font-weight: var(--weight-semibold); margin: 0 0 var(--space-3);">System health</h2>
+                        <div style="display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-body);">
+                          <div style="display: flex; align-items: center; gap: var(--space-2);"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--herb-500);"></span><span style="flex: 1; color: var(--text-secondary);">Payment gateway</span><span style="font-family: var(--font-mono); font-size: var(--text-caption);">operational</span></div>
+                          <div style="display: flex; align-items: center; gap: var(--space-2);"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--herb-500);"></span><span style="flex: 1; color: var(--text-secondary);">Kitchen display</span><span style="font-family: var(--font-mono); font-size: var(--text-caption);">2 screens up</span></div>
+                          <div style="display: flex; align-items: center; gap: var(--space-2);"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--saffron-500);"></span><span style="flex: 1; color: var(--text-secondary);">Receipt printer, pass</span><span style="font-family: var(--font-mono); font-size: var(--text-caption);">low paper</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isMenuAdmin }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ menuAdminStyle }}">
+                  <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-rest); overflow: hidden; align-self: start;">
+                    <div style="padding: var(--space-4); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: baseline; gap: var(--space-2);">
+                      <h2 style="font-family: var(--font-display); font-size: var(--text-title-3); font-weight: var(--weight-semibold); margin: 0;">Categories</h2>
+                      <span style="flex: 1;"></span>
+                      <span style="font-family: var(--font-mono); font-size: var(--text-caption); color: var(--text-tertiary);">drag to reorder</span>
+                    </div>
+                    <sc-for list="{{ categories }}" as="c" hint-placeholder-count="5">
+                      <div style="{{ c.style }}">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--ink-300)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1" /><circle cx="9" cy="5" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="19" r="1" /></svg>
+                        <span style="flex: 1; font-size: var(--text-body);">{{ c.name }}</span>
+                        <span style="font-family: var(--font-mono); font-size: var(--text-caption); color: var(--text-tertiary);">{{ c.count }}</span>
+                      </div>
+                    </sc-for>
+                    <button type="button" style="width: 100%; height: 44px; border: none; border-top: 1px solid var(--border-subtle); background: transparent; color: var(--clay-600); font-family: var(--font-ui); font-size: var(--text-body); font-weight: var(--weight-semibold); cursor: pointer;" style-hover="background: var(--clay-50);">+ New category</button>
+                  </div>
+
+                  <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden;">
+                    <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border-subtle); flex-wrap: wrap;">
+                      <h2 style="font-family: var(--font-display); font-size: var(--text-title-2); font-weight: var(--weight-semibold); margin: 0;">From the grill</h2>
+                      <span style="flex: 1;"></span>
+                      <span style="display: flex; align-items: center; gap: var(--space-2); height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-pill); flex: 1 1 100%; min-width: 0;">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+                        <input type="text" placeholder="Find a dish" style="flex: 1; border: none; outline: none; background: transparent; font-family: var(--font-ui); font-size: var(--text-label);" />
+                      </span>
+                      <button type="button" onClick="{{ openDrawer }}" style="display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 16px; border: none; border-radius: var(--radius-pill); background: var(--action-primary); color: var(--text-on-brand); font-family: var(--font-ui); font-size: var(--text-label); font-weight: var(--weight-semibold); cursor: pointer;" style-hover="background: var(--action-primary-hover);">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>New dish
+                      </button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) 84px 60px; gap: var(--space-3); padding: var(--space-2) var(--space-5); background: var(--surface-sunken); border-bottom: 1px solid var(--border-subtle); font-size: var(--text-label); font-weight: var(--weight-semibold); color: var(--text-secondary);">
+                      <span></span><span>Dish</span><span style="text-align: right;">Price</span><span style="text-align: center;">Live</span>
+                    </div>
+                    <sc-for list="{{ dishes }}" as="d" hint-placeholder-count="6">
+                      <div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) 84px 60px; gap: var(--space-3); padding: var(--space-3) var(--space-5); border-bottom: 1px solid var(--border-subtle); align-items: center;">
+                        <span style="{{ d.thumbStyle }}"></span>
+                        <span style="min-width: 0;">
+                          <span style="display: block; font-size: var(--text-body); font-weight: var(--weight-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ d.name }}</span>
+                          <span style="display: block; font-size: var(--text-caption); color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ d.soldLine }}</span>
+                        </span>
+                        <span style="font-family: var(--font-mono); font-size: var(--text-body); text-align: right;">{{ d.price }}</span>
+                        <span style="display: flex; justify-content: center;">
+                          <button type="button" onClick="{{ d.toggle }}" style="{{ d.switchStyle }}"><span style="{{ d.knobStyle }}"></span></button>
+                        </span>
+                      </div>
+                    </sc-for>
+                  </div>
+
+                  <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-rest); overflow: hidden; align-self: start;">
+                    <div style="padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border-subtle);">
+                      <h2 style="font-family: var(--font-display); font-size: var(--text-title-3); font-weight: var(--weight-semibold); margin: 0;">Editing · Lamb kofta</h2>
+                      <span style="font-family: var(--font-mono); font-size: var(--text-micro); color: var(--text-tertiary);">last saved 14:02 by Yusuf</span>
+                    </div>
+                    <div style="padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4);">
+                      <div style="border: 1.5px dashed var(--border-strong); border-radius: var(--radius-lg); padding: var(--space-5); text-align: center; background: var(--surface-sunken);">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="var(--ink-400)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 8px;"><path d="M16 5h6" /><path d="M19 2v6" /><path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /><circle cx="9" cy="9" r="2" /></svg>
+                        <div style="font-size: var(--text-body); font-weight: var(--weight-semibold);">Drop a photo</div>
+                        <div style="font-size: var(--text-caption); color: var(--text-tertiary); margin-top: 2px;">4:3, at least 1200px wide. Cropped square for list rows.</div>
+                      </div>
+                      <label style="display: flex; flex-direction: column; gap: 6px;">
+                        <span style="font-size: var(--text-label); font-weight: var(--weight-semibold); color: var(--text-secondary);">Name</span>
+                        <input type="text" value="Lamb kofta" style="height: 44px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card); font-family: var(--font-ui); font-size: var(--text-body); outline: none;" style-focus="border-color: var(--border-focus-color); box-shadow: var(--ring-focus);" />
+                      </label>
+                      <label style="display: flex; flex-direction: column; gap: 6px;">
+                        <span style="font-size: var(--text-label); font-weight: var(--weight-semibold); color: var(--text-secondary);">Description</span>
+                        <span style="display: flex; gap: 2px; border: 1px solid var(--border-default); border-bottom: none; border-radius: var(--radius-md) var(--radius-md) 0 0; padding: 4px; background: var(--surface-sunken);">
+                          <span style="width: 30px; height: 28px; display: grid; place-items: center; border-radius: var(--radius-xs); font-weight: 700; font-size: var(--text-caption); cursor: pointer;" style-hover="background: var(--ink-100);">B</span>
+                          <span style="width: 30px; height: 28px; display: grid; place-items: center; border-radius: var(--radius-xs); font-style: italic; font-size: var(--text-caption); cursor: pointer;" style-hover="background: var(--ink-100);">I</span>
+                          <span style="width: 30px; height: 28px; display: grid; place-items: center; border-radius: var(--radius-xs); font-size: var(--text-caption); cursor: pointer;" style-hover="background: var(--ink-100);">•</span>
+                        </span>
+                        <textarea rows="3" style="padding: 12px 14px; border: 1px solid var(--border-default); border-radius: 0 0 var(--radius-md) var(--radius-md); background: var(--surface-card); font-family: var(--font-ui); font-size: var(--text-body); resize: none; outline: none;">Charcoal-grilled, sumac onions, tahini, flatbread.</textarea>
+                      </label>
+                      <div style="display: flex; gap: var(--space-3);">
+                        <label style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px;">
+                          <span style="font-size: var(--text-label); font-weight: var(--weight-semibold); color: var(--text-secondary);">Price</span>
+                          <input type="text" value="18.00" style="width: 100%; min-width: 0; height: 44px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card); font-family: var(--font-mono); font-size: var(--text-body); outline: none;" style-focus="border-color: var(--border-focus-color); box-shadow: var(--ring-focus);" />
+                        </label>
+                        <label style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px;">
+                          <span style="font-size: var(--text-label); font-weight: var(--weight-semibold); color: var(--text-secondary);">Prep minutes</span>
+                          <input type="text" value="18" style="width: 100%; min-width: 0; height: 44px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card); font-family: var(--font-mono); font-size: var(--text-body); outline: none;" style-focus="border-color: var(--border-focus-color); box-shadow: var(--ring-focus);" />
+                        </label>
+                      </div>
+                      <div>
+                        <div style="font-size: var(--text-label); font-weight: var(--weight-semibold); color: var(--text-secondary); margin-bottom: 6px;">Allergens</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                          <span style="display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border-radius: var(--radius-pill); background: var(--ink-900); color: var(--ink-25); font-size: var(--text-caption);">Gluten ×</span>
+                          <span style="display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border-radius: var(--radius-pill); background: var(--ink-900); color: var(--ink-25); font-size: var(--text-caption);">Sesame ×</span>
+                          <span style="display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border-radius: var(--radius-pill); background: var(--ink-900); color: var(--ink-25); font-size: var(--text-caption);">Dairy ×</span>
+                          <span style="display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border: 1px dashed var(--border-strong); border-radius: var(--radius-pill); font-size: var(--text-caption); color: var(--text-secondary); cursor: pointer;">+ add</span>
+                        </div>
+                      </div>
+                      <div style="display: flex; gap: var(--space-2); border-top: 1px solid var(--border-subtle); padding-top: var(--space-4);">
+                        <button type="button" onClick="{{ saveDish }}" style="flex: 1; height: 44px; border: none; border-radius: var(--radius-pill); background: var(--action-primary); color: var(--text-on-brand); font-family: var(--font-ui); font-size: var(--text-body); font-weight: var(--weight-semibold); cursor: pointer;" style-hover="background: var(--action-primary-hover);">Save changes</button>
+                        <button type="button" onClick="{{ openDialog }}" style="width: 44px; height: 44px; border: 1px solid var(--border-default); border-radius: 50%; background: var(--surface-card); display: grid; place-items: center; cursor: pointer;" style-hover="background: var(--danger-bg); border-color: var(--berry-300);">
+                          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="var(--berry-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isReports }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; flex-direction: column; gap: var(--space-5);">
+                  <div style="display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4); box-shadow: var(--shadow-rest);">
+                    <sc-for list="{{ ranges }}" as="r" hint-placeholder-count="4">
+                      <button type="button" onClick="{{ r.go }}" style="{{ r.style }}">{{ r.label }}</button>
+                    </sc-for>
+                    <span style="display: flex; align-items: center; gap: var(--space-2); height: 36px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-pill); font-family: var(--font-mono); font-size: var(--text-caption); color: var(--text-secondary);">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4" /><path d="M16 2v4" /><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" /></svg>
+                      01 Aug – 23 Aug
+                    </span>
+                    <span style="flex: 1;"></span>
+                    <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-pill); background: var(--surface-card); font-family: var(--font-ui); font-size: var(--text-label); font-weight: var(--weight-semibold); cursor: pointer;" style-hover="background: var(--ink-50);">
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>CSV
+                    </button>
+                    <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-pill); background: var(--surface-card); font-family: var(--font-ui); font-size: var(--text-label); font-weight: var(--weight-semibold); cursor: pointer;" style-hover="background: var(--ink-50);">PDF</button>
+                  </div>
+
+                  <div style="{{ reportSplitStyle }}">
+                    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-rest);">
+                      <div style="display: flex; align-items: baseline; gap: var(--space-3); margin-bottom: var(--space-5);">
+                        <h2 style="font-family: var(--font-display); font-size: var(--text-title-2); font-weight: var(--weight-semibold); margin: 0;">Sales by day</h2>
+                        <span style="flex: 1;"></span>
+                        <span style="font-family: var(--font-mono); font-size: var(--text-caption); color: var(--text-tertiary);">peak Sat · $4,120</span>
+                      </div>
+                      <div style="display: flex; align-items: flex-end; gap: var(--space-2); height: 168px;">
+                        <sc-for list="{{ bars }}" as="b" hint-placeholder-count="7">
+                          <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                            <span style="{{ b.barStyle }}"></span>
+                            <span style="font-family: var(--font-mono); font-size: var(--text-micro); color: var(--text-tertiary);">{{ b.label }}</span>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+                      <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-rest);">
+                        <div style="font-size: var(--text-caption); color: var(--text-tertiary);">Gross</div>
+                        <div style="font-family: var(--font-mono); font-size: var(--text-title-1);">$21,486.50</div>
+                      </div>
+                      <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-rest);">
+                        <div style="font-size: var(--text-caption); color: var(--text-tertiary);">Service charge collected</div>
+                        <div style="font-family: var(--font-mono); font-size: var(--text-title-1);">$2,685.81</div>
+                      </div>
+                      <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-rest);">
+                        <div style="font-size: var(--text-caption); color: var(--text-tertiary);">Refunded</div>
+                        <div style="font-family: var(--font-mono); font-size: var(--text-title-1); color: var(--danger-fg);">−$184.00</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden;">
+                    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr) 92px 108px 104px 96px; gap: var(--space-3); padding: var(--space-3) var(--space-5); background: var(--surface-sunken); border-bottom: 1px solid var(--border-subtle); font-size: var(--text-label); font-weight: var(--weight-semibold); color: var(--text-secondary);">
+                      <span>Date</span><span>Waiter · covers</span><span style="text-align: right;">Orders</span><span style="text-align: right;">Net</span><span style="text-align: right;">Tips</span><span style="text-align: center;">Method</span>
+                    </div>
+                    <sc-for list="{{ rows }}" as="r" hint-placeholder-count="7">
+                      <div style="{{ r.rowStyle }}">
+                        <span style="font-family: var(--font-mono); font-size: var(--text-body); color: var(--text-secondary);">{{ r.date }}</span>
+                        <span style="font-size: var(--text-body);">{{ r.waiter }} · <span style="color: var(--text-tertiary);">{{ r.covers }}</span></span>
+                        <span style="font-family: var(--font-mono); font-size: var(--text-body); text-align: right;">{{ r.orders }}</span>
+                        <span style="font-family: var(--font-mono); font-size: var(--text-body); text-align: right; font-weight: 500;">{{ r.net }}</span>
+                        <span style="font-family: var(--font-mono); font-size: var(--text-body); text-align: right; color: var(--text-secondary);">{{ r.tips }}</span>
+                        <span style="display: flex; justify-content: center;"><span style="{{ r.methodStyle }}">{{ r.method }}</span></span>
+                      </div>
+                    </sc-for>
+                    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr) 92px 108px 104px 96px; gap: var(--space-3); padding: var(--space-4) var(--space-5); background: var(--surface-sunken); font-family: var(--font-mono); font-size: var(--text-body); font-weight: 500;">
+                      <span style="font-family: var(--font-ui); font-weight: var(--weight-semibold);">Total</span>
+                      <span></span>
+                      <span style="text-align: right;">412</span>
+                      <span style="text-align: right;">$21,486.50</span>
+                      <span style="text-align: right;">$1,940.20</span>
+                      <span></span>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isKds }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; flex-direction: column; gap: var(--space-4); background: var(--ink-950); border-radius: var(--radius-lg); padding: var(--space-5); margin: calc(-1 * var(--space-2));">
+                  <div style="display: flex; align-items: center; gap: var(--space-3);">
+                    <h2 style="font-family: var(--font-display); font-size: var(--text-title-1); font-weight: var(--weight-semibold); color: var(--ink-25); margin: 0;">Pass · live</h2>
+                    <span style="font-family: var(--font-mono); font-size: var(--text-caption); color: var(--ink-500);">4 tickets · 11 items · longest 14 min</span>
+                    <span style="flex: 1;"></span>
+                    <span style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: var(--radius-pill); background: var(--alpha-paper-08); color: var(--ink-25); font-size: var(--text-caption); font-weight: var(--weight-semibold);">Bump with the touch bar or the keypad</span>
+                  </div>
+                  <div style="{{ kdsGridStyle }}">
+                    <sc-for list="{{ kdsTickets }}" as="k" hint-placeholder-count="4">
+                      <div style="{{ k.cardStyle }}">
+                        <div style="display: flex; align-items: baseline; gap: var(--space-2); padding-bottom: var(--space-3); border-bottom: 1px solid var(--alpha-paper-08);">
+                          <span style="font-family: var(--font-mono); font-size: var(--text-title-2); color: var(--ink-0);">{{ k.code }}</span>
+                          <span style="flex: 1;"></span>
+                          <span style="{{ k.timeStyle }}">{{ k.elapsed }}</span>
+                        </div>
+                        <div style="font-family: var(--font-mono); font-size: var(--text-caption); color: var(--ink-400); padding: var(--space-2) 0;">{{ k.table }}</div>
+                        <div style="display: flex; flex-direction: column; gap: var(--space-2); flex: 1;">
+                          <sc-for list="{{ k.items }}" as="it" hint-placeholder-count="3">
+                            <div>
+                              <div style="display: flex; gap: var(--space-2); font-size: var(--text-body-lg); color: var(--ink-25);">
+                                <span style="font-family: var(--font-mono); color: var(--clay-300);">{{ it.qty }}</span>
+                                <span style="flex: 1;">{{ it.name }}</span>
+                              </div>
+                              <span style="{{ it.noteStyle }}">{{ it.note }}</span>
+                            </div>
+                          </sc-for>
+                        </div>
+                        <button type="button" onClick="{{ k.bump }}" style="height: 48px; margin-top: var(--space-3); border: none; border-radius: var(--radius-pill); background: var(--clay-500); color: #fff; font-family: var(--font-ui); font-size: var(--text-body); font-weight: var(--weight-semibold); cursor: pointer;" style-hover="background: var(--clay-400);">{{ k.action }}</button>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="display: flex; flex-wrap: wrap; gap: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--alpha-paper-08); font-size: var(--text-caption); color: var(--ink-500);">
+                    <span>Guest notes are saffron here too — the only colour on a black screen, so it cannot be missed across the kitchen.</span>
+                    <span>Runner view is this grid filtered to Ready, one column, 60px type.</span>
+                    <span>Cashier view is the same tickets with the bill total and a Take payment action.</span>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </main>
+
+          <sc-if value="{{ showTabBar }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; height: var(--tabbar-h); background: var(--surface-card); border-top: 1px solid var(--border-subtle);">
+              <sc-for list="{{ nav }}" as="n" hint-placeholder-count="3">
+                <button type="button" onClick="{{ n.go }}" style="{{ n.tabStyle }}">
+                  <span style="{{ n.dotStyle }}"></span>
+                  <span style="font-size: var(--text-micro); font-weight: var(--weight-medium);">{{ n.label }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+        <div style="position: absolute; right: var(--space-5); bottom: var(--space-5); z-index: 60; display: flex; align-items: center; gap: var(--space-3); background: var(--ink-900); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); box-shadow: var(--shadow-pop); animation: qr-rise var(--dur-base) var(--ease-standard); max-width: 340px;">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--clay-300); flex: 0 0 auto;"></span>
+          <div style="flex: 1;">
+            <div style="font-size: var(--text-body); font-weight: var(--weight-medium); color: var(--ink-25);">{{ toastTitle }}</div>
+            <div style="font-family: var(--font-mono); font-size: var(--text-caption); color: var(--ink-400);">{{ toastSub }}</div>
+          </div>
+          <button type="button" onClick="{{ clearToast }}" style="border: none; background: transparent; color: var(--clay-300); font-family: var(--font-ui); font-size: var(--text-label); font-weight: var(--weight-semibold); cursor: pointer;">Dismiss</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ dialog }}" hint-placeholder-val="{{ false }}">
+        <div style="position: absolute; inset: 0; z-index: 70; background: var(--surface-scrim); display: grid; place-items: center; padding: var(--space-6);">
+          <div style="width: 100%; max-width: 400px; background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-pop); padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-3); animation: qr-rise var(--dur-base) var(--ease-standard);">
+            <span style="width: 40px; height: 40px; border-radius: var(--radius-pill); background: var(--danger-bg); display: grid; place-items: center;">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--berry-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
+            </span>
+            <h3 style="font-family: var(--font-display); font-size: var(--text-title-2); font-weight: var(--weight-semibold); margin: 0;">{{ dialogTitle }}</h3>
+            <p style="font-size: var(--text-body); color: var(--text-secondary); line-height: var(--leading-normal);">{{ dialogBody }}</p>
+            <div style="display: flex; gap: var(--space-2); margin-top: var(--space-2);">
+              <button type="button" onClick="{{ closeDialog }}" style="flex: 1; height: 44px; border: 1px solid var(--border-default); border-radius: var(--radius-pill); background: var(--surface-card); font-family: var(--font-ui); font-size: var(--text-body); font-weight: var(--weight-semibold); cursor: pointer;" style-hover="background: var(--ink-50);">Cancel</button>
+              <button type="button" onClick="{{ confirmDialog }}" style="flex: 1; height: 44px; border: none; border-radius: var(--radius-pill); background: var(--danger-solid); color: #fff; font-family: var(--font-ui); font-size: var(--text-body); font-weight: var(--weight-semibold); cursor: pointer;" style-hover="background: var(--berry-700);">{{ dialogConfirm }}</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ drawer }}" hint-placeholder-val="{{ false }}">
+        <div style="position: absolute; inset: 0; z-index: 65; background: var(--surface-scrim); display: flex; justify-content: flex-end;">
+          <div style="width: 380px; max-width: 100%; background: var(--surface-card); box-shadow: var(--shadow-pop); display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-5); border-bottom: 1px solid var(--border-subtle);">
+              <h3 style="flex: 1; font-family: var(--font-display); font-size: var(--text-title-2); font-weight: var(--weight-semibold); margin: 0;">{{ drawerTitle }}</h3>
+              <button type="button" onClick="{{ closeDrawer }}" style="width: 44px; height: 44px; border: none; background: transparent; border-radius: 50%; display: grid; place-items: center; cursor: pointer;" style-hover="background: var(--action-ghost-hover);">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--ink-800)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+              </button>
+            </div>
+            <div class="qr-scroll" style="flex: 1; overflow-y: auto; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4);">
+              <label style="display: flex; flex-direction: column; gap: 6px;">
+                <span style="font-size: var(--text-label); font-weight: var(--weight-semibold); color: var(--text-secondary);">Full name</span>
+                <input type="text" placeholder="Omar Faruk" style="height: 44px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card); font-family: var(--font-ui); font-size: var(--text-body); outline: none;" style-focus="border-color: var(--border-focus-color); box-shadow: var(--ring-focus);" />
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 6px;">
+                <span style="font-size: var(--text-label); font-weight: var(--weight-semibold); color: var(--text-secondary);">Work email</span>
+                <input type="text" placeholder="name@albustan.co" style="height: 44px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card); font-family: var(--font-ui); font-size: var(--text-body); outline: none;" style-focus="border-color: var(--border-focus-color); box-shadow: var(--ring-focus);" />
+              </label>
+              <div>
+                <div style="font-size: var(--text-label); font-weight: var(--weight-semibold); color: var(--text-secondary); margin-bottom: 6px;">Role</div>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <span style="display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: var(--radius-pill); background: var(--ink-900); color: var(--ink-25); font-size: var(--text-label); font-weight: var(--weight-semibold);">Waiter</span>
+                  <span style="display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-pill); color: var(--text-secondary); font-size: var(--text-label); cursor: pointer;">Runner</span>
+                  <span style="display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-pill); color: var(--text-secondary); font-size: var(--text-label); cursor: pointer;">Cashier</span>
+                  <span style="display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-pill); color: var(--text-secondary); font-size: var(--text-label); cursor: pointer;">Kitchen</span>
+                </div>
+              </div>
+              <div>
+                <div style="font-size: var(--text-label); font-weight: var(--weight-semibold); color: var(--text-secondary); margin-bottom: 6px;">Tables tonight</div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+                  <span style="height: 44px; display: grid; place-items: center; border-radius: var(--radius-md); background: var(--clay-500); color: #fff; font-family: var(--font-mono); cursor: pointer;">04</span>
+                  <span style="height: 44px; display: grid; place-items: center; border-radius: var(--radius-md); background: var(--clay-500); color: #fff; font-family: var(--font-mono); cursor: pointer;">12</span>
+                  <span style="height: 44px; display: grid; place-items: center; border-radius: var(--radius-md); border: 1px solid var(--border-default); font-family: var(--font-mono); color: var(--text-secondary); cursor: pointer;">05</span>
+                  <span style="height: 44px; display: grid; place-items: center; border-radius: var(--radius-md); border: 1px solid var(--border-default); font-family: var(--font-mono); color: var(--text-secondary); cursor: pointer;">09</span>
+                </div>
+              </div>
+              <label style="display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-body); color: var(--text-secondary);">
+                <span style="width: 40px; height: 24px; border-radius: var(--radius-pill); background: var(--herb-500); position: relative; flex: 0 0 auto;"><span style="position: absolute; top: 3px; left: 19px; width: 18px; height: 18px; border-radius: 50%; background: #fff;"></span></span>
+                Send a set-password link now
+              </label>
+            </div>
+            <div style="display: flex; gap: var(--space-2); padding: var(--space-5); border-top: 1px solid var(--border-subtle);">
+              <button type="button" onClick="{{ closeDrawer }}" style="flex: 1; height: 44px; border: 1px solid var(--border-default); border-radius: var(--radius-pill); background: var(--surface-card); font-family: var(--font-ui); font-size: var(--text-body); font-weight: var(--weight-semibold); cursor: pointer;" style-hover="background: var(--ink-50);">Cancel</button>
+              <button type="button" onClick="{{ saveDrawer }}" style="flex: 1; height: 44px; border: none; border-radius: var(--radius-pill); background: var(--action-primary); color: var(--text-on-brand); font-family: var(--font-ui); font-size: var(--text-body); font-weight: var(--weight-semibold); cursor: pointer;" style-hover="background: var(--action-primary-hover);">Add to shift</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+    </div>
+
+    <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden;">
+      <div style="padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: flex-start; gap: var(--space-4);">
+        <span style="font-family: var(--font-mono); font-size: var(--text-display-3); line-height: 1; color: var(--clay-500);">{{ spec.n }}</span>
+        <div style="flex: 1;">
+          <h2 style="font-family: var(--font-display); font-size: var(--text-title-1); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-title); margin: 0;">{{ spec.title }}</h2>
+          <p style="font-size: var(--text-body); color: var(--text-secondary); line-height: var(--leading-normal); margin-top: 4px; max-width: 78ch;">{{ spec.intent }}</p>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+        <div style="padding: var(--space-5) var(--space-6); border-right: 1px solid var(--border-subtle);">
+          <div style="font-size: var(--text-micro); letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: var(--clay-600); font-weight: var(--weight-semibold); margin-bottom: var(--space-3);">Layout</div>
+          <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+            <sc-for list="{{ spec.layout }}" as="row" hint-placeholder-count="5">
+              <div style="display: flex; gap: var(--space-2); font-size: var(--text-body); color: var(--text-secondary); line-height: var(--leading-normal);">
+                <span style="font-family: var(--font-mono); font-size: var(--text-caption); color: var(--ink-300); padding-top: 2px;">{{ row.i }}</span>
+                <span>{{ row.t }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="padding: var(--space-5) var(--space-6); border-right: 1px solid var(--border-subtle);">
+          <div style="font-size: var(--text-micro); letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: var(--clay-600); font-weight: var(--weight-semibold); margin-bottom: var(--space-3);">Components</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <sc-for list="{{ spec.components }}" as="c" hint-placeholder-count="6">
+              <span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: var(--radius-pill); background: var(--surface-sunken); border: 1px solid var(--border-subtle); font-family: var(--font-mono); font-size: var(--text-micro); color: var(--text-secondary);">{{ c }}</span>
+            </sc-for>
+          </div>
+        </div>
+        <div style="padding: var(--space-5) var(--space-6); border-right: 1px solid var(--border-subtle);">
+          <div style="font-size: var(--text-micro); letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: var(--clay-600); font-weight: var(--weight-semibold); margin-bottom: var(--space-3);">Data points</div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <sc-for list="{{ spec.data }}" as="d" hint-placeholder-count="5">
+              <span style="font-family: var(--font-mono); font-size: var(--text-caption); color: var(--text-secondary);">{{ d }}</span>
+            </sc-for>
+          </div>
+        </div>
+        <div style="padding: var(--space-5) var(--space-6);">
+          <div style="font-size: var(--text-micro); letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: var(--clay-600); font-weight: var(--weight-semibold); margin-bottom: var(--space-3);">Responsive behaviour</div>
+          <div style="font-size: var(--text-body); color: var(--text-secondary); line-height: var(--leading-normal);">{{ spec.responsive }}</div>
+        </div>
+      </div>
+      <div style="padding: var(--space-4) var(--space-6); background: var(--surface-sunken); border-top: 1px solid var(--border-subtle); display: flex; gap: var(--space-3); align-items: flex-start;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--clay-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 2px; flex: 0 0 auto;"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /></svg>
+        <div style="font-size: var(--text-body); color: var(--text-secondary); line-height: var(--leading-normal);"><span style="color: var(--text-primary); font-weight: var(--weight-semibold);">Detail that earns its keep. </span>{{ spec.detail }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1400,&quot;height&quot;:1100},&quot;warnMinutes&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:14,&quot;min&quot;:5,&quot;max&quot;:30,&quot;unit&quot;:&quot; min&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Kitchen SLA&quot;},&quot;lateMinutes&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:25,&quot;min&quot;:10,&quot;max&quot;:60,&quot;unit&quot;:&quot; min&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Kitchen SLA&quot;}}">
+const ROLES = [
+  { id: 'waiter', label: 'Waiter', user: 'Nadia Rahman', initials: 'NR' },
+  { id: 'manager', label: 'Manager', user: 'Sara Malik', initials: 'SM' },
+  { id: 'admin', label: 'Super admin', user: 'Yusuf Aziz', initials: 'YA' },
+  { id: 'kitchen', label: 'Kitchen', user: 'Pass screen', initials: 'KP' },
+];
+const NAV = {
+  waiter: [
+    { id: 'waiter', label: 'My orders', badge: 4, color: 'var(--clay-400)' },
+    { id: 'floor', label: 'My tables', color: 'var(--teal-300)' },
+    { id: 'auth', label: 'Sign in screen', color: 'var(--ink-500)' },
+  ],
+  manager: [
+    { id: 'manager', label: 'Overview', color: 'var(--clay-400)' },
+    { id: 'waiter', label: 'Live orders', badge: 7, color: 'var(--saffron-300)' },
+    { id: 'floor', label: 'Floor', color: 'var(--teal-300)' },
+    { id: 'reports', label: 'Reports', color: 'var(--herb-300)' },
+    { id: 'auth', label: 'Sign in screen', color: 'var(--ink-500)' },
+  ],
+  admin: [
+    { id: 'admin', label: 'System', color: 'var(--clay-400)' },
+    { id: 'menu', label: 'Menu', color: 'var(--saffron-300)' },
+    { id: 'reports', label: 'Reports', color: 'var(--herb-300)' },
+    { id: 'manager', label: 'Orders & team', color: 'var(--teal-300)' },
+    { id: 'auth', label: 'Sign in screen', color: 'var(--ink-500)' },
+  ],
+  kitchen: [
+    { id: 'kds', label: 'Pass', color: 'var(--clay-400)' },
+    { id: 'waiter', label: 'Order feed', color: 'var(--saffron-300)' },
+  ],
+};
+const TITLES = {
+  auth: ['Staff authentication', 'Sign in · password reset · shift QR'],
+  waiter: ['My orders', 'Friday 23 Aug · shift 17:00 – 23:00 · tables 04, 12'],
+  floor: ['My tables', '12 tables · 6 occupied · 1 bill requested'],
+  manager: ['Overview', 'Friday 23 Aug · service in progress'],
+  admin: ['System', 'Al Bustan · Downtown · owner account'],
+  menu: ['Menu management', '5 categories · 42 dishes · 3 sold out'],
+  reports: ['Reports', '01 – 23 Aug · all waiters · USD'],
+  kds: ['Kitchen display', 'Pass screen · 2 stations'],
+};
+const ORDERS = [
+  { code: '#A-1044', table: 'Table 04', guest: 'Dana', status: 'pending', elapsed: '2 min', total: '$31.00', waiter: 'Nadia R.', pay: 'unpaid', items: [{ qty: '1×', name: 'Chicken musakhan' }, { qty: '2×', name: 'Grilled flatbread', note: 'well charred' }] },
+  { code: '#A-1043', table: 'Table 12', guest: 'Rami', status: 'preparing', elapsed: '14 min', total: '$54.35', waiter: 'Nadia R.', pay: 'paid', items: [{ qty: '2×', name: 'Lamb kofta', note: 'sumac onions' }, { qty: '1×', name: 'Charred aubergine', note: 'no tahini' }, { qty: '2×', name: 'Mint lemonade' }] },
+  { code: '#A-1042', table: 'Bar 02', guest: 'Iris', status: 'ready', elapsed: '9 min', total: '$18.50', waiter: 'Omar F.', pay: 'paid', items: [{ qty: '1×', name: 'Fattoush' }, { qty: '1×', name: 'Cardamom coffee' }] },
+  { code: '#A-1041', table: 'Table 07', guest: 'Yara', status: 'served', elapsed: '26 min', total: '$92.20', waiter: 'Lin W.', pay: 'unpaid', items: [{ qty: '3×', name: 'Lamb kofta' }, { qty: '2×', name: 'Knafeh', note: 'birthday candle' }] },
+  { code: '#A-1040', table: 'Table 02', guest: 'Sami', status: 'paid', elapsed: '41 min', total: '$44.00', waiter: 'Omar F.', pay: 'paid', items: [{ qty: '2×', name: 'Labneh & za\u2019atar' }, { qty: '2×', name: 'Mint lemonade' }] },
+];
+const COLUMNS = [
+  { key: 'pending', label: 'New', color: 'var(--saffron-500)', next: 'Start cooking' },
+  { key: 'preparing', label: 'Preparing', color: 'var(--teal-500)', next: 'Mark ready' },
+  { key: 'ready', label: 'Ready', color: 'var(--clay-500)', next: 'Mark served' },
+  { key: 'served', label: 'Served', color: 'var(--herb-500)', next: 'Take payment' },
+];
+const TABLES = [
+  { n: '01', s: 'free', seats: '2 seats' }, { n: '02', s: 'seated', seats: '4 seats', meta: '$44.00 · 41 min' },
+  { n: '03', s: 'free', seats: '2 seats' }, { n: '04', s: 'ordered', seats: '4 seats', meta: '$31.00 · 2 min' },
+  { n: '05', s: 'free', seats: '6 seats' }, { n: '06', s: 'seated', seats: '2 seats', meta: '8 min' },
+  { n: '07', s: 'bill', seats: '6 seats', meta: '$92.20 · 26 min' }, { n: '08', s: 'free', seats: '2 seats' },
+  { n: '09', s: 'seated', seats: '4 seats', meta: '12 min' }, { n: '10', s: 'free', seats: '4 seats' },
+  { n: '11', s: 'free', seats: '2 seats' }, { n: '12', s: 'ordered', seats: '4 seats', meta: '$54.35 · 14 min' },
+];
+const TABLE_STATE = {
+  free: { label: 'Free', bg: 'var(--table-free-bg)', fg: 'var(--table-free-fg)', bd: 'var(--border-subtle)' },
+  seated: { label: 'Seated', bg: 'var(--table-seated-bg)', fg: 'var(--table-seated-fg)', bd: 'var(--teal-100)' },
+  ordered: { label: 'Ordered', bg: 'var(--table-ordered-bg)', fg: 'var(--table-ordered-fg)', bd: 'var(--saffron-100)' },
+  bill: { label: 'Bill requested', bg: 'var(--table-bill-bg)', fg: 'var(--table-bill-fg)', bd: 'var(--clay-200)' },
+};
+const STAFF = [
+  { name: 'Nadia Rahman', meta: 'Waiter · tables 04, 12 · 14 orders', status: 'On shift', on: true, initials: 'NR', tone: 'teal' },
+  { name: 'Omar Faruk', meta: 'Waiter · table 02, bar · 11 orders', status: 'On shift', on: true, initials: 'OF', tone: 'clay' },
+  { name: 'Lin Wu', meta: 'Waiter · tables 07, 09 · 22 orders', status: 'Off at 18:00', on: false, initials: 'LW', tone: 'ink' },
+  { name: 'Sara Malik', meta: 'Manager · 16:00 – 00:00', status: 'On shift', on: true, initials: 'SM', tone: 'clay' },
+];
+const MATRIX = [
+  { cap: 'See own tables', a: true, b: false, c: true, d: true },
+  { cap: 'See all orders', a: false, b: true, c: true, d: true },
+  { cap: 'Change order status', a: true, b: true, c: true, d: true },
+  { cap: 'Take payment · refund', a: true, b: false, c: true, d: true },
+  { cap: 'Manage waiter accounts', a: false, b: false, c: true, d: true },
+  { cap: 'Edit menu & prices', a: false, b: false, c: false, d: true },
+  { cap: 'Financial reports · export', a: false, b: false, c: true, d: true },
+  { cap: 'Restaurant & system config', a: false, b: false, c: false, d: true },
+];
+const CATEGORIES = [
+  { name: 'Small plates', count: 9, active: false },
+  { name: 'From the grill', count: 11, active: true },
+  { name: 'Sides', count: 6, active: false },
+  { name: 'Sweet', count: 7, active: false },
+  { name: 'Drinks', count: 9, active: false },
+];
+const DISHES = [
+  { name: 'Lamb kofta', desc: 'Charcoal-grilled, sumac onions, tahini', price: '$18.00', sold: 38, on: true, tone: 0 },
+  { name: 'Chicken musakhan', desc: 'Caramelised onion, pine nuts, taboon', price: '$16.50', sold: 24, on: true, tone: 3 },
+  { name: 'Whole sea bass', desc: 'Lemon and chermoula, off the coals', price: '$26.00', sold: 6, on: false, tone: 1 },
+  { name: 'Shish taouk', desc: 'Garlic, lemon, toum on the side', price: '$17.00', sold: 19, on: true, tone: 0 },
+  { name: 'Grilled halloumi', desc: 'Honey, chilli, oregano', price: '$13.50', sold: 12, on: true, tone: 2 },
+];
+const ROWS = [
+  { date: '23 Aug', waiter: 'Nadia Rahman', covers: '64 covers', orders: 22, net: '$2,418.00', tips: '$214.50', method: 'App' },
+  { date: '22 Aug', waiter: 'Omar Faruk', covers: '58 covers', orders: 19, net: '$2,104.20', tips: '$188.00', method: 'App' },
+  { date: '22 Aug', waiter: 'Lin Wu', covers: '41 covers', orders: 14, net: '$1,562.75', tips: '$96.40', method: 'Cash' },
+  { date: '21 Aug', waiter: 'Nadia Rahman', covers: '52 covers', orders: 18, net: '$1,988.00', tips: '$174.00', method: 'App' },
+  { date: '21 Aug', waiter: 'Omar Faruk', covers: '47 covers', orders: 16, net: '$1,740.50', tips: '$132.20', method: 'POS' },
+  { date: '20 Aug', waiter: 'Lin Wu', covers: '39 covers', orders: 13, net: '$1,402.00', tips: '$88.60', method: 'Cash' },
+  { date: '20 Aug', waiter: 'Nadia Rahman', covers: '61 covers', orders: 21, net: '$2,286.30', tips: '$203.10', method: 'App' },
+];
+const BARS = [
+  { label: 'Mon', v: 0.34 }, { label: 'Tue', v: 0.42 }, { label: 'Wed', v: 0.51 },
+  { label: 'Thu', v: 0.63 }, { label: 'Fri', v: 0.88 }, { label: 'Sat', v: 1 }, { label: 'Sun', v: 0.58 },
+];
+const SPEC = {
+  auth: {
+    n: '08', title: 'Staff authentication', intent: 'Signing in happens once a shift, often on a shared tablet at the pass with wet hands. Speed beats ceremony, so the fastest route \u2014 the shift QR \u2014 is a first-class option rather than a fallback.',
+    layout: ['Split: 380px form column, photo panel on the right', 'Wordmark, display-3 title, restaurant line', 'Email, password with reveal, keep-me-signed-in', 'Primary sign in at 48px', 'Divider, then shift-QR sign in', 'Lockout and reset-expiry policy in caption'],
+    components: ['Logo', 'Input', 'Checkbox', 'Button', 'Divider', 'Photo'],
+    data: ['user.email, user.role, user.restaurant_id', 'session.expires_at, device_trusted', 'failed_attempts, locked_until', 'reset_token.expires_at (30 min)'],
+    responsive: 'Below 900px the photo panel drops and the form centres with 24px gutters. The QR option moves above the password field on tablets, where it is the common path.',
+    detail: 'Password reset is the same screen with the fields swapped, never a separate page \u2014 staff who mistyped once should not lose their place.'
+  },
+  waiter: {
+    n: '09', title: 'Waiter dashboard', intent: 'Four columns matching the four things that can be true of an order. A waiter with two plates in hand needs one glanceable column and one 44px button, not a table of data.',
+    layout: ['View switch: kanban or list, plus a live summary line', 'Four columns: New, Preparing, Ready, Served', 'Ticket: code, elapsed time, table and guest name', 'Item lines with guest notes in saffron', 'Footer strip: paid/unpaid chip and order total', 'Two actions: advance status (44px) and an overflow menu'],
+    components: ['Tabs', 'OrderTicket', 'StatusPill', 'Button', 'Toast', 'EmptyState'],
+    data: ['orders[] code, table, guest_name, status, placed_at, total, paid', 'lines[] qty, name, note', 'assigned_tables[], shift window', 'realtime channel: order.created / order.updated'],
+    responsive: 'Kanban on desktop and tablet landscape. On a phone the columns collapse to a single status-filtered list, the sidebar becomes a bottom tab bar, and cards go full width.',
+    detail: 'Elapsed time turns saffron at 15 minutes and berry at 25, so the oldest ticket announces itself without anyone reading a number. New orders arrive as a toast plus a sound, never as a modal that blocks the hands.'
+  },
+  floor: {
+    n: '09b', title: 'Table map & checkout', intent: 'The floor plan as a grid of tiles, coloured by occupancy, with the bill one tap away. This is where cash and card-at-table payments get closed out.',
+    layout: ['Legend chips with live counts per state', 'Tile grid, 4 up on desktop, coloured by occupancy token', 'Tile: number in mono, seats, state, total and elapsed', 'Selected table opens the checkout card below', 'Checkout: itemised lines with notes, total due', 'Three payment closes: card at table, cash, split/print/email'],
+    components: ['ChipFilter', 'TableTile', 'Card', 'PriceSummary', 'Button', 'Dialog'],
+    data: ['tables[] number, seats, state, party_size, seated_at', 'open_bill.total, lines[], notes[]', 'payment.method, paid_at, taken_by'],
+    responsive: 'Tiles are a 2-up grid on phones with 44px minimum height; the checkout card becomes a bottom sheet so the thumb reaches the actions.',
+    detail: 'A table cannot be freed while an unpaid bill exists \u2014 the tile stays clay until payment lands, which is how the system prevents walkouts being an accident.'
+  },
+  manager: {
+    n: '10', title: 'Manager dashboard', intent: 'Two questions, answered above the fold: is service running on time, and is the team where it should be. Everything else is one click deeper.',
+    layout: ['Four stat cards: covers, net sales, kitchen median, unpaid at table', 'Left: all active orders table with status pills and age', 'Right: floor team list with shift state and inline edit', 'Add waiter opens a right-hand drawer, not a new page', 'Deletion policy stated under the list'],
+    components: ['Stat', 'DataTable', 'StatusPill', 'Avatar', 'Button', 'Drawer', 'Tooltip'],
+    data: ['covers, net_sales, avg_per_cover, median_prep_minutes', 'orders[] all waiters, status, age, total', 'staff[] name, role, tables[], shift, order_count, on_shift', 'unpaid_total, open_bills'],
+    responsive: 'The two panels stack below 1100px, stats go 2-up, and the orders table drops the age column first \u2014 status and total are what a manager scans on a phone.',
+    detail: 'Order age is the only column with colour. Three orders over 25 minutes is stated as a number on the kitchen stat rather than buried in the table, because that is the thing a manager acts on.'
+  },
+  admin: {
+    n: '11', title: 'Super admin dashboard', intent: 'The owner\u2019s view: money, menu health, and who can do what. It is deliberately the only screen where the permission matrix is editable.',
+    layout: ['Month-to-date revenue on inverse ink, then three lighter stats', 'Paid-in-app share with a progress bar', 'Roles and permissions matrix, six roles across capabilities', 'Restaurant details card: service charge, currency, languages, QR count', 'System health list: gateway, KDS screens, printers'],
+    components: ['Stat', 'DataTable', 'Switch', 'Card', 'Badge', 'Button'],
+    data: ['revenue.mtd, net_of_fees, refunds', 'payment_split app/cash/pos', 'menu.live_count, sold_out, scheduled', 'roles[] capabilities[]', 'integrations[] status, last_heartbeat'],
+    responsive: 'The matrix keeps its first column pinned and scrolls horizontally on narrow screens rather than wrapping \u2014 a permission grid that reflows is unreadable.',
+    detail: 'Every permission change is written to an audit log with actor and timestamp, and the affected role sees the new sidebar on next sign-in rather than mid-shift.'
+  },
+  menu: {
+    n: '12', title: 'Menu management', intent: 'Three panels so nobody loses their place: categories on the left, dishes in the middle, the editor on the right. Sold-out is a switch in the table, not a trip into the editor.',
+    layout: ['Left: draggable category list with dish counts', 'Middle: dish table \u2014 thumb, name, price, availability switch, sold today', 'Right: editor \u2014 photo dropzone, name, rich-text description', 'Price and prep minutes side by side in mono', 'Allergen tags with add control', 'Save plus a destructive delete behind a dialog'],
+    components: ['SidebarNav', 'DataTable', 'Switch', 'Input', 'Textarea', 'Tag', 'Dialog', 'Toast'],
+    data: ['categories[] name, sort_order, dish_count', 'dishes[] name, description, price, photo, prep_minutes, available, sold_today', 'allergens[], variants[], addons[]', 'audit: updated_by, updated_at'],
+    responsive: 'On tablets the editor becomes a right drawer over the table. On phones each panel is a full screen with a back path \u2014 categories, then dishes, then the editor.',
+    detail: 'Toggling availability saves immediately and toasts, because during service the kitchen shouts "no more bass" and someone has four seconds to act. Everything else in the editor is explicit save.'
+  },
+  reports: {
+    n: '13', title: 'Data tables & reports', intent: 'Built for reading and for exporting. One chart to show shape, three totals to anchor, one dense table where every number aligns on the decimal.',
+    layout: ['Filter bar: preset ranges, custom date range, CSV and PDF export', 'Sales-by-day bars with the peak called out', 'Three summary cards: gross, service charge, refunded', 'Table: date, waiter and covers, orders, net, tips, method', 'Sticky total row at the bottom, mono and bold'],
+    components: ['ChipFilter', 'Button', 'Stat', 'DataTable', 'Badge'],
+    data: ['range.start, range.end, preset', 'rows[] date, waiter, covers, orders, net, tips, method', 'totals: gross, service, refunds, tips', 'export.format, generated_at'],
+    responsive: 'The table becomes a stack of cards below 720px with the label-value pairs preserved, so nothing depends on horizontal scrolling.',
+    detail: 'Numeric columns are right-aligned mono with tabular figures; text columns are left-aligned UI type. That single rule is what makes a dense financial table scannable.'
+  },
+  kds: {
+    n: '14', title: 'Kitchen, runner & cashier', intent: 'The same order data, three different jobs. The pass screen is dark, large-type, and touch-bumped; the runner sees only what is ready; the cashier sees only what is owed.',
+    layout: ['Header: live ticket count, item count, longest wait', 'Ticket grid, four across on a 27-inch pass screen', 'Ticket: code, elapsed, table, items at 17px, notes in saffron', 'One full-width bump button per ticket at 48px', 'Footnote describing the runner and cashier variants'],
+    components: ['OrderTicket dark', 'Badge', 'Button', 'Toast'],
+    data: ['tickets[] code, table, items[], notes[], fired_at', 'station routing (grill, cold, sweet)', 'elapsed_minutes, sla_threshold', 'bump events with actor and time'],
+    responsive: 'The pass screen is fixed landscape. The runner variant is a single column at 60px type for reading across a room; the cashier variant reuses the manager order table.',
+    detail: 'Nothing on the pass screen is smaller than 15px and nothing relies on hover \u2014 it is a touch screen behind a hot line, viewed from two metres.'
+  }
+};
+
+class Component extends DCLogic {
+  state = {
+    role: 'waiter', screen: 'waiter', width: 'desktop', range: '3 weeks',
+    dishes: DISHES.map(d => ({ ...d })), statuses: ORDERS.map(o => o.status),
+    toast: null, dialog: false, drawer: false,
+  };
+
+  chip(active, extra) {
+    return 'display: inline-flex; align-items: center; justify-content: center; height: 34px; padding: 0 14px; border-radius: var(--radius-pill); border: 1px solid ' +
+      (active ? 'transparent' : 'var(--border-default)') + '; background: ' + (active ? 'var(--ink-900)' : 'var(--surface-card)') +
+      '; color: ' + (active ? 'var(--ink-25)' : 'var(--text-secondary)') +
+      '; font-family: var(--font-ui); font-size: var(--text-label); font-weight: var(--weight-semibold); white-space: nowrap; cursor: pointer; transition: background var(--dur-fast) var(--ease-standard);' + (extra || '');
+  }
+
+  pillFor(status) {
+    return 'display: inline-flex; align-items: center; justify-content: center; height: 24px; padding: 0 10px; border-radius: var(--radius-pill); font-size: var(--text-micro); font-weight: var(--weight-semibold); text-transform: capitalize; background: var(--status-' + status + '-bg); color: var(--status-' + status + '-fg);';
+  }
+
+  toast(title, sub) {
+    this.setState({ toast: { title, sub } });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ toast: null }), 4200);
+  }
+
+  componentWillUnmount() { clearTimeout(this._t); }
+
+  navigate(screen) {
+    const role = ROLES.find(r => NAV[r.id].some(n => n.id === screen)) && screen;
+    this.setState({ screen });
+  }
+
+  renderVals() {
+    const s = this.state;
+    const role = ROLES.find(r => r.id === s.role) || ROLES[0];
+    const nav = NAV[s.role] || NAV.waiter;
+    const narrow = s.width === 'phone';
+    const tablet = s.width === 'tablet';
+    const frameW = narrow ? 390 : tablet ? 834 : 1180;
+    const title = TITLES[s.screen] || TITLES.waiter;
+
+    const navItems = nav.map(n => {
+      const active = n.id === s.screen;
+      return {
+        label: n.label, badge: n.badge || '',
+        go: () => this.setState({ screen: n.id }),
+        style: 'display: flex; align-items: center; gap: var(--space-3); width: 100%; min-height: 44px; padding: 0 var(--space-3); border: none; border-radius: var(--radius-md); background: ' +
+          (active ? 'var(--ink-800)' : 'transparent') + '; color: ' + (active ? 'var(--ink-25)' : 'var(--ink-300)') +
+          '; font-family: var(--font-ui); font-size: var(--text-body); font-weight: ' + (active ? 'var(--weight-semibold)' : 'var(--weight-regular)') +
+          '; cursor: pointer; transition: background var(--dur-fast) var(--ease-standard);',
+        tabStyle: 'flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: none; background: transparent; cursor: pointer; color: ' +
+          (active ? 'var(--clay-600)' : 'var(--text-tertiary)') + ';',
+        dotStyle: 'width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: ' + n.color + '; opacity: ' + (active ? '1' : '0.55') + ';',
+        badgeStyle: n.badge
+          ? 'display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--radius-pill); background: var(--clay-500); color: #fff; font-family: var(--font-mono); font-size: 10px;'
+          : 'display: none;',
+      };
+    });
+
+    const statusOf = i => s.statuses[i];
+    const columns = COLUMNS.map(col => {
+      const orders = ORDERS.map((o, i) => ({ o, i })).filter(x => statusOf(x.i) === col.key);
+      return {
+        label: col.label, count: orders.length, empty: orders.length === 0,
+        dotStyle: 'width: 10px; height: 10px; border-radius: 50%; background: ' + col.color + ';',
+        orders: orders.map(({ o, i }) => {
+          const late = parseInt(o.elapsed, 10) >= (this.props.lateMinutes ?? 25);
+          const warm = parseInt(o.elapsed, 10) >= (this.props.warnMinutes ?? 14);
+          return {
+            code: o.code, table: o.table, guest: o.guest, total: o.total, elapsed: o.elapsed,
+            items: o.items.map(it => ({
+              qty: it.qty, name: it.name, note: it.note || '',
+              noteStyle: it.note
+                ? 'display: inline-block; font-size: var(--text-caption); color: var(--saffron-700); background: var(--saffron-50); border-radius: var(--radius-xs); padding: 2px 8px; margin-left: 22px;'
+                : 'display: none;',
+            })),
+            cardStyle: 'background: var(--surface-card); border: 1px solid var(--border-subtle); border-left: 3px solid ' + col.color +
+              '; border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden;',
+            timeStyle: 'font-family: var(--font-mono); font-size: var(--text-caption); font-weight: 500; white-space: nowrap; color: ' +
+              (late ? 'var(--berry-500)' : warm ? 'var(--saffron-700)' : 'var(--text-tertiary)') + ';',
+            payLabel: o.pay === 'paid' ? 'Paid' : 'Unpaid',
+            payStyle: 'display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: var(--radius-pill); font-size: var(--text-micro); font-weight: var(--weight-semibold); background: ' +
+              (o.pay === 'paid' ? 'var(--status-paid-bg)' : 'var(--status-pending-bg)') + '; color: ' + (o.pay === 'paid' ? 'var(--status-paid-fg)' : 'var(--status-pending-fg)') + ';',
+            primaryLabel: col.next,
+            primaryStyle: 'flex: 1; min-height: 44px; border: none; border-radius: var(--radius-pill); background: ' +
+              (col.key === 'served' ? 'var(--action-secondary)' : 'var(--action-primary)') +
+              '; color: ' + (col.key === 'served' ? 'var(--text-inverse)' : 'var(--text-on-brand)') +
+              '; font-family: var(--font-ui); font-size: var(--text-label); font-weight: var(--weight-semibold); cursor: pointer;',
+            advance: () => {
+              const order = ['pending', 'preparing', 'ready', 'served', 'paid'];
+              const next = order[Math.min(order.length - 1, order.indexOf(statusOf(i)) + 1)];
+              this.setState(st => ({ statuses: st.statuses.map((x, j) => j === i ? next : x) }));
+              this.toast(o.code + ' → ' + next, o.table + ' · ' + o.total);
+            },
+            void: () => this.setState({ dialog: { title: 'Void ' + o.code + '?', body: 'The kitchen has already started items on this ticket. Voiding notifies the pass and logs the reason against this shift.', confirm: 'Void order' } }),
+          };
+        }),
+      };
+    });
+
+    return {
+      roleTabs: ROLES.map(r => ({
+        label: r.label, style: this.chip(s.role === r.id),
+        go: () => this.setState({ role: r.id, screen: NAV[r.id][0].id }),
+      })),
+      widthTabs: [
+        { id: 'desktop', label: 'Desktop 1180' }, { id: 'tablet', label: 'Tablet 834' }, { id: 'phone', label: 'Phone 390' },
+      ].map(w => ({ label: w.label, style: this.chip(s.width === w.id), go: () => this.setState({ width: w.id }) })),
+      screenTabs: nav.map(n => ({ label: n.label, style: this.chip(s.screen === n.id), go: () => this.setState({ screen: n.id }) })),
+      frameStyle: 'position: relative; flex: 0 0 auto; width: ' + frameW + 'px; height: ' + (narrow ? 812 : 760) + 'px; margin: 0 auto; display: flex; flex-direction: column; background: var(--surface-card); border: 1px solid var(--ink-200); border-radius: ' +
+        (narrow ? '32px' : 'var(--radius-xl)') + '; overflow: hidden; box-shadow: 0 2px 6px rgba(66, 60, 53, 0.10), 0 28px 56px rgba(66, 60, 53, 0.18);',
+      urlText: 'app.qresto.co/' + s.role + '/' + s.screen,
+      widthLabel: narrow ? '390 × 812' : tablet ? '834 × 760' : '1180 × 760',
+      roleLabel: role.label, userName: role.user, userInitials: role.initials,
+      pageTitle: title[0], pageSub: title[1],
+      isAuth: s.screen === 'auth', isApp: s.screen !== 'auth',
+      isWaiter: s.screen === 'waiter', isFloor: s.screen === 'floor', isManager: s.screen === 'manager',
+      isAdmin: s.screen === 'admin', isMenuAdmin: s.screen === 'menu', isReports: s.screen === 'reports', isKds: s.screen === 'kds',
+      showSidebar: !narrow, showTabBar: narrow,
+      contentPadStyle: 'flex: 1; min-width: 0; padding: var(--space-6) var(--space-6) ' + (narrow ? 'calc(var(--tabbar-h) + var(--space-6))' : 'var(--space-10)') + ';',
+      nav: navItems,
+      authArtStyle: 'flex: 1; min-width: 0; position: relative; display: ' + (narrow || tablet ? 'none' : 'flex') + '; background: linear-gradient(150deg, #DC7B57 0%, #4A1E11 100%);',
+      kanbanStyle: 'display: grid; grid-template-columns: ' + (narrow ? 'minmax(0, 1fr)' : tablet ? 'repeat(2, minmax(0, 1fr))' : 'repeat(auto-fit, minmax(230px, 1fr))') + '; gap: var(--space-4); align-items: start;',
+      floorStyle: 'display: grid; grid-template-columns: ' + (narrow ? 'repeat(2, minmax(0, 1fr))' : tablet ? 'repeat(3, minmax(0, 1fr))' : 'repeat(auto-fit, minmax(180px, 1fr))') + '; gap: var(--space-3);',
+      statGridStyle: 'display: grid; grid-template-columns: ' + (narrow ? 'minmax(0, 1fr)' : tablet ? 'repeat(2, minmax(0, 1fr))' : (s.screen === 'admin' ? 'minmax(0, 1.6fr) repeat(3, minmax(0, 1fr))' : 'repeat(4, minmax(0, 1fr))')) + '; gap: var(--space-4);',
+      managerSplitStyle: 'display: grid; grid-template-columns: ' + (narrow || tablet ? 'minmax(0, 1fr)' : 'minmax(0, 1.5fr) minmax(0, 1fr)') + '; gap: var(--space-4); align-items: start;',
+      adminSplitStyle: 'display: grid; grid-template-columns: ' + (narrow || tablet ? 'minmax(0, 1fr)' : 'minmax(0, 1.5fr) minmax(0, 1fr)') + '; gap: var(--space-4); align-items: start;',
+      menuAdminStyle: 'display: grid; grid-template-columns: ' + (narrow ? 'minmax(0, 1fr)' : tablet ? 'minmax(0, 1fr) minmax(0, 1fr)' : '176px minmax(360px, 1.4fr) minmax(280px, 1fr)') + '; gap: var(--space-4); align-items: start;',
+      reportSplitStyle: 'display: grid; grid-template-columns: ' + (narrow ? 'minmax(0, 1fr)' : 'minmax(0, 2fr) minmax(0, 1fr)') + '; gap: var(--space-4); align-items: start;',
+      kdsGridStyle: 'display: grid; grid-template-columns: ' + (narrow ? 'minmax(0, 1fr)' : tablet ? 'repeat(2, minmax(0, 1fr))' : 'repeat(auto-fit, minmax(240px, 1fr))') + '; gap: var(--space-3); align-items: start;',
+      columns,
+      tables: TABLES.map(t => {
+        const st = TABLE_STATE[t.s];
+        return {
+          n: t.n, seats: t.seats, state: st.label, meta: t.meta || '\u2014',
+          open: () => this.toast('Table ' + t.n + ' · ' + st.label, t.meta || t.seats),
+          style: 'display: flex; flex-direction: column; gap: 4px; align-items: flex-start; min-height: 96px; padding: var(--space-3); border-radius: var(--radius-lg); border: 1px solid ' +
+            st.bd + '; background: ' + st.bg + '; color: ' + st.fg + '; cursor: pointer; text-align: left; transition: box-shadow var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);',
+        };
+      }),
+      allOrders: ORDERS.map((o, i) => ({
+        code: o.code, table: o.table, waiter: o.waiter, total: o.total, elapsed: o.elapsed,
+        status: s.statuses[i], pillStyle: this.pillFor(s.statuses[i]),
+        ageStyle: 'font-family: var(--font-mono); font-size: var(--text-body); text-align: right; color: ' +
+          (parseInt(o.elapsed, 10) >= (this.props.lateMinutes ?? 25) ? 'var(--berry-500)' : parseInt(o.elapsed, 10) >= (this.props.warnMinutes ?? 14) ? 'var(--saffron-700)' : 'var(--text-tertiary)') + ';',
+      })),
+      staff: STAFF.map(p => ({
+        name: p.name, meta: p.meta, initials: p.initials, status: p.status,
+        avatarStyle: 'width: 36px; height: 36px; flex: 0 0 auto; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-size: var(--text-caption); font-weight: 600; background: ' +
+          (p.tone === 'clay' ? 'var(--clay-100)' : p.tone === 'teal' ? 'var(--teal-100)' : 'var(--ink-100)') + '; color: ' +
+          (p.tone === 'clay' ? 'var(--clay-700)' : p.tone === 'teal' ? 'var(--teal-700)' : 'var(--ink-700)') + ';',
+        shiftStyle: 'display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: var(--radius-pill); font-size: var(--text-micro); font-weight: var(--weight-semibold); white-space: nowrap; background: ' +
+          (p.on ? 'var(--success-bg)' : 'var(--ink-100)') + '; color: ' + (p.on ? 'var(--success-fg)' : 'var(--text-tertiary)') + ';',
+      })),
+      matrix: MATRIX.map(m => {
+        const cell = v => 'text-align: center; font-family: var(--font-mono); color: ' + (v ? 'var(--herb-500)' : 'var(--ink-300)') + ';';
+        return { cap: m.cap, a: m.a ? '✓' : '—', b: m.b ? '✓' : '—', c: m.c ? '✓' : '—', d: m.d ? '✓' : '—', aStyle: cell(m.a), bStyle: cell(m.b), cStyle: cell(m.c), dStyle: cell(m.d) };
+      }),
+      categories: CATEGORIES.map(c => ({
+        name: c.name, count: c.count,
+        style: 'display: flex; align-items: center; gap: var(--space-2); min-height: 44px; padding: 0 var(--space-4); border-bottom: 1px solid var(--border-subtle); cursor: pointer; background: ' +
+          (c.active ? 'var(--clay-50)' : 'transparent') + '; color: ' + (c.active ? 'var(--clay-700)' : 'var(--text-primary)') + ';',
+      })),
+      dishes: s.dishes.map((d, i) => ({
+        name: d.name, desc: d.desc, price: d.price, sold: d.sold,
+        soldLine: d.sold + ' sold today · ' + d.desc,
+        thumbStyle: 'width: 44px; height: 44px; border-radius: var(--radius-sm); background: ' +
+          ['linear-gradient(150deg, #E9A184 0%, #8A391E 100%)', 'linear-gradient(150deg, #DC7B57 0%, #4A1E11 100%)', 'linear-gradient(150deg, #C0B7AA 0%, #423C35 100%)', 'linear-gradient(150deg, #EDC55F 0%, #8A391E 100%)'][d.tone] +
+          '; filter: ' + (d.on ? 'none' : 'grayscale(0.7)') + ';',
+        switchStyle: 'width: 44px; height: 26px; border: none; border-radius: var(--radius-pill); position: relative; cursor: pointer; padding: 0; background: ' +
+          (d.on ? 'var(--herb-500)' : 'var(--ink-200)') + '; transition: background var(--dur-fast) var(--ease-standard);',
+        knobStyle: 'position: absolute; top: 3px; left: ' + (d.on ? '21px' : '3px') + '; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-rest); transition: left var(--dur-fast) var(--ease-standard);',
+        toggle: () => {
+          this.setState(st => ({ dishes: st.dishes.map((x, j) => j === i ? { ...x, on: !x.on } : x) }));
+          this.toast(d.name + (d.on ? ' marked sold out' : ' back on the menu'), 'Saved · guests see it immediately');
+        },
+      })),
+      ranges: ['Today', 'This week', '3 weeks', 'Month'].map(r => ({
+        label: r, style: this.chip(s.range === r), go: () => this.setState({ range: r }),
+      })),
+      bars: BARS.map(b => ({
+        label: b.label,
+        barStyle: 'width: 100%; height: ' + Math.round(b.v * 140) + 'px; border-radius: var(--radius-sm) var(--radius-sm) 2px 2px; background: ' +
+          (b.v === 1 ? 'var(--clay-500)' : 'var(--clay-200)') + ';',
+      })),
+      rows: ROWS.map((r, i) => ({
+        date: r.date, waiter: r.waiter, covers: r.covers, orders: r.orders, net: r.net, tips: r.tips, method: r.method,
+        rowStyle: 'display: grid; grid-template-columns: 96px minmax(0, 1fr) 92px 108px 104px 96px; gap: var(--space-3); padding: var(--space-3) var(--space-5); border-bottom: 1px solid var(--border-subtle); align-items: center; background: ' +
+          (i % 2 ? 'var(--ink-25)' : 'transparent') + ';',
+        methodStyle: 'display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: var(--radius-pill); font-size: var(--text-micro); font-weight: var(--weight-semibold); background: ' +
+          (r.method === 'App' ? 'var(--info-bg)' : r.method === 'Cash' ? 'var(--warning-bg)' : 'var(--surface-sunken)') + '; color: ' +
+          (r.method === 'App' ? 'var(--info-fg)' : r.method === 'Cash' ? 'var(--warning-fg)' : 'var(--text-secondary)') + ';',
+      })),
+      kdsTickets: ORDERS.slice(0, 4).map((o, i) => ({
+        code: o.code, table: o.table + ' · ' + o.guest, elapsed: o.elapsed,
+        action: i === 2 ? 'Ready — call the runner' : 'Bump',
+        cardStyle: 'display: flex; flex-direction: column; min-height: 260px; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--ink-900); border: 1px solid ' +
+          (parseInt(o.elapsed, 10) >= 25 ? 'var(--berry-500)' : parseInt(o.elapsed, 10) >= 14 ? 'var(--saffron-500)' : 'var(--ink-800)') + ';',
+        timeStyle: 'font-family: var(--font-mono); font-size: var(--text-title-3); color: ' +
+          (parseInt(o.elapsed, 10) >= 25 ? 'var(--berry-300)' : parseInt(o.elapsed, 10) >= 14 ? 'var(--saffron-300)' : 'var(--ink-400)') + ';',
+        items: o.items.map(it => ({
+          qty: it.qty, name: it.name, note: it.note || '',
+          noteStyle: it.note ? 'display: inline-block; font-size: var(--text-caption); color: var(--saffron-300); margin-left: 26px;' : 'display: none;',
+        })),
+        bump: () => this.toast(o.code + ' bumped', 'Pass → ' + o.table),
+      })),
+      fireToast: () => this.toast('New order · Table 04', '#A-1044 · $31.00'),
+      signIn: () => { this.setState({ screen: NAV[s.role][0].id }); this.toast('Signed in as ' + role.user, role.label + ' · shift 17:00 – 23:00'); },
+      markPaid: () => this.toast('Table 07 marked paid', '$92.20 · card at table'),
+      saveDish: () => this.toast('Lamb kofta saved', 'Live on the guest menu'),
+      openDrawer: () => this.setState({ drawer: true }),
+      closeDrawer: () => this.setState({ drawer: false }),
+      saveDrawer: () => { this.setState({ drawer: false }); this.toast('Waiter added to tonight', 'Set-password link sent'); },
+      drawerTitle: s.screen === 'menu' ? 'New dish' : 'Add a waiter',
+      drawer: !!s.drawer,
+      openDialog: () => this.setState({ dialog: { title: 'Delete Lamb kofta?', body: 'It has sold 38 times today. Deleting removes it from the guest menu immediately; past orders keep their line items.', confirm: 'Delete dish' } }),
+      closeDialog: () => this.setState({ dialog: false }),
+      confirmDialog: () => { this.setState({ dialog: false }); this.toast('Done', 'Logged against this shift'); },
+      dialog: !!s.dialog,
+      dialogTitle: s.dialog ? s.dialog.title : '',
+      dialogBody: s.dialog ? s.dialog.body : '',
+      dialogConfirm: s.dialog ? s.dialog.confirm : '',
+      toast: !!s.toast,
+      toastTitle: s.toast ? s.toast.title : '',
+      toastSub: s.toast ? s.toast.sub : '',
+      clearToast: () => this.setState({ toast: null }),
+      spec: SPEC[s.screen] ? { ...SPEC[s.screen], layout: SPEC[s.screen].layout.map((x, i) => ({ i: String(i + 1).padStart(2, '0'), t: x })) } : SPEC.waiter,
+    };
+  }
+}
+
+</script>
+</body>
+</html>
