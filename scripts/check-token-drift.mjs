@@ -1,6 +1,7 @@
+/* global process */
+
 import fs from 'node:fs';
 import path from 'node:path';
-
 const root = process.cwd();
 
 const sourceTokensDir = path.join(root, 'docs', 'design', 'ds', 'tokens');
@@ -13,9 +14,7 @@ function read(file) {
 
 function getCustomProperties(css) {
     return new Set(
-        [...css.matchAll(/(--[a-zA-Z0-9_-]+)\s*:/g)].map(
-            (match) => match[1],
-        ),
+        [...css.matchAll(/(--[a-zA-Z0-9_-]+)\s*:/g)].map((match) => match[1]),
     );
 }
 
@@ -43,10 +42,7 @@ function collectImportedCss(entryFile, visited = new Set()) {
             continue;
         }
 
-        const importedFile = path.resolve(
-            path.dirname(resolved),
-            importPath,
-        );
+        const importedFile = path.resolve(path.dirname(resolved), importPath);
 
         if (fs.existsSync(importedFile)) {
             combined += `\n${collectImportedCss(importedFile, visited)}`;
@@ -113,24 +109,16 @@ if (missingTokens.length > 0) {
 
 const compiledCss = getCompiledCss();
 
-const clayMatch = compiledCss.match(
-    /--clay-500\s*:\s*#C85C34\b/i,
-);
+const clayMatch = compiledCss.match(/--clay-500\s*:\s*#C85C34\b/i);
 
 if (!clayMatch) {
-    console.error(
-        '\nCompiled CSS is missing "--clay-500: #C85C34".\n',
-    );
+    console.error('\nCompiled CSS is missing "--clay-500: #C85C34".\n');
 
     process.exit(1);
 }
 
-console.log(
-    `✓ ${expectedTokens.size} QResto design tokens are present.`,
-);
+console.log(`✓ ${expectedTokens.size} QResto design tokens are present.`);
 
-console.log(
-    '✓ Compiled CSS contains --clay-500: #C85C34.',
-);
+console.log('✓ Compiled CSS contains --clay-500: #C85C34.');
 
 console.log('✓ Token drift check passed.');
