@@ -19,6 +19,7 @@ type OrderTicketProps = {
     onAdvance?: () => void;
     onOverflow?: () => void;
 };
+
 const variantStyles = {
     light: {
         card: 'bg-[var(--surface-card)] border-[var(--border-subtle)] text-[var(--text-primary)]',
@@ -33,6 +34,7 @@ const variantStyles = {
         elapsed: 'text-[var(--ink-400)]',
     },
 };
+
 export function OrderTicket({
     code,
     elapsed,
@@ -56,52 +58,52 @@ export function OrderTicket({
                 className={`flex items-center gap-2 border-b px-3 pb-2 pt-3 ${styles.divider}`}
             >
                 <span
-                    className={`font-mono text-title-3 font-medium ${styles.code}`}
+                    className={`text-title-3 font-mono font-medium ${styles.code}`}
                 >
                     {code}
                 </span>
 
                 <span className="flex-1" />
 
-                <span
-                    className={`font-mono text-caption ${styles.elapsed}`}
-                >
+                <span className={`text-caption font-mono ${styles.elapsed}`}>
                     {elapsed}
                 </span>
             </div>
+
             <div
-                className={`flex items-center gap-1.5 px-3 text-caption ${
+                className={`text-caption flex items-center gap-1.5 px-3 ${
                     variant === 'dark'
                         ? 'text-[var(--ink-400)]'
                         : 'text-[var(--text-secondary)]'
                 }`}
             >
                 <span aria-hidden="true">▦</span>
+
                 <span>
                     {table} · {guest}
                 </span>
             </div>
+
             <div className="flex flex-col gap-1 px-3 pb-3 pt-2">
                 {items.map((item, index) => (
                     <div key={`${item.name}-${index}`}>
-                        <div className="flex gap-2 text-body">
+                        <div className="text-body flex gap-2">
                             <span className="font-mono text-[var(--text-tertiary)]">
                                 {item.qty}
                             </span>
 
-                            <span className="min-w-0 flex-1">
-                                {item.name}
-                            </span>
+                            <span className="min-w-0 flex-1">{item.name}</span>
                         </div>
 
                         {item.note && (
-                            <span className="ml-[26px] inline-block text-caption text-[var(--saffron-300)]">
+                            <span className="text-caption ml-[26px] inline-block text-[var(--saffron-300)]">
                                 {item.note}
                             </span>
                         )}
                     </div>
                 ))}
             </div>
+
             <div
                 className={`flex items-center gap-2 border-t px-3 py-2 ${
                     variant === 'dark'
@@ -110,7 +112,7 @@ export function OrderTicket({
                 }`}
             >
                 <span
-                    className={`inline-flex h-6 items-center rounded-full px-2.5 text-micro font-semibold ${
+                    className={`text-micro inline-flex h-6 items-center rounded-full px-2.5 font-semibold ${
                         paid
                             ? 'bg-[var(--status-paid-bg)] text-[var(--status-paid-fg)]'
                             : 'bg-[var(--status-pending-bg)] text-[var(--status-pending-fg)]'
@@ -121,15 +123,15 @@ export function OrderTicket({
 
                 <span className="flex-1" />
 
-                <span className="font-mono text-body font-medium">
-                    {total}
-                </span>
+                <span className="text-body font-mono font-medium">{total}</span>
             </div>
+
             <div className="flex gap-2 p-3">
                 <button
                     type="button"
                     onClick={onAdvance}
-                    className="h-11 flex-1 rounded-full bg-[var(--action-primary)] px-3 text-body font-semibold text-[var(--text-on-brand)]"
+                    aria-label={`Advance order status from ${status}`}
+                    className="text-body h-11 flex-1 rounded-full bg-[var(--action-primary)] px-3 font-semibold text-[var(--text-on-brand)]"
                 >
                     Advance status
                 </button>

@@ -26,7 +26,7 @@ export function DataTable<T extends Record<string, ReactNode>>({
             <div className="overflow-x-auto">
                 <div className="min-w-[640px]">
                     <div
-                        className="grid gap-3 border-b border-[var(--border-subtle)] bg-[var(--surface-sunken)] px-5 py-2 text-label font-semibold text-[var(--text-secondary)]"
+                        className="text-label grid gap-3 border-b border-[var(--border-subtle)] bg-[var(--surface-sunken)] px-5 py-2 font-semibold text-[var(--text-secondary)]"
                         style={{
                             gridTemplateColumns: columns
                                 .map(() => 'minmax(0, 1fr)')
@@ -37,9 +37,7 @@ export function DataTable<T extends Record<string, ReactNode>>({
                             <span
                                 key={String(column.key)}
                                 className={
-                                    column.numeric
-                                        ? 'text-right'
-                                        : 'text-left'
+                                    column.numeric ? 'text-right' : 'text-left'
                                 }
                             >
                                 {column.label}
@@ -50,7 +48,7 @@ export function DataTable<T extends Record<string, ReactNode>>({
                     {rows.map((row, rowIndex) => (
                         <div
                             key={rowIndex}
-                            className="grid items-center gap-3 border-b border-[var(--border-subtle)] px-5 py-3 text-body"
+                            className="text-body grid items-center gap-3 border-b border-[var(--border-subtle)] px-5 py-3"
                             style={{
                                 gridTemplateColumns: columns
                                     .map(() => 'minmax(0, 1fr)')
@@ -74,16 +72,14 @@ export function DataTable<T extends Record<string, ReactNode>>({
 
                     {total !== undefined && (
                         <div
-                            className="grid items-center gap-3 bg-[var(--surface-sunken)] px-5 py-4 font-mono text-body font-medium"
+                            className="text-body grid items-center gap-3 bg-[var(--surface-sunken)] px-5 py-4 font-mono font-medium"
                             style={{
                                 gridTemplateColumns: columns
                                     .map(() => 'minmax(0, 1fr)')
                                     .join(' '),
                             }}
                         >
-                            <span className="font-ui font-semibold">
-                                Total
-                            </span>
+                            <span className="font-ui font-semibold">Total</span>
 
                             <span>{total}</span>
                         </div>

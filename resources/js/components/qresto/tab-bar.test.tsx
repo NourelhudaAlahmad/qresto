@@ -28,10 +28,7 @@ describe('TabBar', () => {
     it('marks the active tab with the active color', () => {
         const { getByText } = render(
             <TabBar
-                items={[
-                    { label: 'Menu', active: true },
-                    { label: 'Order' },
-                ]}
+                items={[{ label: 'Menu', active: true }, { label: 'Order' }]}
             />,
         );
 
@@ -48,11 +45,7 @@ describe('TabBar', () => {
         const onClick = vi.fn();
 
         const { getByRole } = render(
-            <TabBar
-                items={[
-                    { label: 'Menu', onClick },
-                ]}
-            />,
+            <TabBar items={[{ label: 'Menu', onClick }]} />,
         );
 
         getByRole('button', { name: 'Menu' }).click();

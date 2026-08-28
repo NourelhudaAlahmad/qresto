@@ -6,11 +6,7 @@ import { PriceSummary } from './price-summary';
 describe('PriceSummary', () => {
     it('renders the required totals', () => {
         const { getByText } = render(
-            <PriceSummary
-                subtotal="9.00"
-                service="54.35"
-                total="154.00"
-            />,
+            <PriceSummary subtotal="9.00" service="54.35" total="154.00" />,
         );
 
         expect(getByText('Subtotal')).toBeInTheDocument();

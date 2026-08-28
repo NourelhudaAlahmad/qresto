@@ -27,13 +27,13 @@ export function Stat({
                 {label}
             </div>
 
-            <div className="font-mono text-display-3 leading-[1.1]">
+            <div className="text-display-3 font-mono leading-[1.1]">
                 {value}
             </div>
 
             {hint !== undefined && (
                 <div
-                    className={`flex items-center gap-1 text-caption ${hintStyles[hintTone]}`}
+                    className={`text-caption flex items-center gap-1 ${hintStyles[hintTone]}`}
                 >
                     {hint}
                 </div>

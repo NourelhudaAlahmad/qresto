@@ -11,7 +11,7 @@ function Label({
         <LabelPrimitive.Root
             data-slot="qresto-label"
             className={cn(
-                'text-label font-medium text-text-primary select-none',
+                'text-label text-text-primary select-none font-medium',
                 'peer-disabled:cursor-not-allowed peer-disabled:opacity-50',
                 className,
             )}

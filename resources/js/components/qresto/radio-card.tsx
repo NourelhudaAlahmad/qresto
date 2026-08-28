@@ -21,14 +21,14 @@ function RadioCard({
             htmlFor={id}
             className={cn(
                 'flex min-h-[52px] w-full cursor-pointer items-center gap-3',
-                'rounded-md border border-border-default bg-surface-card px-4',
-                'transition-[background-color,border-color,box-shadow] duration-fast ease-standard',
+                'border-border-default bg-surface-card rounded-md border px-4',
+                'duration-fast ease-standard transition-[background-color,border-color,box-shadow]',
                 'has-[[data-state=checked]]:border-border-brand',
                 'has-[[data-state=checked]]:bg-surface-brand-soft',
                 'has-[[data-state=checked]]:shadow-none',
                 'hover:bg-action-ghost-hover',
                 'focus-within:border-border-brand',
-                'focus-within:ring-[3px] focus-within:ring-[var(--clay-500)]/30',
+                'focus-within:ring-[var(--clay-500)]/30 focus-within:ring-[3px]',
                 'has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60',
                 className,
             )}
@@ -36,12 +36,12 @@ function RadioCard({
             <Radio id={id} {...props} />
 
             <span className="min-w-0 flex-1">
-                <span className="block text-label font-medium text-text-primary">
+                <span className="text-label text-text-primary block font-medium">
                     {title}
                 </span>
 
                 {description ? (
-                    <span className="mt-0.5 block text-caption text-text-secondary">
+                    <span className="text-caption text-text-secondary mt-0.5 block">
                         {description}
                     </span>
                 ) : null}

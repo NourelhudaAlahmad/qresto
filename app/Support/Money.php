@@ -26,7 +26,11 @@ final class Money implements JsonSerializable
         $negative = str_starts_with($amount, '-');
         $normalized = ltrim($amount, '+-');
 
-        [$whole, $decimal] = array_pad(explode('.', $normalized, 2), 2, '0');
+        [$whole, $decimal] = array_pad(
+            explode('.', $normalized, 2),
+            2,
+            '0',
+        );
 
         $minor = ((int) $whole * 100) + (int) str_pad($decimal, 2, '0');
 
@@ -45,54 +49,58 @@ final class Money implements JsonSerializable
     {
         return $this->currency;
     }
-public function add(self $other): self
-{
-    $this->assertSameCurrency($other);
 
-    return self::fromMinor(
-        $this->amount + $other->amount,
-        $this->currency,
-    );
-}
+    public function add(self $other): self
+    {
+        $this->assertSameCurrency($other);
 
-public function subtract(self $other): self
-{
-    $this->assertSameCurrency($other);
-
-    return self::fromMinor(
-        $this->amount - $other->amount,
-        $this->currency,
-    );
-}
-
-public function multiply(int $multiplier): self
-{
-    return self::fromMinor(
-        $this->amount * $multiplier,
-        $this->currency,
-    );
-}
-
-public function percentage(float $percentage): self
-{
-    $minor = (int) round(
-        $this->amount * $percentage / 100,
-        0,
-        PHP_ROUND_HALF_UP,
-    );
-
-    return self::fromMinor($minor, $this->currency);
-}
-
-private function assertSameCurrency(self $other): void
-{
-    if ($this->currency !== $other->currency) {
-        throw new InvalidArgumentException(
-            'Cannot operate on different currencies.',
+        return self::fromMinor(
+            $this->amount + $other->amount,
+            $this->currency,
         );
     }
-}
 
+    public function subtract(self $other): self
+    {
+        $this->assertSameCurrency($other);
+
+        return self::fromMinor(
+            $this->amount - $other->amount,
+            $this->currency,
+        );
+    }
+
+    public function multiply(int $multiplier): self
+    {
+        return self::fromMinor(
+            $this->amount * $multiplier,
+            $this->currency,
+        );
+    }
+
+    public function percentage(float $percentage): self
+    {
+        $minor = (int) round(
+            $this->amount * $percentage / 100,
+            0,
+            PHP_ROUND_HALF_UP,
+        );
+
+        return self::fromMinor($minor, $this->currency);
+    }
+
+    private function assertSameCurrency(self $other): void
+    {
+        if ($this->currency !== $other->currency) {
+            throw new InvalidArgumentException(
+                'Cannot operate on different currencies.',
+            );
+        }
+    }
+
+    /**
+     * @return array<string, int|string>
+     */
     public function jsonSerialize(): array
     {
         return [

@@ -9,13 +9,13 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-   [
+    [
         'inline-flex items-center justify-center gap-2 whitespace-nowrap',
         'min-w-[44px]',
 
         'relative isolate',
         'before:absolute before:-inset-1',
-        'before:min-w-[44px] before:min-h-[44px]',
+        'before:min-h-[44px] before:min-w-[44px]',
         'before:pointer-events-auto',
         'font-ui font-medium',
         'transition-[background-color,color,border-color,box-shadow,transform,opacity]',
@@ -84,9 +84,9 @@ const buttonVariants = cva(
             },
 
             size: {
-                sm: 'h-[34px] px-4 text-label',
-                md: 'h-[44px] px-5 text-label',
-                lg: 'h-[54px] px-6 text-body-lg',
+                sm: 'text-label h-[34px] px-4',
+                md: 'text-label h-[44px] px-5',
+                lg: 'text-body-lg h-[54px] px-6',
             },
 
             fullWidth: {
@@ -144,9 +144,7 @@ function Button({
                     fullWidth,
                     className,
                 }),
-                !loading &&
-                    !disabled &&
-                    'active:scale-[var(--press-scale)]',
+                !loading && !disabled && 'active:scale-[var(--press-scale)]',
             )}
             {...props}
         >

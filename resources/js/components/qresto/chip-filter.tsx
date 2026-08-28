@@ -23,7 +23,7 @@ export function ChipFilter({
         <button
             type="button"
             onClick={onClick}
-            className={`inline-flex min-h-11 items-center justify-center rounded-full border px-3 text-caption font-semibold transition-colors ${
+            className={`text-caption inline-flex min-h-11 items-center justify-center rounded-full border px-3 font-semibold transition-colors ${
                 active ? activeClasses : inactiveClasses
             }`}
             aria-pressed={active}

@@ -9,14 +9,10 @@ const sizes = {
     md: 'h-9 w-9',
 };
 
-export function Avatar({
-    initials,
-    size = 'md',
-    className = '',
-}: AvatarProps) {
+export function Avatar({ initials, size = 'md', className = '' }: AvatarProps) {
     return (
         <span
-            className={`grid shrink-0 place-items-center rounded-full bg-[var(--clay-100)] font-display text-caption font-semibold text-[var(--clay-700)] ${sizes[size]} ${className}`}
+            className={`font-display text-caption grid shrink-0 place-items-center rounded-full bg-[var(--clay-100)] font-semibold text-[var(--clay-700)] ${sizes[size]} ${className}`}
             aria-label={initials}
         >
             {initials}

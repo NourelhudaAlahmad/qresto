@@ -41,19 +41,12 @@ describe('DataTable', () => {
         );
 
         expect(getByText('22')).toHaveClass('text-right', 'font-mono');
-        expect(getByText('$2,418.00')).toHaveClass(
-            'text-right',
-            'font-mono',
-        );
+        expect(getByText('$2,418.00')).toHaveClass('text-right', 'font-mono');
     });
 
     it('renders the optional total row', () => {
         const { getByText } = render(
-            <DataTable
-                columns={columns}
-                rows={rows}
-                total="$4,522.20"
-            />,
+            <DataTable columns={columns} rows={rows} total="$4,522.20" />,
         );
 
         expect(getByText('Total')).toBeInTheDocument();

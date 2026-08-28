@@ -12,11 +12,11 @@ function Switch({
             <SwitchPrimitive.Root
                 data-slot="qresto-switch"
                 className={cn(
-                    'peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-pill',
-                    'border border-border-default bg-surface-sunken',
-                    'transition-[background-color,border-color,box-shadow] duration-fast ease-standard',
+                    'rounded-pill peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center',
+                    'border-border-default bg-surface-sunken border',
+                    'duration-fast ease-standard transition-[background-color,border-color,box-shadow]',
                     'outline-none',
-                    'focus-visible:border-border-brand focus-visible:ring-[3px] focus-visible:ring-[var(--clay-500)]/30',
+                    'focus-visible:border-border-brand focus-visible:ring-[var(--clay-500)]/30 focus-visible:ring-[3px]',
                     'data-[state=checked]:border-action-primary data-[state=checked]:bg-action-primary',
                     'disabled:cursor-not-allowed disabled:opacity-60',
                     className,
@@ -26,8 +26,8 @@ function Switch({
                 <SwitchPrimitive.Thumb
                     data-slot="qresto-switch-thumb"
                     className={cn(
-                        'pointer-events-none block size-5 rounded-full bg-white shadow-rest',
-                        'transition-transform duration-fast ease-standard',
+                        'shadow-rest pointer-events-none block size-5 rounded-full bg-white',
+                        'duration-fast ease-standard transition-transform',
                         'data-[state=checked]:translate-x-5',
                         'data-[state=unchecked]:translate-x-0.5',
                     )}

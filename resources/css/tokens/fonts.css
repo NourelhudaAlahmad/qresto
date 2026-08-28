@@ -5,7 +5,7 @@
    local @font-face rules — the token names below never change. */
 
 :root {
-  --font-display: "Familjen Grotesk", "Helvetica Neue", Helvetica, sans-serif;
-  --font-ui: "Outfit", "Familjen Grotesk", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --font-display: 'Familjen Grotesk', 'Helvetica Neue', Helvetica, sans-serif;
+    --font-ui: 'Outfit', 'Familjen Grotesk', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }

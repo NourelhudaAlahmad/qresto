@@ -30,10 +30,7 @@ const stateStyles = {
     },
 };
 
-export function ProgressTrail({
-    items,
-    className = '',
-}: ProgressTrailProps) {
+export function ProgressTrail({ items, className = '' }: ProgressTrailProps) {
     return (
         <div className={`flex flex-col ${className}`}>
             {items.map((item, index) => {
@@ -41,10 +38,7 @@ export function ProgressTrail({
                 const isLast = index === items.length - 1;
 
                 return (
-                    <div
-                        key={index}
-                        className="flex items-stretch gap-4"
-                    >
+                    <div key={index} className="flex items-stretch gap-4">
                         <div className="flex w-5 shrink-0 flex-col items-center">
                             <span
                                 className={`mt-1 h-3 w-3 rounded-full border-2 ${styles.dot}`}
@@ -66,14 +60,14 @@ export function ProgressTrail({
                                 </span>
 
                                 {item.time !== undefined && (
-                                    <span className="font-mono text-caption text-[var(--text-tertiary)]">
+                                    <span className="text-caption font-mono text-[var(--text-tertiary)]">
                                         {item.time}
                                     </span>
                                 )}
                             </div>
 
                             {item.detail !== undefined && (
-                                <p className="mt-1 text-caption leading-[var(--leading-normal)] text-[var(--text-secondary)]">
+                                <p className="text-caption mt-1 leading-[var(--leading-normal)] text-[var(--text-secondary)]">
                                     {item.detail}
                                 </p>
                             )}

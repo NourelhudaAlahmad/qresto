@@ -1,58 +1,51 @@
-
 import { Head } from '@inertiajs/react';
 
 export default function Welcome() {
     return (
         <>
             <Head title="Qresto Design System" />
-<span data-numeric>$54.35</span>
-            <div className="min-h-screen bg-background text-foreground p-8">
+            <span data-numeric>$54.35</span>
+            <div className="bg-background text-foreground min-h-screen p-8">
                 <div className="mx-auto max-w-6xl space-y-12">
-
                     {/* Header */}
                     <header>
-                        <p className="mb-2 text-sm font-medium uppercase tracking-wider text-text-brand">
+                        <p className="text-text-brand mb-2 text-sm font-medium uppercase tracking-wider">
                             QResto
                         </p>
 
-                        <h1 className="text-4xl font-bold">
-                            Design System
-                        </h1>
+                        <h1 className="text-4xl font-bold">Design System</h1>
 
-                        <p className="mt-2 text-muted-foreground">
-                            Visual test for colors, typography, buttons, cards and states.
+                        <p className="text-muted-foreground mt-2">
+                            Visual test for colors, typography, buttons, cards
+                            and states.
                         </p>
                     </header>
 
                     {/* Colors */}
                     <section>
-                        <h2 className="mb-6 text-2xl font-semibold">
-                            Colors
-                        </h2>
+                        <h2 className="mb-6 text-2xl font-semibold">Colors</h2>
 
                         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                            <div className="rounded-xl bg-clay-500 p-6 text-white">
+                            <div className="bg-clay-500 rounded-xl p-6 text-white">
                                 <p className="font-semibold">Clay</p>
-                                <p className="mt-1 text-sm opacity-80">
-                                    Brand
-                                </p>
+                                <p className="mt-1 text-sm opacity-80">Brand</p>
                             </div>
 
-                            <div className="rounded-xl bg-saffron-500 p-6 text-white">
+                            <div className="bg-saffron-500 rounded-xl p-6 text-white">
                                 <p className="font-semibold">Saffron</p>
                                 <p className="mt-1 text-sm opacity-80">
                                     Pending
                                 </p>
                             </div>
 
-                            <div className="rounded-xl bg-herb-500 p-6 text-white">
+                            <div className="bg-herb-500 rounded-xl p-6 text-white">
                                 <p className="font-semibold">Herb</p>
                                 <p className="mt-1 text-sm opacity-80">
                                     Success
                                 </p>
                             </div>
 
-                            <div className="rounded-xl bg-berry-500 p-6 text-white">
+                            <div className="bg-berry-500 rounded-xl p-6 text-white">
                                 <p className="font-semibold">Berry</p>
                                 <p className="mt-1 text-sm opacity-80">
                                     Danger
@@ -66,27 +59,27 @@ export default function Welcome() {
                                 </p>
                             </div>
 
-                            <div className="rounded-xl bg-ink-900 p-6 text-white">
+                            <div className="bg-ink-900 rounded-xl p-6 text-white">
                                 <p className="font-semibold">Ink</p>
                                 <p className="mt-1 text-sm opacity-80">
                                     Primary text
                                 </p>
                             </div>
 
-                            <div className="rounded-xl bg-surface-card border p-6">
-                                <p className="font-semibold text-text-primary">
+                            <div className="bg-surface-card rounded-xl border p-6">
+                                <p className="text-text-primary font-semibold">
                                     Card
                                 </p>
-                                <p className="mt-1 text-sm text-text-secondary">
+                                <p className="text-text-secondary mt-1 text-sm">
                                     Surface
                                 </p>
                             </div>
 
-                            <div className="rounded-xl bg-surface-sunken border p-6">
-                                <p className="font-semibold text-text-primary">
+                            <div className="bg-surface-sunken rounded-xl border p-6">
+                                <p className="text-text-primary font-semibold">
                                     Sunken
                                 </p>
-                                <p className="mt-1 text-sm text-text-secondary">
+                                <p className="text-text-secondary mt-1 text-sm">
                                     Background
                                 </p>
                             </div>
@@ -99,9 +92,9 @@ export default function Welcome() {
                             Typography
                         </h2>
 
-                        <div className="space-y-5 rounded-2xl border bg-card p-8 shadow-card">
+                        <div className="bg-card shadow-card space-y-5 rounded-2xl border p-8">
                             <div>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-muted-foreground text-sm">
                                     Display
                                 </p>
 
@@ -111,7 +104,7 @@ export default function Welcome() {
                             </div>
 
                             <div>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-muted-foreground text-sm">
                                     Title
                                 </p>
 
@@ -121,7 +114,7 @@ export default function Welcome() {
                             </div>
 
                             <div>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-muted-foreground text-sm">
                                     Body
                                 </p>
 
@@ -132,7 +125,7 @@ export default function Welcome() {
                             </div>
 
                             <div>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-muted-foreground text-sm">
                                     Numeric
                                 </p>
 
@@ -145,24 +138,22 @@ export default function Welcome() {
 
                     {/* Buttons */}
                     <section>
-                        <h2 className="mb-6 text-2xl font-semibold">
-                            Buttons
-                        </h2>
+                        <h2 className="mb-6 text-2xl font-semibold">Buttons</h2>
 
                         <div className="flex flex-wrap gap-4">
-                            <button className="min-h-[44px] rounded-pill bg-action-primary px-6 font-medium text-primary-foreground transition hover:bg-action-primary-hover active:bg-action-primary-active">
+                            <button className="rounded-pill bg-action-primary text-primary-foreground hover:bg-action-primary-hover active:bg-action-primary-active min-h-[44px] px-6 font-medium transition">
                                 Primary
                             </button>
 
-                            <button className="min-h-[44px] rounded-pill bg-action-secondary px-6 font-medium text-white transition hover:bg-action-secondary-hover">
+                            <button className="rounded-pill bg-action-secondary hover:bg-action-secondary-hover min-h-[44px] px-6 font-medium text-white transition">
                                 Secondary
                             </button>
 
-                            <button className="min-h-[44px] rounded-pill border border-border-default bg-surface-card px-6 font-medium transition hover:bg-action-ghost-hover">
+                            <button className="rounded-pill border-border-default bg-surface-card hover:bg-action-ghost-hover min-h-[44px] border px-6 font-medium transition">
                                 Outline
                             </button>
 
-                            <button className="min-h-[44px] rounded-pill bg-action-disabled-bg px-6 text-action-disabled-text">
+                            <button className="rounded-pill bg-action-disabled-bg text-action-disabled-text min-h-[44px] px-6">
                                 Disabled
                             </button>
                         </div>
@@ -175,31 +166,31 @@ export default function Welcome() {
                         </h2>
 
                         <div className="flex flex-wrap gap-3">
-                            <span className="rounded-pill bg-status-placed-bg px-4 py-2 text-sm font-medium text-status-placed-fg">
+                            <span className="rounded-pill bg-status-placed-bg text-status-placed-fg px-4 py-2 text-sm font-medium">
                                 Placed
                             </span>
 
-                            <span className="rounded-pill bg-status-pending-bg px-4 py-2 text-sm font-medium text-status-pending-fg">
+                            <span className="rounded-pill bg-status-pending-bg text-status-pending-fg px-4 py-2 text-sm font-medium">
                                 Pending
                             </span>
 
-                            <span className="rounded-pill bg-status-preparing-bg px-4 py-2 text-sm font-medium text-status-preparing-fg">
+                            <span className="rounded-pill bg-status-preparing-bg text-status-preparing-fg px-4 py-2 text-sm font-medium">
                                 Preparing
                             </span>
 
-                            <span className="rounded-pill bg-status-ready-bg px-4 py-2 text-sm font-medium text-status-ready-fg">
+                            <span className="rounded-pill bg-status-ready-bg text-status-ready-fg px-4 py-2 text-sm font-medium">
                                 Ready
                             </span>
 
-                            <span className="rounded-pill bg-status-served-bg px-4 py-2 text-sm font-medium text-status-served-fg">
+                            <span className="rounded-pill bg-status-served-bg text-status-served-fg px-4 py-2 text-sm font-medium">
                                 Served
                             </span>
 
-                            <span className="rounded-pill bg-status-paid-bg px-4 py-2 text-sm font-medium text-status-paid-fg">
+                            <span className="rounded-pill bg-status-paid-bg text-status-paid-fg px-4 py-2 text-sm font-medium">
                                 Paid
                             </span>
 
-                            <span className="rounded-pill bg-status-cancelled-bg px-4 py-2 text-sm font-medium text-status-cancelled-fg">
+                            <span className="rounded-pill bg-status-cancelled-bg text-status-cancelled-fg px-4 py-2 text-sm font-medium">
                                 Cancelled
                             </span>
                         </div>
@@ -211,10 +202,10 @@ export default function Welcome() {
                             Restaurant Card
                         </h2>
 
-                        <div className="max-w-md rounded-lg border border-border-subtle bg-surface-card p-6 shadow-card transition hover:shadow-lift">
+                        <div className="border-border-subtle bg-surface-card shadow-card hover:shadow-lift max-w-md rounded-lg border p-6 transition">
                             <div className="flex items-start justify-between">
                                 <div>
-                                    <p className="text-sm text-text-secondary">
+                                    <p className="text-text-secondary text-sm">
                                         Restaurant
                                     </p>
 
@@ -223,14 +214,14 @@ export default function Welcome() {
                                     </h3>
                                 </div>
 
-                                <span className="rounded-pill bg-status-served-bg px-3 py-1 text-xs font-medium text-status-served-fg">
+                                <span className="rounded-pill bg-status-served-bg text-status-served-fg px-3 py-1 text-xs font-medium">
                                     Open
                                 </span>
                             </div>
 
                             <div className="mt-6 grid grid-cols-2 gap-4">
-                                <div className="rounded-md bg-surface-sunken p-4">
-                                    <p className="text-sm text-text-secondary">
+                                <div className="bg-surface-sunken rounded-md p-4">
+                                    <p className="text-text-secondary text-sm">
                                         Orders
                                     </p>
 
@@ -239,8 +230,8 @@ export default function Welcome() {
                                     </p>
                                 </div>
 
-                                <div className="rounded-md bg-surface-sunken p-4">
-                                    <p className="text-sm text-text-secondary">
+                                <div className="bg-surface-sunken rounded-md p-4">
+                                    <p className="text-text-secondary text-sm">
                                         Revenue
                                     </p>
 
@@ -250,15 +241,13 @@ export default function Welcome() {
                                 </div>
                             </div>
 
-                            <button className="mt-6 min-h-[44px] w-full rounded-pill bg-action-primary font-medium text-primary-foreground transition hover:bg-action-primary-hover">
+                            <button className="rounded-pill bg-action-primary text-primary-foreground hover:bg-action-primary-hover mt-6 min-h-[44px] w-full font-medium transition">
                                 Open Dashboard
                             </button>
                         </div>
                     </section>
-
                 </div>
             </div>
         </>
     );
 }
-

@@ -6,10 +6,7 @@ import { cn } from '@/lib/utils';
 
 type SearchFieldProps = React.ComponentProps<typeof Input>;
 
-function SearchField({
-    className,
-    ...props
-}: SearchFieldProps) {
+function SearchField({ className, ...props }: SearchFieldProps) {
     return (
         <div
             data-slot="qresto-search-field"
@@ -20,7 +17,7 @@ function SearchField({
         >
             <SearchIcon
                 aria-hidden="true"
-                className="pointer-events-none absolute left-3 size-4 text-text-tertiary"
+                className="text-text-tertiary pointer-events-none absolute left-3 size-4"
             />
 
             <Input

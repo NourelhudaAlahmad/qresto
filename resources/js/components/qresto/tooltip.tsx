@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
+import type { ReactNode } from 'react';
 
 type TooltipProps = {
     content: ReactNode;
@@ -17,23 +17,11 @@ export function Tooltip({ content, children }: TooltipProps) {
                 <TooltipPrimitive.Portal>
                     <TooltipPrimitive.Content
                         sideOffset={8}
-                        className="
-                            z-50
-                            rounded-[8px]
-                            bg-[var(--ink-900)]
-                            px-2.5
-                            py-1.5
-                            text-micro
-                            text-[var(--ink-25)]
-                            shadow-[var(--shadow-rest)]
-                            outline-none
-                        "
+                        className="text-micro z-50 rounded-[8px] bg-[var(--ink-900)] px-2.5 py-1.5 text-[var(--ink-25)] shadow-[var(--shadow-rest)] outline-none"
                     >
                         {content}
 
-                        <TooltipPrimitive.Arrow
-                            className="fill-[var(--ink-900)]"
-                        />
+                        <TooltipPrimitive.Arrow className="fill-[var(--ink-900)]" />
                     </TooltipPrimitive.Content>
                 </TooltipPrimitive.Portal>
             </TooltipPrimitive.Root>

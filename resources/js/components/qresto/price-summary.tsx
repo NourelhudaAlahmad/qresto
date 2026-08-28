@@ -18,72 +18,62 @@ export function PriceSummary({
 }: PriceSummaryProps) {
     return (
         <div className={`flex flex-col gap-2 ${className}`}>
-            <div className="flex items-baseline text-body">
+            <div className="text-body flex items-baseline">
                 <span className="flex-1 text-[var(--text-secondary)]">
                     Subtotal
                 </span>
 
-                <span className="font-mono">
-                    {subtotal}
-                </span>
+                <span className="font-mono">{subtotal}</span>
             </div>
 
             {service !== undefined && (
-                <div className="flex items-baseline text-body">
+                <div className="text-body flex items-baseline">
                     <span className="flex-1 text-[var(--text-secondary)]">
                         Service
                     </span>
 
-                    <span className="font-mono">
-                        {service}
-                    </span>
+                    <span className="font-mono">{service}</span>
                 </div>
             )}
 
             {discount !== undefined && (
-                <div className="flex items-baseline text-body">
+                <div className="text-body flex items-baseline">
                     <span className="flex-1 text-[var(--text-secondary)]">
                         Discount
                     </span>
 
-                    <span className="font-mono">
-                        {discount}
-                    </span>
+                    <span className="font-mono">{discount}</span>
                 </div>
             )}
 
             {tip !== undefined && (
-                <div className="flex items-baseline text-body">
+                <div className="text-body flex items-baseline">
                     <span className="flex-1 text-[var(--text-secondary)]">
                         Tip
                     </span>
 
-                    <span className="font-mono">
-                        {tip}
-                    </span>
+                    <span className="font-mono">{tip}</span>
                 </div>
             )}
 
             {split !== undefined && (
-                <div className="flex items-baseline text-body">
+                <div className="text-body flex items-baseline">
                     <span className="flex-1 text-[var(--text-secondary)]">
                         Split
                     </span>
 
-                    <span className="font-mono">
-                        {split}
-                    </span>
+                    <span className="font-mono">{split}</span>
                 </div>
             )}
 
             <div className="my-1 h-px bg-[var(--border-subtle)]" />
 
-            <div className="flex items-baseline text-body">
+            <div className="text-body flex items-baseline">
                 <span className="flex-1 text-[var(--text-secondary)]">
                     Total
                 </span>
 
-                <span className="font-mono text-title-2 font-medium">
+                <span className="text-title-2 font-mono font-medium">
                     {total}
                 </span>
             </div>

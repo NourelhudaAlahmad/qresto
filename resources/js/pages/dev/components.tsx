@@ -17,9 +17,9 @@ import { OrderTicket } from '@/components/qresto/order-ticket';
 import { PriceSummary } from '@/components/qresto/price-summary';
 import { ProgressTrail } from '@/components/qresto/progress-trail';
 import { QuantityStepper } from '@/components/qresto/quantity-stepper';
-import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { Radio, RadioGroup } from '@/components/qresto/radio';
 import { RadioCard } from '@/components/qresto/radio-card';
+import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { SearchField } from '@/components/qresto/search-field';
 import { SectionHead } from '@/components/qresto/section-head';
 import { Skeleton } from '@/components/qresto/skeleton';
@@ -28,8 +28,8 @@ import { StickyDock } from '@/components/qresto/sticky-dock';
 import { Switch } from '@/components/qresto/switch';
 import { TabBar } from '@/components/qresto/tab-bar';
 import { Textarea } from '@/components/qresto/textarea';
-import { Tooltip } from '@/components/qresto/tooltip';
 import { showToast } from '@/components/qresto/toast';
+import { Tooltip } from '@/components/qresto/tooltip';
 
 export default function Components() {
     const [quantity, setQuantity] = React.useState(9);
@@ -69,35 +69,32 @@ export default function Components() {
         <>
             <Head title="QResto Components" />
 
-<main className="min-h-screen w-full overflow-x-hidden bg-surface-page p-4 text-text-primary sm:p-6 lg:p-8"><div className="mx-auto w-full max-w-6xl space-y-8 sm:space-y-10 lg:space-y-12">
+            <main className="bg-surface-page text-text-primary min-h-screen w-full overflow-x-hidden p-4 sm:p-6 lg:p-8">
+                <div className="mx-auto w-full max-w-6xl space-y-8 sm:space-y-10 lg:space-y-12">
                     <header>
-                        <p className="text-label font-medium uppercase tracking-eyebrow text-text-brand">
+                        <p className="text-label tracking-eyebrow text-text-brand font-medium uppercase">
                             QResto
                         </p>
 
-                        <h1 className="mt-2 text-display-2 font-semibold">
+                        <h1 className="text-display-2 mt-2 font-semibold">
                             Component Playground
                         </h1>
 
-                        <p className="mt-2 max-w-prose text-text-secondary">
+                        <p className="text-text-secondary mt-2 max-w-prose">
                             Local-only visual regression page for QResto
                             primitives.
                         </p>
                     </header>
 
                     <section className="space-y-5">
-                        <h2 className="text-title-1 font-semibold">
-                            Buttons
-                        </h2>
+                        <h2 className="text-title-1 font-semibold">Buttons</h2>
 
                         <div className="flex flex-wrap gap-4">
                             <Button variant="primary">Primary</Button>
                             <Button variant="secondary">Secondary</Button>
                             <Button variant="outline">Outline</Button>
                             <Button variant="ghost">Ghost</Button>
-                            <Button variant="destructive">
-                                Destructive
-                            </Button>
+                            <Button variant="destructive">Destructive</Button>
                             <Button variant="disabled" disabled>
                                 Sold out
                             </Button>
@@ -129,7 +126,7 @@ export default function Components() {
                     </section>
 
                     <section className="grid gap-6 md:grid-cols-2">
-                        <div className="space-y-3 rounded-lg border border-border-subtle bg-surface-card p-6">
+                        <div className="border-border-subtle bg-surface-card space-y-3 rounded-lg border p-6">
                             <h2 className="text-title-2 font-semibold">
                                 Input
                             </h2>
@@ -144,7 +141,7 @@ export default function Components() {
                             />
                         </div>
 
-                        <div className="space-y-3 rounded-lg border border-border-subtle bg-surface-card p-6">
+                        <div className="border-border-subtle bg-surface-card space-y-3 rounded-lg border p-6">
                             <h2 className="text-title-2 font-semibold">
                                 Search
                             </h2>
@@ -155,20 +152,17 @@ export default function Components() {
                             />
                         </div>
 
-                        <div className="space-y-3 rounded-lg border border-border-subtle bg-surface-card p-6">
+                        <div className="border-border-subtle bg-surface-card space-y-3 rounded-lg border p-6">
                             <h2 className="text-title-2 font-semibold">
                                 Textarea
                             </h2>
 
                             <Label htmlFor="notes">Notes</Label>
 
-                            <Textarea
-                                id="notes"
-                                placeholder="Write notes..."
-                            />
+                            <Textarea id="notes" placeholder="Write notes..." />
                         </div>
 
-                        <div className="space-y-3 rounded-lg border border-border-subtle bg-surface-card p-6">
+                        <div className="border-border-subtle bg-surface-card space-y-3 rounded-lg border p-6">
                             <h2 className="text-title-2 font-semibold">
                                 Switch
                             </h2>
@@ -196,22 +190,20 @@ export default function Components() {
                     </section>
 
                     <section className="grid gap-6 md:grid-cols-2">
-                        <div className="rounded-lg border border-border-subtle bg-surface-card p-6">
-                            <h2 className="mb-4 text-title-2 font-semibold">
+                        <div className="border-border-subtle bg-surface-card rounded-lg border p-6">
+                            <h2 className="text-title-2 mb-4 font-semibold">
                                 Checkbox
                             </h2>
 
                             <label className="flex items-center gap-2">
                                 <Checkbox id="cheese" />
 
-                                <span className="text-label">
-                                    Extra cheese
-                                </span>
+                                <span className="text-label">Extra cheese</span>
                             </label>
                         </div>
 
-                        <div className="rounded-lg border border-border-subtle bg-surface-card p-6">
-                            <h2 className="mb-4 text-title-2 font-semibold">
+                        <div className="border-border-subtle bg-surface-card rounded-lg border p-6">
+                            <h2 className="text-title-2 mb-4 font-semibold">
                                 Radio
                             </h2>
 
@@ -219,17 +211,13 @@ export default function Components() {
                                 <label className="flex items-center gap-2">
                                     <Radio value="cash" />
 
-                                    <span className="text-label">
-                                        Cash
-                                    </span>
+                                    <span className="text-label">Cash</span>
                                 </label>
 
                                 <label className="flex items-center gap-2">
                                     <Radio value="card" />
 
-                                    <span className="text-label">
-                                        Card
-                                    </span>
+                                    <span className="text-label">Card</span>
                                 </label>
                             </RadioGroup>
                         </div>
@@ -240,10 +228,7 @@ export default function Components() {
                             Radio Cards
                         </h2>
 
-                        <RadioGroup
-                            defaultValue="medium"
-                            className="max-w-xl"
-                        >
+                        <RadioGroup defaultValue="medium" className="max-w-xl">
                             <RadioCard
                                 value="small"
                                 title="Small"
@@ -271,7 +256,7 @@ export default function Components() {
 
                         <div className="flex flex-wrap items-center gap-8">
                             <div>
-                                <p className="mb-2 text-caption text-text-secondary">
+                                <p className="text-caption text-text-secondary mb-2">
                                     36px
                                 </p>
 
@@ -284,7 +269,7 @@ export default function Components() {
                             </div>
 
                             <div>
-                                <p className="mb-2 text-caption text-text-secondary">
+                                <p className="text-caption text-text-secondary mb-2">
                                     44px
                                 </p>
 
@@ -302,29 +287,29 @@ export default function Components() {
                         </div>
                     </section>
 
-                    <section className="rounded-lg border border-border-subtle bg-surface-card p-6">
-                        <h2 className="mb-4 text-title-1 font-semibold">
+                    <section className="border-border-subtle bg-surface-card rounded-lg border p-6">
+                        <h2 className="text-title-1 mb-4 font-semibold">
                             Numeric Test
                         </h2>
 
                         <div className="space-y-2">
                             <span
                                 data-numeric
-                                className="block text-title-2 font-bold"
+                                className="text-title-2 block font-bold"
                             >
                                 $54.35
                             </span>
 
                             <span
                                 data-numeric
-                                className="block text-title-2 font-bold"
+                                className="text-title-2 block font-bold"
                             >
                                 $120.00
                             </span>
 
                             <span
                                 data-numeric
-                                className="block text-title-2 font-bold"
+                                className="text-title-2 block font-bold"
                             >
                                 $8.50
                             </span>
@@ -338,10 +323,7 @@ export default function Components() {
 
                         <div className="grid gap-6 md:grid-cols-2">
                             <Card>
-                                <SectionHead
-                                    title="Floor team"
-                                    count={4}
-                                />
+                                <SectionHead title="Floor team" count={4} />
 
                                 <div className="my-4">
                                     <Divider />
@@ -365,19 +347,12 @@ export default function Components() {
                             </Card>
 
                             <Card>
-                                <SectionHead
-                                    title="Menu filters"
-                                    count={3}
-                                />
+                                <SectionHead title="Menu filters" count={3} />
 
                                 <div className="mt-4 flex flex-wrap gap-2">
-                                    <ChipFilter active>
-                                        All
-                                    </ChipFilter>
+                                    <ChipFilter active>All</ChipFilter>
 
-                                    <ChipFilter>
-                                        Preparing
-                                    </ChipFilter>
+                                    <ChipFilter>Preparing</ChipFilter>
 
                                     <ChipFilter type="category">
                                         Ready
@@ -442,15 +417,13 @@ export default function Components() {
                                             {
                                                 title: 'In the kitchen',
                                                 time: '19:44',
-                                                detail:
-                                                    'Kofta on the grill',
+                                                detail: 'Kofta on the grill',
                                                 state: 'current',
                                             },
                                             {
                                                 title: 'Ready at the pass',
                                                 time: '~19:58',
-                                                detail:
-                                                    'Nadia collects it',
+                                                detail: 'Nadia collects it',
                                                 state: 'upcoming',
                                             },
                                             {
@@ -569,22 +542,14 @@ export default function Components() {
                             </Button>
 
                             <Tooltip content="More actions">
-                                <Button variant="ghost">
-                                    Tooltip
-                                </Button>
+                                <Button variant="ghost">Tooltip</Button>
                             </Tooltip>
                         </div>
 
                         <StickyDock>
-                            <Button
-                                variant="primary"
-                                size="lg"
-                                fullWidth
-                            >
+                            <Button variant="primary" size="lg" fullWidth>
                                 View order · 3 items
-                                <span className="ml-2 font-mono">
-                                    $42.00
-                                </span>
+                                <span className="ml-2 font-mono">$42.00</span>
                             </Button>
                         </StickyDock>
 
@@ -614,9 +579,7 @@ export default function Components() {
                         title="Add waiter"
                     >
                         <div className="space-y-4">
-                            <Label htmlFor="drawer-name">
-                                Waiter name
-                            </Label>
+                            <Label htmlFor="drawer-name">Waiter name</Label>
 
                             <Input
                                 id="drawer-name"
@@ -646,18 +609,14 @@ export default function Components() {
                             <div className="flex gap-3">
                                 <Button
                                     variant="outline"
-                                    onClick={() =>
-                                        setOverlayOpen(false)
-                                    }
+                                    onClick={() => setOverlayOpen(false)}
                                 >
                                     Cancel
                                 </Button>
 
                                 <Button
                                     variant="primary"
-                                    onClick={() =>
-                                        setOverlayOpen(false)
-                                    }
+                                    onClick={() => setOverlayOpen(false)}
                                 >
                                     Confirm
                                 </Button>

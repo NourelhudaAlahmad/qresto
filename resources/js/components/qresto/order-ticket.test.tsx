@@ -32,10 +32,7 @@ describe('OrderTicket', () => {
         'renders guest notes in saffron for %s variant',
         (variant) => {
             const { getByText } = render(
-                <OrderTicket
-                    {...ticketProps}
-                    variant={variant}
-                />,
+                <OrderTicket {...ticketProps} variant={variant} />,
             );
 
             expect(getByText('sumac onions')).toHaveClass(
@@ -49,9 +46,7 @@ describe('OrderTicket', () => {
     );
 
     it('renders the order information', () => {
-        const { getByText } = render(
-            <OrderTicket {...ticketProps} />,
-        );
+        const { getByText } = render(<OrderTicket {...ticketProps} />);
 
         expect(getByText('#A-1043')).toBeInTheDocument();
         expect(getByText('14 min')).toBeInTheDocument();

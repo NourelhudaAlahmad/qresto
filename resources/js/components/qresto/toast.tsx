@@ -29,11 +29,13 @@ export function showToast({
 
     if (type === 'success') {
         toast.success(title, options);
+
         return;
     }
 
     if (type === 'error') {
         toast.error(title, options);
+
         return;
     }
 

@@ -12,12 +12,12 @@ function Input({
             type={type}
             data-slot="qresto-input"
             className={cn(
-                'h-[44px] w-full min-w-0 rounded-md border border-border-default bg-surface-card px-3 py-2 text-body text-text-primary shadow-none',
+                'border-border-default bg-surface-card text-body text-text-primary h-[44px] w-full min-w-0 rounded-md border px-3 py-2 shadow-none',
                 'placeholder:text-text-tertiary',
-                'transition-[border-color,box-shadow,background-color] duration-fast ease-standard',
+                'duration-fast ease-standard transition-[border-color,box-shadow,background-color]',
                 'outline-none',
-              'focus-visible:border-[var(--border-brand)] focus-visible:ring-[3px] focus-visible:ring-[var(--clay-500)]/30',
-                'disabled:cursor-not-allowed disabled:bg-action-disabled-bg disabled:text-action-disabled-text',
+                'focus-visible:ring-[var(--clay-500)]/30 focus-visible:border-[var(--border-brand)] focus-visible:ring-[3px]',
+                'disabled:bg-action-disabled-bg disabled:text-action-disabled-text disabled:cursor-not-allowed',
                 'disabled:opacity-60',
                 'file:border-0 file:bg-transparent file:text-sm file:font-medium',
                 className,

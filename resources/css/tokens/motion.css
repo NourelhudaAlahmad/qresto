@@ -1,16 +1,26 @@
 /* Motion is quick and confident. Nothing bounces except the cart badge.
    Everything an order status touches cross-fades rather than slides. */
 :root {
-  --dur-instant: 90ms;  /* @kind other */
-  --dur-fast:    140ms; /* @kind other */
-  --dur-base:    220ms; /* @kind other */
-  --dur-slow:    360ms; /* @kind other */
-  --dur-sheet:   420ms; /* @kind other */
+    --dur-instant: 90ms; /* @kind other */
+    --dur-fast: 140ms; /* @kind other */
+    --dur-base: 220ms; /* @kind other */
+    --dur-slow: 360ms; /* @kind other */
+    --dur-sheet: 420ms; /* @kind other */
 
-  --ease-standard: cubic-bezier(0.2, 0, 0, 1);       /* @kind other  default in/out */
-  --ease-exit:     cubic-bezier(0.4, 0, 1, 1);       /* @kind other */
-  --ease-enter:    cubic-bezier(0, 0, 0.2, 1);       /* @kind other */
-  --ease-spring:   cubic-bezier(0.34, 1.4, 0.64, 1); /* @kind other  cart bump only */
+    --ease-standard: cubic-bezier(
+        0.2,
+        0,
+        0,
+        1
+    ); /* @kind other  default in/out */
+    --ease-exit: cubic-bezier(0.4, 0, 1, 1); /* @kind other */
+    --ease-enter: cubic-bezier(0, 0, 0.2, 1); /* @kind other */
+    --ease-spring: cubic-bezier(
+        0.34,
+        1.4,
+        0.64,
+        1
+    ); /* @kind other  cart bump only */
 
-  --press-scale: 0.975; /* @kind other */
+    --press-scale: 0.975; /* @kind other */
 }

@@ -6,11 +6,7 @@ import { Drawer } from './drawer';
 describe('Drawer', () => {
     it('renders the title and content when open', () => {
         const { getByText } = render(
-            <Drawer
-                open={true}
-                onOpenChange={vi.fn()}
-                title="Add waiter"
-            >
+            <Drawer open={true} onOpenChange={vi.fn()} title="Add waiter">
                 <p>Waiter form</p>
             </Drawer>,
         );
@@ -21,11 +17,7 @@ describe('Drawer', () => {
 
     it('uses the right-side drawer layout', () => {
         const { getByText } = render(
-            <Drawer
-                open={true}
-                onOpenChange={vi.fn()}
-                title="Add waiter"
-            >
+            <Drawer open={true} onOpenChange={vi.fn()} title="Add waiter">
                 <p>Waiter form</p>
             </Drawer>,
         );

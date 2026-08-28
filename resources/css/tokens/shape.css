@@ -1,20 +1,20 @@
 /* Mixed shape language: actions are pills, containers are 14px,
    overlays are 20px. Nothing is ever fully square except tables and dividers. */
 :root {
-  --radius-none: 0;
-  --radius-xs:   4px;   /* checkbox, swatch, tag */
-  --radius-sm:   8px;   /* small chip, image thumb */
-  --radius-md:   10px;  /* inputs, selects, textarea */
-  --radius-lg:   14px;  /* CARDS — the signature radius */
-  --radius-xl:   20px;  /* modals, sheets, hero media */
-  --radius-2xl:  28px;  /* bottom sheets, full-bleed panels */
-  --radius-pill: 999px; /* all buttons, badges, filter chips, avatars */
+    --radius-none: 0;
+    --radius-xs: 4px; /* checkbox, swatch, tag */
+    --radius-sm: 8px; /* small chip, image thumb */
+    --radius-md: 10px; /* inputs, selects, textarea */
+    --radius-lg: 14px; /* CARDS — the signature radius */
+    --radius-xl: 20px; /* modals, sheets, hero media */
+    --radius-2xl: 28px; /* bottom sheets, full-bleed panels */
+    --radius-pill: 999px; /* all buttons, badges, filter chips, avatars */
 
-  --border-hair: 1px;
-  --border-thick: 1.5px;
-  --border-focus: 2px;
+    --border-hair: 1px;
+    --border-thick: 1.5px;
+    --border-focus: 2px;
 
-  --stroke-subtle: 1px solid var(--ink-100);
-  --stroke-default: 1px solid var(--ink-200);
-  --stroke-strong: 1.5px solid var(--ink-800);
+    --stroke-subtle: 1px solid var(--ink-100);
+    --stroke-default: 1px solid var(--ink-200);
+    --stroke-strong: 1.5px solid var(--ink-800);
 }

@@ -19,9 +19,7 @@ describe('Skeleton', () => {
     });
 
     it('accepts custom width and height', () => {
-        const { container } = render(
-            <Skeleton width="60%" height="20px" />,
-        );
+        const { container } = render(<Skeleton width="60%" height="20px" />);
 
         const skeleton = container.firstElementChild;
 

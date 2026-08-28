@@ -49,7 +49,7 @@ function QuantityStepper({
         <div
             data-slot="qresto-quantity-stepper"
             className={cn(
-                'inline-flex items-center gap-1 rounded-pill',
+                'rounded-pill inline-flex items-center gap-1',
                 'bg-surface-card',
                 className,
             )}
@@ -65,9 +65,9 @@ function QuantityStepper({
             >
                 <span
                     className={cn(
-                        'flex items-center justify-center rounded-pill',
+                        'rounded-pill flex items-center justify-center',
                         visualSize,
-                        'transition-colors duration-fast ease-standard',
+                        'duration-fast ease-standard transition-colors',
                         'group-hover:bg-action-ghost-hover',
                     )}
                 >
@@ -78,7 +78,7 @@ function QuantityStepper({
             <span
                 data-numeric
                 aria-live="polite"
-                className="flex min-w-[2.25rem] items-center justify-center text-label font-medium text-text-primary"
+                className="text-label text-text-primary flex min-w-[2.25rem] items-center justify-center font-medium"
             >
                 {value}
             </span>
@@ -94,9 +94,9 @@ function QuantityStepper({
             >
                 <span
                     className={cn(
-                        'flex items-center justify-center rounded-pill',
+                        'rounded-pill flex items-center justify-center',
                         visualSize,
-                        'transition-colors duration-fast ease-standard',
+                        'duration-fast ease-standard transition-colors',
                         'group-hover:bg-action-ghost-hover',
                     )}
                 >

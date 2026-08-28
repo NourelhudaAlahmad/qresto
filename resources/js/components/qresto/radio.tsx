@@ -26,10 +26,10 @@ function Radio({
             <RadioGroupPrimitive.Item
                 data-slot="qresto-radio"
                 className={cn(
-                    'peer size-5 shrink-0 rounded-full border border-border-default bg-surface-card',
-                    'transition-[background-color,border-color,box-shadow,color] duration-fast ease-standard',
+                    'border-border-default bg-surface-card peer size-5 shrink-0 rounded-full border',
+                    'duration-fast ease-standard transition-[background-color,border-color,box-shadow,color]',
                     'outline-none',
-                    'focus-visible:border-border-brand focus-visible:ring-[3px] focus-visible:ring-[var(--clay-500)]/30',
+                    'focus-visible:border-border-brand focus-visible:ring-[var(--clay-500)]/30 focus-visible:ring-[3px]',
                     'data-[state=checked]:border-action-primary data-[state=checked]:text-action-primary',
                     'disabled:cursor-not-allowed disabled:opacity-60',
                     className,

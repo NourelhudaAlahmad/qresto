@@ -11,9 +11,7 @@ describe('StickyDock', () => {
             </StickyDock>,
         );
 
-        expect(
-            getByText('View order · 3 items'),
-        ).toBeInTheDocument();
+        expect(getByText('View order · 3 items')).toBeInTheDocument();
     });
 
     it('uses the sticky bottom dock layout', () => {

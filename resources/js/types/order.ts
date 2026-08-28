@@ -7,8 +7,4 @@ export type OrderStatus =
     | 'paid'
     | 'cancelled';
 
-export type TableState =
-    | 'free'
-    | 'seated'
-    | 'ordered'
-    | 'bill';
+export type TableState = 'free' | 'seated' | 'ordered' | 'bill';

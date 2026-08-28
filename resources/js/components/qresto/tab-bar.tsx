@@ -13,10 +13,7 @@ type TabBarProps = {
     className?: string;
 };
 
-export function TabBar({
-    items,
-    className = '',
-}: TabBarProps) {
+export function TabBar({ items, className = '' }: TabBarProps) {
     return (
         <nav
             className={`sticky bottom-0 z-[14] flex h-[var(--tabbar-h)] border-t border-[var(--border-subtle)] bg-[var(--surface-card)] pb-2 ${className}`}
@@ -37,16 +34,14 @@ export function TabBar({
                             {item.icon}
 
                             {item.badge !== undefined && (
-                                <span className="absolute -right-2.5 -top-1.5 grid min-w-[17px] h-[17px] place-items-center rounded-full bg-[var(--clay-500)] px-1 font-mono text-[10px] text-white">
+                                <span className="absolute -right-2.5 -top-1.5 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-[var(--clay-500)] px-1 font-mono text-[10px] text-white">
                                     {item.badge}
                                 </span>
                             )}
                         </span>
                     )}
 
-                    <span className="text-micro font-medium">
-                        {item.label}
-                    </span>
+                    <span className="text-micro font-medium">{item.label}</span>
                 </button>
             ))}
         </nav>

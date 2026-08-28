@@ -31,9 +31,7 @@ describe('ProgressTrail', () => {
     ];
 
     it('renders all trail items', () => {
-        const { getByText } = render(
-            <ProgressTrail items={items} />,
-        );
+        const { getByText } = render(<ProgressTrail items={items} />);
 
         expect(getByText('Order placed')).toBeInTheDocument();
         expect(getByText('In the kitchen')).toBeInTheDocument();
@@ -45,9 +43,7 @@ describe('ProgressTrail', () => {
     });
 
     it('applies the correct state colors', () => {
-        const { getByText } = render(
-            <ProgressTrail items={items} />,
-        );
+        const { getByText } = render(<ProgressTrail items={items} />);
 
         expect(getByText('Order placed')).toHaveClass(
             'text-[var(--text-primary)]',

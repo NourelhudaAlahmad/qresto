@@ -13,10 +13,10 @@ function Checkbox({
             <CheckboxPrimitive.Root
                 data-slot="qresto-checkbox"
                 className={cn(
-                    'peer size-5 shrink-0 rounded-xs border border-border-default bg-surface-card',
-                    'transition-[background-color,border-color,box-shadow,color] duration-fast ease-standard',
+                    'rounded-xs border-border-default bg-surface-card peer size-5 shrink-0 border',
+                    'duration-fast ease-standard transition-[background-color,border-color,box-shadow,color]',
                     'outline-none',
-                    'focus-visible:border-border-brand focus-visible:ring-[3px] focus-visible:ring-[var(--clay-500)]/30',
+                    'focus-visible:border-border-brand focus-visible:ring-[var(--clay-500)]/30 focus-visible:ring-[3px]',
                     'data-[state=checked]:border-action-primary data-[state=checked]:bg-action-primary data-[state=checked]:text-text-on-brand',
                     'disabled:cursor-not-allowed disabled:opacity-60',
                     className,

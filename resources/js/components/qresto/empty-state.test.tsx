@@ -18,10 +18,7 @@ describe('EmptyState', () => {
 
     it('renders the icon when provided', () => {
         const { getByText } = render(
-            <EmptyState
-                icon={<span>○</span>}
-                headline="Nothing here"
-            />,
+            <EmptyState icon={<span>○</span>} headline="Nothing here" />,
         );
 
         expect(getByText('○')).toBeInTheDocument();
