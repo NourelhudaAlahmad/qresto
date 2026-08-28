@@ -114,6 +114,8 @@ export default [
             'resources/js/components/ui/*',
             'resources/js/routes/**',
             'resources/js/wayfinder/**',
+                         'docs/design/vendor/**',
+'docs/design/support.js',
         ],
     },
     prettier,

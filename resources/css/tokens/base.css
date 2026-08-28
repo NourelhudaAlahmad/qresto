@@ -1,0 +1,120 @@
+/* Minimal element resets. Ships with the tokens so a consumer linking
+   styles.css gets QResto typography and link colours without extra work. */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+html {
+    -webkit-text-size-adjust: 100%;
+}
+body {
+    margin: 0;
+    background: var(--surface-page);
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+    font-size: var(--text-body);
+    line-height: var(--leading-normal);
+    font-weight: var(--weight-regular);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+h1,
+h2,
+h3,
+h4 {
+    font-family: var(--font-display);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-title);
+    line-height: var(--leading-snug);
+    margin: 0;
+    text-wrap: pretty;
+}
+h1 {
+    font-size: var(--text-display-3);
+    letter-spacing: var(--tracking-display);
+}
+h2 {
+    font-size: var(--text-title-1);
+}
+h3 {
+    font-size: var(--text-title-2);
+}
+p {
+    margin: 0;
+    text-wrap: pretty;
+}
+a {
+    color: var(--text-link);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    transition: color var(--dur-fast) var(--ease-standard);
+}
+a:hover {
+    color: var(--text-link-hover);
+}
+button,
+input,
+select,
+textarea {
+    font: inherit;
+    color: inherit;
+}
+:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-focus);
+    border-radius: var(--radius-xs);
+}
+[data-numeric],
+.qr-numeric {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+}
+::selection {
+    background: var(--clay-200);
+    color: var(--ink-900);
+}
+
+/* The two keyframes the components rely on. */
+@keyframes qr-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+@keyframes qr-bump {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    40% {
+        transform: scale(1.18);
+    }
+}
+@keyframes qr-rise {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+@keyframes qr-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.45;
+    }
+}
+@keyframes qr-shimmer {
+    from {
+        background-position: -200% 0;
+    }
+    to {
+        background-position: 200% 0;
+    }
+}

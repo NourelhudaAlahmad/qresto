@@ -1,0 +1,11 @@
+/* Webfonts — served from Google Fonts.
+   SUBSTITUTION NOTE: QResto shipped no font binaries. These three faces are the
+   chosen brand faces, loaded from the Google Fonts CDN. If licensed binaries
+   arrive later, drop them in assets/fonts/ and swap these @import lines for
+   local @font-face rules — the token names below never change. */
+
+:root {
+    --font-display: 'Familjen Grotesk', 'Helvetica Neue', Helvetica, sans-serif;
+    --font-ui: 'Outfit', 'Familjen Grotesk', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}

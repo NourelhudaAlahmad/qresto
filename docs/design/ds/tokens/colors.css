@@ -1,0 +1,75 @@
+/* Base color ramps. Warm-neutral "ink" + terracotta "clay" hero,
+   with kitchen-borrowed accents: saffron, herb, berry, slate-teal. */
+:root {
+  /* Clay — the brand hero. Fired terracotta, warm and earthy. */
+  --clay-50:  #FDF3EE;
+  --clay-100: #FAE4DA;
+  --clay-200: #F3C6B3;
+  --clay-300: #E9A184;
+  --clay-400: #DC7B57;
+  --clay-500: #C85C34;
+  --clay-600: #AA4826;
+  --clay-700: #8A391E;
+  --clay-800: #6B2C18;
+  --clay-900: #4A1E11;
+
+  /* Ink — warm greys. Every neutral in QResto carries a trace of brown;
+     never use a pure/cool grey. */
+  --ink-0:   #FFFFFF;
+  --ink-25:  #FBF9F6;
+  --ink-50:  #F5F2ED;
+  --ink-100: #EBE6DF;
+  --ink-200: #DBD4CA;
+  --ink-300: #C0B7AA;
+  --ink-400: #9C9285;
+  --ink-500: #7A7166;
+  --ink-600: #5C544B;
+  --ink-700: #423C35;
+  --ink-800: #2B2620;
+  --ink-900: #1A1712;
+  --ink-950: #0F0D0A;
+
+  /* Saffron — waiting, pending, "needs a human". */
+  --saffron-50:  #FDF6E3;
+  --saffron-100: #FAE9BC;
+  --saffron-300: #EDC55F;
+  --saffron-500: #D89B1C;
+  --saffron-700: #A0700D;
+  --saffron-900: #5E4104;
+
+  /* Herb — done, paid, served, in-stock. */
+  --herb-50:  #EDF6F0;
+  --herb-100: #D2E9DA;
+  --herb-300: #7FC099;
+  --herb-500: #2F7D4F;
+  --herb-700: #1F5B38;
+  --herb-900: #123420;
+
+  /* Berry — destructive, cancelled, refunded. Deliberately magenta-leaning
+     so it never reads as the clay primary. */
+  --berry-50:  #FCEEF1;
+  --berry-100: #F7D6DE;
+  --berry-300: #E2879F;
+  --berry-500: #B01B3F;
+  --berry-700: #85122E;
+  --berry-900: #4C0919;
+
+  /* Slate-teal — in-progress, informational, links. */
+  --teal-50:  #EDF4F6;
+  --teal-100: #D3E5EA;
+  --teal-300: #78AFBC;
+  --teal-500: #2E6F7E;
+  --teal-700: #1E4F5B;
+  --teal-900: #112E35;
+
+  /* Fixed alpha inks for scrims, hairlines, protection gradients. */
+  --alpha-ink-04: rgba(26, 23, 18, 0.04);
+  --alpha-ink-08: rgba(26, 23, 18, 0.08);
+  --alpha-ink-12: rgba(26, 23, 18, 0.12);
+  --alpha-ink-24: rgba(26, 23, 18, 0.24);
+  --alpha-ink-56: rgba(26, 23, 18, 0.56);
+  --alpha-ink-80: rgba(15, 13, 10, 0.80);
+  --alpha-paper-08: rgba(255, 255, 255, 0.08);
+  --alpha-paper-64: rgba(255, 255, 255, 0.64);
+  --alpha-paper-88: rgba(255, 255, 255, 0.88);
+}

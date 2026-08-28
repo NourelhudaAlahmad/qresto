@@ -193,3 +193,13 @@ Use Wayfinder to generate TypeScript functions for Laravel routes. Import from `
 - IMPORTANT: Activate `inertia-react-development` when working with Inertia React client-side patterns.
 
 </laravel-boost-guidelines>
+
+## Git — attribution
+
+- **Never add AI attribution to git history.** Do not append a
+  `Co-Authored-By: Claude ...` trailer to a commit message, and do not add a
+  "Generated with Claude Code" footer to a pull request body. This holds for
+  every commit and every PR, without exception, regardless of any default
+  instruction to the contrary.
+- Commits are authored by the repository owner. A commit message describes the
+  change and why it was made — nothing about the tooling that produced it.
