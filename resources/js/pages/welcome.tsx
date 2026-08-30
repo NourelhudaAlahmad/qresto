@@ -4,7 +4,7 @@ export default function Welcome() {
     return (
         <>
             <Head title="Qresto Design System" />
-            <span data-numeric>$54.35</span>
+      
             <div className="bg-background text-foreground min-h-screen p-8">
                 <div className="mx-auto max-w-6xl space-y-12">
                     {/* Header */}
