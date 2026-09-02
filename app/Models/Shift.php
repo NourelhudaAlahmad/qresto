@@ -10,8 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Shift extends Model
 {
-    use HasFactory;
     use BelongsToRestaurant;
+    use HasFactory;
 
     protected $fillable = [
         'restaurant_id',
@@ -43,4 +43,3 @@ class Shift extends Model
         );
     }
 }
-

@@ -76,4 +76,3 @@ test('allergen returns attached menu items', function () {
         ->and($allergen->menuItems->first()->is($item))->toBeTrue()
         ->and((bool) $allergen->menuItems->first()->pivot->may_contain)->toBeFalse();
 });
-

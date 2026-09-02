@@ -35,4 +35,3 @@ class MenuItemVariantFactory extends Factory
         ]);
     }
 }
-

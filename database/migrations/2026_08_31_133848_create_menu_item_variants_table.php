@@ -39,4 +39,3 @@ return new class extends Migration
         Schema::dropIfExists('menu_item_variants');
     }
 };
-

@@ -11,7 +11,7 @@ class MoneyCast implements CastsAttributes
     /**
      * Convert the stored integer into a Money value object.
      *
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed>  $attributes
      */
     public function get(
         Model $model,
@@ -32,7 +32,7 @@ class MoneyCast implements CastsAttributes
     /**
      * Convert a Money value object into minor units for storage.
      *
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed>  $attributes
      */
     public function set(
         Model $model,
@@ -64,4 +64,3 @@ class MoneyCast implements CastsAttributes
         );
     }
 }
-

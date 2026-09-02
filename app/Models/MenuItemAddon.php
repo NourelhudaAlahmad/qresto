@@ -33,4 +33,3 @@ class MenuItemAddon extends Model
         return $this->belongsTo(MenuItem::class);
     }
 }
-

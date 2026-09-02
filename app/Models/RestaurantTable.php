@@ -11,8 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RestaurantTable extends Model
 {
-    use HasFactory;
     use BelongsToRestaurant;
+    use HasFactory;
 
     protected $table = 'tables';
 
@@ -79,4 +79,3 @@ class RestaurantTable extends Model
         ]);
     }
 }
-

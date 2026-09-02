@@ -23,7 +23,7 @@ trait BelongsToRestaurant
 
             if ($restaurantId !== null) {
                 $builder->where(
-                    $builder->getModel()->getTable() . '.restaurant_id',
+                    $builder->getModel()->getTable().'.restaurant_id',
                     $restaurantId,
                 );
             }

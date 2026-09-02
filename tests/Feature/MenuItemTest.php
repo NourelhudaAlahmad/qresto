@@ -86,4 +86,3 @@ test('sold out items remain visible in the menu', function () {
     expect($items->contains($soldOut))->toBeTrue()
         ->and($soldOut->is_available)->toBeFalse();
 });
-

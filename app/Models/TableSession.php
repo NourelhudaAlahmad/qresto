@@ -10,8 +10,8 @@ use Illuminate\Support\Str;
 
 class TableSession extends Model
 {
-    use HasFactory;
     use BelongsToRestaurant;
+    use HasFactory;
 
     protected $fillable = [
         'restaurant_id',
@@ -33,8 +33,6 @@ class TableSession extends Model
             'last_seen_at' => 'datetime',
         ];
     }
-
-
 
     public function table(): BelongsTo
     {

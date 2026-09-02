@@ -28,11 +28,12 @@ class Restaurant extends Model
         'supported_locales',
         'timezone',
     ];
-public function menuCategories(): HasMany
-{
-    return $this->hasMany(MenuCategory::class)
-        ->orderBy('sort_order');
-}
+
+    public function menuCategories(): HasMany
+    {
+        return $this->hasMany(MenuCategory::class)
+            ->orderBy('sort_order');
+    }
 
     protected function casts(): array
     {

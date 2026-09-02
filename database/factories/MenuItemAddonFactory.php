@@ -40,4 +40,3 @@ class MenuItemAddonFactory extends Factory
         ]);
     }
 }
-

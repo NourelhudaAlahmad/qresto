@@ -33,4 +33,3 @@ class MenuItemVariant extends Model
         return $this->belongsTo(MenuItem::class);
     }
 }
-

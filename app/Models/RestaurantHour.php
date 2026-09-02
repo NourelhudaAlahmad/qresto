@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class RestaurantHour extends Model
 {
-    use HasFactory;
     use BelongsToRestaurant;
+    use HasFactory;
 
     protected $fillable = [
         'restaurant_id',
@@ -18,4 +18,3 @@ class RestaurantHour extends Model
         'closes_at',
     ];
 }
-

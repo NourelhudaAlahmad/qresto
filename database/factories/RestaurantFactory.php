@@ -40,4 +40,3 @@ class RestaurantFactory extends Factory
         ];
     }
 }
-

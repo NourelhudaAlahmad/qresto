@@ -67,5 +67,3 @@ test('menu item returns variants ordered by sort order', function () {
     expect($variants->first()->id)->toBe($first->id)
         ->and($variants->last()->id)->toBe($second->id);
 });
-
-

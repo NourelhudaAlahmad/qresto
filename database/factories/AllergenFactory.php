@@ -37,5 +37,3 @@ class AllergenFactory extends Factory
         ];
     }
 }
-
-

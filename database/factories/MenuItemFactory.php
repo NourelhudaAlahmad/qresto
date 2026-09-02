@@ -110,4 +110,3 @@ class MenuItemFactory extends Factory
         });
     }
 }
-

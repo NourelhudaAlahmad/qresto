@@ -89,4 +89,3 @@ test('unavailable addon is not available', function () {
 
     expect($addon->is_available)->toBeFalse();
 });
-

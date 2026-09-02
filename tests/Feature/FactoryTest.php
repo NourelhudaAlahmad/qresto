@@ -1,13 +1,13 @@
 <?php
 
 use App\CurrentRestaurant;
+use App\Enums\TableState;
 use App\Models\Restaurant;
 use App\Models\RestaurantHour;
 use App\Models\RestaurantTable;
 use App\Models\Shift;
 use App\Models\TableSession;
 use App\Models\User;
-use App\Enums\TableState;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
