@@ -23,13 +23,10 @@ export default function Menu({ restaurant, table, session }: MenuProps) {
 
                 <p>Table: {table.number}</p>
 
-                <p>
-                    Session: {session.active ? 'Active' : 'Inactive'}
-                </p>
+                <p>Session: {session.active ? 'Active' : 'Inactive'}</p>
 
                 <p>Welcome! Your table is ready.</p>
             </main>
         </>
     );
 }
-
