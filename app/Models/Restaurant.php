@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\CarbonInterface;
+use Database\Factories\RestaurantFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Restaurant extends Model
 {
+    /** @use HasFactory<RestaurantFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -29,6 +31,9 @@ class Restaurant extends Model
         'timezone',
     ];
 
+    /**
+     * @return HasMany<MenuCategory, $this>
+     */
     public function menuCategories(): HasMany
     {
         return $this->hasMany(MenuCategory::class)
@@ -43,16 +48,25 @@ class Restaurant extends Model
         ];
     }
 
+    /**
+     * @return HasMany<User, $this>
+     */
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
     }
 
+    /**
+     * @return HasMany<RestaurantHour, $this>
+     */
     public function hours(): HasMany
     {
         return $this->hasMany(RestaurantHour::class);
     }
 
+    /**
+     * @return HasMany<RestaurantTable, $this>
+     */
     public function tables(): HasMany
     {
         return $this->hasMany(RestaurantTable::class);
@@ -119,6 +133,9 @@ class Restaurant extends Model
         return $localDateTime->betweenIncluded($opensAt, $closesAt);
     }
 
+    /**
+     * @return Attribute<bool, never>
+     */
     protected function openNow(): Attribute
     {
         return Attribute::get(

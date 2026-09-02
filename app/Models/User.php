@@ -35,6 +35,9 @@ class User extends Authenticatable implements PasskeyUser
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
+    /**
+     * @return BelongsTo<Restaurant, $this>
+     */
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);

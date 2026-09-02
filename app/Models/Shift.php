@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\BelongsToRestaurant;
+use Database\Factories\ShiftFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Shift extends Model
 {
     use BelongsToRestaurant;
+
+    /** @use HasFactory<ShiftFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -28,11 +31,17 @@ class Shift extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return BelongsToMany<RestaurantTable, $this>
+     */
     public function tables(): BelongsToMany
     {
         return $this->belongsToMany(

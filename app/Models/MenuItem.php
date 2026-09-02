@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Concerns\BelongsToRestaurant;
+use Database\Factories\MenuItemFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class MenuItem extends Model
 {
     use BelongsToRestaurant;
+
+    /** @use HasFactory<MenuItemFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -51,29 +54,45 @@ class MenuItem extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<MenuCategory, $this>
+     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(MenuCategory::class, 'menu_category_id');
     }
 
+    /**
+     * @return HasMany<MenuItemVariant, $this>
+     */
     public function variants(): HasMany
     {
         return $this->hasMany(MenuItemVariant::class)
             ->orderBy('sort_order');
     }
 
+    /**
+     * @return HasMany<MenuItemAddon, $this>
+     */
     public function addons(): HasMany
     {
         return $this->hasMany(MenuItemAddon::class)
             ->orderBy('sort_order');
     }
 
+    /**
+     * @return BelongsToMany<Allergen, $this>
+     */
     public function allergens(): BelongsToMany
     {
         return $this->belongsToMany(Allergen::class)
             ->withPivot('may_contain');
     }
 
+    /**
+     * @param  Builder<$this>  $query
+     * @return Builder<$this>
+     */
     public function scopeAvailableNow(Builder $query): Builder
     {
         $now = now();

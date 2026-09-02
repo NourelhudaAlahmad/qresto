@@ -13,8 +13,11 @@ trait BelongsToRestaurant
     public static function bootBelongsToRestaurant(): void
     {
         static::creating(function (Model $model) {
-            if ($model->restaurant_id === null) {
-                $model->restaurant_id = app(CurrentRestaurant::class)->id();
+            if ($model->getAttribute('restaurant_id') === null) {
+                $model->setAttribute(
+                    'restaurant_id',
+                    app(CurrentRestaurant::class)->id(),
+                );
             }
         });
 
@@ -30,6 +33,9 @@ trait BelongsToRestaurant
         });
     }
 
+    /**
+     * @return BelongsTo<Restaurant, $this>
+     */
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);

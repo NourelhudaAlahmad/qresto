@@ -6,6 +6,9 @@ use App\Support\Money;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @implements CastsAttributes<Money, mixed>
+ */
 class MoneyCast implements CastsAttributes
 {
     /**

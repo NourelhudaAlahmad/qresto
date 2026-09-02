@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\BelongsToRestaurant;
+use Database\Factories\MenuCategoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class MenuCategory extends Model
 {
     use BelongsToRestaurant;
+
+    /** @use HasFactory<MenuCategoryFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -29,6 +32,9 @@ class MenuCategory extends Model
         ];
     }
 
+    /**
+     * @return HasMany<MenuItem, $this>
+     */
     public function items(): HasMany
     {
         return $this->hasMany(MenuItem::class)

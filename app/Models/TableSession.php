@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\BelongsToRestaurant;
+use Database\Factories\TableSessionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,8 @@ use Illuminate\Support\Str;
 class TableSession extends Model
 {
     use BelongsToRestaurant;
+
+    /** @use HasFactory<TableSessionFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -34,6 +37,9 @@ class TableSession extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<RestaurantTable, $this>
+     */
     public function table(): BelongsTo
     {
         return $this->belongsTo(
@@ -42,6 +48,9 @@ class TableSession extends Model
         );
     }
 
+    /**
+     * @return BelongsTo<Restaurant, $this>
+     */
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);

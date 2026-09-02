@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToRestaurant;
 use App\Enums\TableState;
+use Database\Factories\RestaurantTableFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class RestaurantTable extends Model
 {
     use BelongsToRestaurant;
+
+    /** @use HasFactory<RestaurantTableFactory> */
     use HasFactory;
 
     protected $table = 'tables';
@@ -37,11 +40,17 @@ class RestaurantTable extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Restaurant, $this>
+     */
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);
     }
 
+    /**
+     * @return HasMany<TableSession, $this>
+     */
     public function sessions(): HasMany
     {
         return $this->hasMany(TableSession::class, 'restaurant_table_id');

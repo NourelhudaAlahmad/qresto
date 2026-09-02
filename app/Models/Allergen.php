@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\BelongsToRestaurant;
+use Database\Factories\AllergenFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Allergen extends Model
 {
     use BelongsToRestaurant;
+
+    /** @use HasFactory<AllergenFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -25,6 +28,9 @@ class Allergen extends Model
         ];
     }
 
+    /**
+     * @return BelongsToMany<MenuItem, $this>
+     */
     public function menuItems(): BelongsToMany
     {
         return $this->belongsToMany(MenuItem::class)
