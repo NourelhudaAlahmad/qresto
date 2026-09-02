@@ -1,4 +1,3 @@
-php
 <?php
 
 use App\Http\Controllers\QrController;
