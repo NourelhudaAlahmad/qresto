@@ -36,12 +36,17 @@ return new class extends Migration
                 ->constrained('shifts')
                 ->cascadeOnDelete();
 
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
             $table->foreignId('table_id')
                 ->constrained('tables')
                 ->cascadeOnDelete();
 
             $table->primary([
                 'shift_id',
+                'user_id',
                 'table_id',
             ]);
         });
@@ -53,4 +58,3 @@ return new class extends Migration
         Schema::dropIfExists('shifts');
     }
 };
-
