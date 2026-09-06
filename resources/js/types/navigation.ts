@@ -7,8 +7,10 @@ export type BreadcrumbItem = {
 };
 
 export type NavItem = {
+    id?: string;
     title: string;
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
+    badge?: number | string | null;
     isActive?: boolean;
 };
