@@ -258,23 +258,21 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 }
-
 @utility qr-numeric {
     font-family: var(--font-mono);
-
     font-variant-numeric: tabular-nums;
-
     letter-spacing: -0.01em;
+    direction: ltr;
+    unicode-bidi: isolate;
 }
 
 [data-numeric] {
     font-family: var(--font-mono);
-
     font-variant-numeric: tabular-nums;
-
     letter-spacing: -0.01em;
+    direction: ltr;
+    unicode-bidi: isolate;
 }
-
 @layer base {
     *,
     *::before,

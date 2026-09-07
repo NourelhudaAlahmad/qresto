@@ -24,7 +24,7 @@ describe('Drawer', () => {
 
         const content = getByText('Add waiter').closest('[role="dialog"]');
 
-        expect(content).toHaveClass('right-0');
+        expect(content).toHaveClass('end-0');
         expect(content).toHaveClass('top-0');
         expect(content).toHaveClass('h-full');
     });

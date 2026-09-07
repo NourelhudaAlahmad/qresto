@@ -23,7 +23,9 @@ export function DataTable<T extends Record<string, ReactNode>>({
         <div
             className={`overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-card)] ${className}`}
         >
+            {' '}
             <div className="overflow-x-auto">
+                {' '}
                 <div className="min-w-[640px]">
                     <div
                         className="text-label grid gap-3 border-b border-[var(--border-subtle)] bg-[var(--surface-sunken)] px-5 py-2 font-semibold text-[var(--text-secondary)]"
@@ -37,12 +39,12 @@ export function DataTable<T extends Record<string, ReactNode>>({
                             <span
                                 key={String(column.key)}
                                 className={
-                                    column.numeric ? 'text-right' : 'text-left'
+                                    column.numeric ? 'text-end' : 'text-start'
                                 }
                             >
-                                {column.label}
+                                {column.label}{' '}
                             </span>
-                        ))}
+                        ))}{' '}
                     </div>
 
                     {rows.map((row, rowIndex) => (
@@ -60,8 +62,8 @@ export function DataTable<T extends Record<string, ReactNode>>({
                                     key={String(column.key)}
                                     className={
                                         column.numeric
-                                            ? 'text-right font-mono'
-                                            : 'text-left'
+                                            ? 'text-end font-mono'
+                                            : 'text-start'
                                     }
                                 >
                                     {row[column.key]}

@@ -549,7 +549,7 @@ export default function Components() {
                         <StickyDock>
                             <Button variant="primary" size="lg" fullWidth>
                                 View order · 3 items
-                                <span className="ml-2 font-mono">$42.00</span>
+                                <span className="qr-numeric ms-2">$42.00</span>
                             </Button>
                         </StickyDock>
 

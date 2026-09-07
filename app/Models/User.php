@@ -26,6 +26,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
  * @property int|null $restaurant_id
+ * @property string|null $locale
  * @property bool $is_active
  * @property string|null $initials
  * @property string|null $job_title
@@ -37,6 +38,7 @@ use Spatie\Permission\Traits\HasRoles;
     'email',
     'password',
     'restaurant_id',
+    'locale',
     'is_active',
     'initials',
     'job_title',

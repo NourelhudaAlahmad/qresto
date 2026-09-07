@@ -6,6 +6,7 @@ use App\Casts\MoneyCast;
 use App\Concerns\BelongsToRestaurant;
 use Database\Factories\MenuItemFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -52,6 +53,42 @@ class MenuItem extends Model
             'dietary_tags' => 'array',
             'chef_flag' => 'boolean',
         ];
+    }
+
+    /**
+     * @return Attribute<string, never>
+     */
+    protected function translatedName(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                $translations = $this->translations ?? [];
+                $locale = app()->getLocale();
+
+                return $translations[$locale]
+                    ?? $translations['en']
+                    ?? $this->getRawOriginal('name')
+                    ?? '';
+            },
+        );
+    }
+
+    /**
+     * @return Attribute<string, never>
+     */
+    protected function translatedDescription(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                $translations = $this->translations ?? [];
+                $locale = app()->getLocale();
+
+                return $translations[$locale]
+                    ?? $translations['en']
+                    ?? $this->getRawOriginal('description')
+                    ?? '';
+            },
+        );
     }
 
     /**

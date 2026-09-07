@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\QrController;
 use Illuminate\Support\Facades\Route;
 
@@ -9,6 +10,9 @@ if (app()->environment('local')) {
     Route::inertia('dev/components', 'dev/components')
         ->name('dev.components');
 }
+
+Route::post('/locale', [LocaleController::class, 'update'])
+    ->name('locale.update');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');

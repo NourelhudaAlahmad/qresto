@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToRestaurant;
 use Database\Factories\MenuCategoryFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,6 +31,24 @@ class MenuCategory extends Model
             'sort_order' => 'integer',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * @return Attribute<string, never>
+     */
+    protected function translatedName(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                $translations = $this->translations ?? [];
+                $locale = app()->getLocale();
+
+                return $translations[$locale]
+                    ?? $translations['en']
+                    ?? $this->getRawOriginal('name')
+                    ?? '';
+            },
+        );
     }
 
     /**
