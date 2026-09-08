@@ -38,12 +38,12 @@ it('seeds the design order totals', function () {
         AlBustanSeeder::class,
     ]);
 
-    expect((float) Order::where('code', '#A-1043')->value('total'))
-        ->toBe(54.35)
-        ->and((float) Order::where('code', '#A-1041')->value('total'))
-        ->toBe(92.20)
-        ->and((float) Order::where('code', '#A-1040')->value('total'))
-        ->toBe(44.00);
+    expect(Order::where('code', '#A-1043')->value('total')->amount())
+        ->toBe(5435)
+        ->and(Order::where('code', '#A-1041')->value('total')->amount())
+        ->toBe(9220)
+        ->and(Order::where('code', '#A-1040')->value('total')->amount())
+        ->toBe(4400);
 });
 
 it('seeds the design table states', function () {

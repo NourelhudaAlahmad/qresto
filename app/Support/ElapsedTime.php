@@ -2,25 +2,29 @@
 
 namespace App\Support;
 
-use Carbon\CarbonInterface;
+use Carbon\Carbon;
 
 final class ElapsedTime
 {
-    /**
-     * @return 'normal'|'warn'|'late'
-     */
-    public static function level(CarbonInterface $since): string
+    public const NORMAL = 'normal';
+    public const WARN = 'warn';
+    public const LATE = 'late';
+
+    public static function level(Carbon $since): string
     {
-        $minutes = $since->diffInMinutes(now());
+        $elapsedMinutes = $since->diffInMinutes(now());
 
-        if ($minutes >= (int) config('qresto.sla.late_minutes')) {
-            return 'late';
+        $warnMinutes = (int) config('qresto.sla.warn_minutes', 14);
+        $lateMinutes = (int) config('qresto.sla.late_minutes', 25);
+
+        if ($elapsedMinutes >= $lateMinutes) {
+            return self::LATE;
         }
 
-        if ($minutes >= (int) config('qresto.sla.warn_minutes')) {
-            return 'warn';
+        if ($elapsedMinutes >= $warnMinutes) {
+            return self::WARN;
         }
 
-        return 'normal';
+        return self::NORMAL;
     }
 }

@@ -7,6 +7,7 @@ use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\Restaurant;
 use App\Models\User;
+use App\Support\Money;
 use App\Support\OrderTotals;
 use Illuminate\Database\Seeder;
 
@@ -36,9 +37,9 @@ class AlBustanOrdersSeeder extends Seeder
                 'waiter' => 'Nadia Rahman',
                 'status' => OrderStatus::PENDING,
                 'minutes_ago' => 2,
-                'total' => 31.00,
-                'tip' => 3.44,
-                'discount' => 0,
+                'total' => '31.00',
+                'tip' => '3.44',
+                'discount' => '0.00',
                 'paid' => false,
                 'items' => [
                     [
@@ -60,9 +61,9 @@ class AlBustanOrdersSeeder extends Seeder
                 'waiter' => 'Nadia Rahman',
                 'status' => OrderStatus::PREPARING,
                 'minutes_ago' => 14,
-                'total' => 54.35,
-                'tip' => 0,
-                'discount' => 11.46,
+                'total' => '54.35',
+                'tip' => '0.00',
+                'discount' => '11.46',
                 'paid' => true,
                 'items' => [
                     [
@@ -89,9 +90,9 @@ class AlBustanOrdersSeeder extends Seeder
                 'waiter' => 'Omar Faruk',
                 'status' => OrderStatus::READY,
                 'minutes_ago' => 9,
-                'total' => 18.50,
-                'tip' => 1.06,
-                'discount' => 0,
+                'total' => '18.50',
+                'tip' => '1.06',
+                'discount' => '0.00',
                 'paid' => true,
                 'items' => [
                     [
@@ -112,9 +113,9 @@ class AlBustanOrdersSeeder extends Seeder
                 'waiter' => 'Lin Wu',
                 'status' => OrderStatus::SERVED,
                 'minutes_ago' => 26,
-                'total' => 92.20,
-                'tip' => 10.07,
-                'discount' => 0,
+                'total' => '92.20',
+                'tip' => '10.07',
+                'discount' => '0.00',
                 'paid' => false,
                 'items' => [
                     [
@@ -136,9 +137,9 @@ class AlBustanOrdersSeeder extends Seeder
                 'waiter' => 'Omar Faruk',
                 'status' => OrderStatus::PAID,
                 'minutes_ago' => 41,
-                'total' => 44.00,
-                'tip' => 12.50,
-                'discount' => 0,
+                'total' => '44.00',
+                'tip' => '12.50',
+                'discount' => '0.00',
                 'paid' => true,
                 'items' => [
                     [
@@ -152,6 +153,8 @@ class AlBustanOrdersSeeder extends Seeder
                 ],
             ],
         ];
+
+        $servicePct = (string) $restaurant->service_charge_pct;
 
         foreach ($orders as $data) {
             $table = $data['table'] !== null
@@ -178,22 +181,28 @@ class AlBustanOrdersSeeder extends Seeder
                 ];
             }
 
+            $tipAmount = Money::fromDecimal($data['tip']);
+            $discountAmount = Money::fromDecimal($data['discount']);
+
             $totals = OrderTotals::calculate(
                 collect($lineData)
                     ->map(fn (array $line) => [
-                        'unit_price' => $line['menu_item']->price->amount() / 100,
+                        'unit_price' => $line['menu_item']->price,
                         'qty' => $line['qty'],
                     ])
                     ->all(),
-                (float) $restaurant->service_charge_pct,
-                $data['tip'],
-                $data['discount'],
+                $servicePct,
+                $tipAmount,
+                $discountAmount,
             );
 
-            if (round($totals->total, 2) !== round($data['total'], 2)) {
+            $expectedTotal = Money::fromDecimal($data['total']);
+
+            if ($totals->total->amount() !== $expectedTotal->amount()) {
                 throw new \RuntimeException(
                     "Order {$data['code']} total mismatch. ".
-                    "Expected {$data['total']}, calculated {$totals->total}."
+                    "Expected {$expectedTotal->formatted()}, ".
+                    "calculated {$totals->total->formatted()}."
                 );
             }
 
@@ -209,34 +218,33 @@ class AlBustanOrdersSeeder extends Seeder
                     'assigned_user_id' => $waiter?->id,
                     'status' => OrderStatus::PLACED,
                     'placed_at' => now()->subMinutes($data['minutes_ago']),
+                    'currency' => 'TRY',
                     'subtotal' => $totals->subtotal,
-                    'service_pct' => $restaurant->service_charge_pct,
+                    'service_pct' => $servicePct,
                     'service_amount' => $totals->serviceAmount,
-                    'tip_amount' => $data['tip'],
-                    'discount_amount' => $data['discount'],
+                    'tip_amount' => $tipAmount,
+                    'discount_amount' => $discountAmount,
                     'total' => $totals->total,
                     'is_paid' => false,
                     'paid_at' => null,
                 ],
             );
+
             $order->lines()->delete();
             $order->payments()->delete();
             $order->events()->delete();
+
             foreach ($lineData as $line) {
                 $menuItem = $line['menu_item'];
-
-                $unitPrice = $menuItem->price->amount() / 100;
-                $lineTotal = round(
-                    $unitPrice * $line['qty'],
-                    2,
-                );
+                $unitPrice = $menuItem->price;
+                $lineTotal = $unitPrice->multiply((int) $line['qty']);
 
                 $order->lines()->create([
                     'menu_item_id' => $menuItem->id,
                     'name_snapshot' => $menuItem->name,
-                    'unit_price' => $unitPrice,
+                    'unit_price' => $unitPrice->formatted(),
                     'qty' => $line['qty'],
-                    'line_total' => $lineTotal,
+                    'line_total' => $lineTotal->formatted(),
                     'note' => $line['note'],
                     'station' => $this->stationFor($menuItem->name),
                 ]);
@@ -257,16 +265,19 @@ class AlBustanOrdersSeeder extends Seeder
                 $order->payments()->create([
                     'method' => 'card',
                     'status' => 'paid',
-                    'amount' => $data['total'],
-                    'tip_amount' => $data['tip'],
+                    'amount' => $expectedTotal->formatted(),
+                    'tip_amount' => $tipAmount->formatted(),
                     'gateway' => 'demo',
-                    'gateway_intent_id' => 'demo_'.strtolower(str_replace('#', '', $data['code'])),
+                    'gateway_intent_id' => 'demo_'.
+                        strtolower(
+                            str_replace('#', '', $data['code'])
+                        ),
                     'gateway_status' => 'succeeded',
                     'requires_3ds' => false,
                     'failure_reason' => null,
                     'taken_by' => $waiter?->id,
                     'paid_at' => now()->subMinutes($data['minutes_ago']),
-                    'refunded_amount' => 0,
+                    'refunded_amount' => '0.00',
                     'refunded_at' => null,
                 ]);
             }

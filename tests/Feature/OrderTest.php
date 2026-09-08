@@ -29,23 +29,39 @@ class OrderTest extends TestCase
 
         $order->refresh();
 
-        $this->assertSame(OrderStatus::PENDING, $order->status);
+        $this->assertSame(
+            OrderStatus::PENDING,
+            $order->status,
+        );
 
         $this->assertDatabaseCount('order_events', 1);
 
         $event = OrderEvent::first();
 
-        $this->assertSame($order->id, $event->order_id);
+        $this->assertSame(
+            $order->id,
+            $event->order_id,
+        );
+
         $this->assertSame(
             OrderStatus::PLACED->value,
-            $event->from_status
+            $event->from_status,
         );
+
         $this->assertSame(
             OrderStatus::PENDING->value,
-            $event->to_status
+            $event->to_status,
         );
-        $this->assertSame($user->id, $event->actor_id);
-        $this->assertSame('staff', $event->actor_kind);
+
+        $this->assertSame(
+            $user->id,
+            $event->actor_id,
+        );
+
+        $this->assertSame(
+            'staff',
+            $event->actor_kind,
+        );
     }
 
     public function test_system_transition_creates_event_with_system_actor(): void
@@ -56,7 +72,11 @@ class OrderTest extends TestCase
 
         $event = OrderEvent::first();
 
-        $this->assertSame('system', $event->actor_kind);
+        $this->assertSame(
+            'system',
+            $event->actor_kind,
+        );
+
         $this->assertNull($event->actor_id);
     }
 
@@ -66,12 +86,16 @@ class OrderTest extends TestCase
 
         $order->transitionTo(
             OrderStatus::PENDING,
-            'guest'
+            'guest',
         );
 
         $event = OrderEvent::first();
 
-        $this->assertSame('guest', $event->actor_kind);
+        $this->assertSame(
+            'guest',
+            $event->actor_kind,
+        );
+
         $this->assertNull($event->actor_id);
     }
 
@@ -120,7 +144,7 @@ class OrderTest extends TestCase
 
         $this->assertSame(
             OrderStatus::PAID,
-            $order->status
+            $order->status,
         );
 
         $this->assertDatabaseCount('order_events', 5);
@@ -129,13 +153,16 @@ class OrderTest extends TestCase
             ->pluck('to_status')
             ->all();
 
-        $this->assertSame([
-            'pending',
-            'preparing',
-            'ready',
-            'served',
-            'paid',
-        ], $statuses);
+        $this->assertSame(
+            [
+                'pending',
+                'preparing',
+                'ready',
+                'served',
+                'paid',
+            ],
+            $statuses,
+        );
     }
 
     public function test_deleting_menu_item_keeps_historical_order_line_snapshot(): void
@@ -153,9 +180,9 @@ class OrderTest extends TestCase
             ->forMenuItem($menuItem)
             ->create([
                 'name_snapshot' => 'Kofta',
-                'unit_price' => 19.50,
+                'unit_price' => '19.50',
                 'qty' => 2,
-                'line_total' => 39.00,
+                'line_total' => '39.00',
             ]);
 
         $menuItemId = $menuItem->id;
@@ -164,19 +191,28 @@ class OrderTest extends TestCase
 
         $line->refresh();
 
-        $this->assertNull($line->menu_item_id);
+        $this->assertNull(
+            $line->menu_item_id,
+        );
+
         $this->assertSame(
             'Kofta',
-            $line->name_snapshot
+            $line->name_snapshot,
         );
+
         $this->assertSame(
-            '19.50',
-            $line->unit_price
+            1950,
+            $line->unit_price->amount(),
         );
-        $this->assertSame(2, $line->qty);
+
         $this->assertSame(
-            '39.00',
-            $line->line_total
+            2,
+            $line->qty,
+        );
+
+        $this->assertSame(
+            3900,
+            $line->line_total->amount(),
         );
 
         $this->assertDatabaseMissing('menu_items', [
@@ -193,9 +229,7 @@ class OrderTest extends TestCase
             'code' => '#A-1043',
         ]);
 
-        $this->expectException(
-            QueryException::class
-        );
+        $this->expectException(QueryException::class);
 
         Order::factory()->create([
             'restaurant_id' => $restaurant->id,
@@ -220,17 +254,17 @@ class OrderTest extends TestCase
 
         $this->assertSame(
             '#A-1043',
-            $orderA->code
+            $orderA->code,
         );
 
         $this->assertSame(
             '#A-1043',
-            $orderB->code
+            $orderB->code,
         );
 
         $this->assertNotSame(
             $orderA->restaurant_id,
-            $orderB->restaurant_id
+            $orderB->restaurant_id,
         );
     }
 
@@ -246,7 +280,10 @@ class OrderTest extends TestCase
 
         $activeOrders = Order::active()->get();
 
-        $this->assertCount(4, $activeOrders);
+        $this->assertCount(
+            4,
+            $activeOrders,
+        );
 
         $this->assertTrue(
             $activeOrders->every(
@@ -256,22 +293,27 @@ class OrderTest extends TestCase
                         OrderStatus::PAID,
                         OrderStatus::CANCELLED,
                     ],
-                    true
-                )
-            )
+                    true,
+                ),
+            ),
         );
     }
 
     public function test_unpaid_scope_returns_only_unpaid_orders(): void
     {
         Order::factory()->unpaid()->create();
-
         Order::factory()->paid()->create();
 
         $unpaidOrders = Order::unpaid()->get();
 
-        $this->assertCount(1, $unpaidOrders);
-        $this->assertFalse($unpaidOrders->first()->is_paid);
+        $this->assertCount(
+            1,
+            $unpaidOrders,
+        );
+
+        $this->assertFalse(
+            $unpaidOrders->first()->is_paid,
+        );
     }
 
     public function test_for_waiter_scope_returns_orders_assigned_to_user(): void
@@ -303,10 +345,14 @@ class OrderTest extends TestCase
 
         $orders = Order::forWaiter($waiter)->get();
 
-        $this->assertCount(1, $orders);
+        $this->assertCount(
+            1,
+            $orders,
+        );
+
         $this->assertSame(
             $waiter->id,
-            $orders->first()->assigned_user_id
+            $orders->first()->assigned_user_id,
         );
     }
 
@@ -316,6 +362,9 @@ class OrderTest extends TestCase
             'placed_at' => now()->subMinutes(15),
         ]);
 
-        $this->assertSame(15, $order->elapsed_minutes);
+        $this->assertSame(
+            15,
+            $order->elapsed_minutes,
+        );
     }
 }

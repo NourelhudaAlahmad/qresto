@@ -2,25 +2,33 @@
 
 namespace App\Enums;
 
-enum PaymentMethod: string
+enum PaymentStatus: string
 {
-    case CARD = 'card';
-    case WALLET = 'wallet';
-    case CASH = 'cash';
-    case POS = 'pos';
+    case PENDING = 'pending';
+    case REQUIRES_ACTION = 'requires_action';
+    case PAID = 'paid';
+    case FAILED = 'failed';
+    case REFUNDED = 'refunded';
 
     public function label(): string
     {
         return match ($this) {
-            self::CARD => 'Card',
-            self::WALLET => 'Wallet',
-            self::CASH => 'Cash',
-            self::POS => 'POS',
+            self::PENDING => 'Pending',
+            self::REQUIRES_ACTION => 'Requires action',
+            self::PAID => 'Paid',
+            self::FAILED => 'Failed',
+            self::REFUNDED => 'Refunded',
         };
     }
 
     public function color(): string
     {
-        return 'ink';
+        return match ($this) {
+            self::PENDING => 'saffron',
+            self::REQUIRES_ACTION => 'saffron',
+            self::PAID => 'success',
+            self::FAILED => 'berry',
+            self::REFUNDED => 'info',
+        };
     }
 }

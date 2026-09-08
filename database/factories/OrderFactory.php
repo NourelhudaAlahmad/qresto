@@ -8,6 +8,7 @@ use App\Models\Restaurant;
 use App\Models\RestaurantTable;
 use App\Models\TableSession;
 use App\Models\User;
+use App\Support\OrderCodeGenerator;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -23,15 +24,12 @@ class OrderFactory extends Factory
             'restaurant_id' => Restaurant::factory(),
             'table_id' => null,
             'table_session_id' => null,
-            'code' => '#'.fake()->randomElement([
-                'A',
-                'B',
-                'C',
-            ]).'-'.fake()->unique()->numberBetween(1000, 9999),
+            'code' => null,
             'guest_name' => fake()->optional()->name(),
             'assigned_user_id' => null,
             'status' => OrderStatus::PLACED,
             'placed_at' => now(),
+            'currency' => 'TRY',
             'subtotal' => 0,
             'service_pct' => 0,
             'service_amount' => 0,
@@ -45,6 +43,16 @@ class OrderFactory extends Factory
             'voided_by' => null,
             'voided_at' => null,
         ];
+    }
+
+    public function configure(): static
+    {
+        return $this->afterMaking(function (Order $order): void {
+            if ($order->code === null) {
+                $order->code = app(OrderCodeGenerator::class)
+                    ->generate($order->restaurant_id);
+            }
+        });
     }
 
     public function placed(): static

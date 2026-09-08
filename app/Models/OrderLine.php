@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Database\Factories\OrderLineFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -27,9 +28,9 @@ class OrderLine extends Model
     protected function casts(): array
     {
         return [
-            'unit_price' => 'decimal:2',
+            'unit_price' => MoneyCast::class,
             'qty' => 'integer',
-            'line_total' => 'decimal:2',
+            'line_total' => MoneyCast::class,
         ];
     }
 

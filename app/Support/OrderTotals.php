@@ -2,45 +2,48 @@
 
 namespace App\Support;
 
+use InvalidArgumentException;
+
 final class OrderTotals
 {
     public function __construct(
-        public readonly float $subtotal,
-        public readonly float $serviceAmount,
-        public readonly float $total,
+        public readonly Money $subtotal,
+        public readonly Money $serviceAmount,
+        public readonly Money $total,
     ) {}
 
     /**
-     * @param  array<int, array{unit_price: float|int|string, qty: int}>  $lines
+     * @param array<int, array{unit_price: Money, qty: int}> $lines
      */
     public static function calculate(
         array $lines,
-        float $servicePct = 0,
-        float $tipAmount = 0,
-        float $discountAmount = 0,
+        string $servicePct = '0',
+        ?Money $tipAmount = null,
+        ?Money $discountAmount = null,
     ): self {
-        $subtotal = 0.0;
+        $tipAmount ??= Money::fromMinor(0);
+        $discountAmount ??= Money::fromMinor(0);
+
+        $subtotal = Money::fromMinor(0);
 
         foreach ($lines as $line) {
-            $subtotal += (float) $line['unit_price'] * (int) $line['qty'];
+            if (! $line['unit_price'] instanceof Money) {
+                throw new InvalidArgumentException(
+                    'Line unit_price must be an instance of Money.'
+                );
+            }
+
+            $subtotal = $subtotal->add(
+                $line['unit_price']->multiply((int) $line['qty']),
+            );
         }
 
-        $subtotal = round($subtotal, 2);
+        $serviceAmount = $subtotal->percentage($servicePct);
 
-        $serviceAmount = round(
-            $subtotal * $servicePct / 100,
-            2,
-            PHP_ROUND_HALF_UP,
-        );
-
-        $total = round(
-            $subtotal
-                + $serviceAmount
-                + $tipAmount
-                - $discountAmount,
-            2,
-            PHP_ROUND_HALF_UP,
-        );
+        $total = $subtotal
+            ->add($serviceAmount)
+            ->add($tipAmount)
+            ->subtract($discountAmount);
 
         return new self(
             subtotal: $subtotal,

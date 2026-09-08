@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderLine;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,7 +18,12 @@ class OrderLineFactory extends Factory
     public function definition(): array
     {
         $qty = fake()->numberBetween(1, 4);
-        $unitPrice = fake()->randomFloat(2, 5, 50);
+
+        $unitPrice = Money::fromMinor(
+            fake()->numberBetween(500, 5000),
+        );
+
+        $lineTotal = $unitPrice->multiply($qty);
 
         return [
             'order_id' => Order::factory(),
@@ -25,7 +31,7 @@ class OrderLineFactory extends Factory
             'name_snapshot' => fake()->words(2, true),
             'unit_price' => $unitPrice,
             'qty' => $qty,
-            'line_total' => round($unitPrice * $qty, 2),
+            'line_total' => $lineTotal,
             'note' => fake()->optional()->sentence(),
             'station' => fake()->optional()->randomElement([
                 'kitchen',
@@ -44,10 +50,12 @@ class OrderLineFactory extends Factory
 
     public function forMenuItem(MenuItem $menuItem): static
     {
-        $unitPrice = $menuItem->price->amount() / 100;
+        return $this->state(function (array $attributes) use ($menuItem) {
+            $qty = (int) ($attributes['qty'] ?? 1);
 
-        return $this->state(function (array $attributes) use ($menuItem, $unitPrice) {
-            $qty = $attributes['qty'] ?? 1;
+            $unitPrice = $menuItem->price instanceof Money
+                ? $menuItem->price
+                : Money::fromDecimal((string) $menuItem->price);
 
             return [
                 'order_id' => $attributes['order_id'] ?? Order::factory(),
@@ -55,7 +63,7 @@ class OrderLineFactory extends Factory
                 'name_snapshot' => $menuItem->name,
                 'unit_price' => $unitPrice,
                 'qty' => $qty,
-                'line_total' => round($unitPrice * $qty, 2),
+                'line_total' => $unitPrice->multiply($qty),
             ];
         });
     }
@@ -63,11 +71,17 @@ class OrderLineFactory extends Factory
     public function quantity(int $qty): static
     {
         return $this->state(function (array $attributes) use ($qty) {
-            $unitPrice = (float) $attributes['unit_price'];
+            $unitPrice = $attributes['unit_price'] ?? Money::fromMinor(0);
+
+            if (! $unitPrice instanceof Money) {
+                $unitPrice = is_int($unitPrice)
+                    ? Money::fromMinor($unitPrice)
+                    : Money::fromDecimal((string) $unitPrice);
+            }
 
             return [
                 'qty' => $qty,
-                'line_total' => round($unitPrice * $qty, 2),
+                'line_total' => $unitPrice->multiply($qty),
             ];
         });
     }

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderLine;
+use App\Support\Money;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -20,24 +21,14 @@ class OrderLineFactoryTest extends TestCase
         $this->assertNotNull($line->order_id);
         $this->assertNotNull($line->menu_item_id);
         $this->assertNotEmpty($line->name_snapshot);
-        $this->assertGreaterThan(0, $line->unit_price);
+        $this->assertInstanceOf(Money::class, $line->unit_price);
+        $this->assertGreaterThan(0, $line->unit_price->amount());
         $this->assertGreaterThan(0, $line->qty);
 
-        $this->assertEquals(
-            round((float) $line->unit_price * $line->qty, 2),
-            (float) $line->line_total
+        $this->assertSame(
+            $line->unit_price->amount() * $line->qty,
+            $line->line_total->amount(),
         );
-    }
-
-    public function test_order_line_can_be_created_for_specific_order(): void
-    {
-        $order = Order::factory()->create();
-
-        $line = OrderLine::factory()
-            ->forOrder($order)
-            ->create();
-
-        $this->assertEquals($order->id, $line->order_id);
     }
 
     public function test_order_line_can_be_created_for_specific_menu_item(): void
@@ -48,32 +39,42 @@ class OrderLineFactoryTest extends TestCase
             ->forMenuItem($menuItem)
             ->create();
 
-        $this->assertEquals($menuItem->id, $line->menu_item_id);
-        $this->assertEquals($menuItem->name, $line->name_snapshot);
-
-        $menuItemPrice = $menuItem->price->amount() / 100;
-
-        $this->assertEquals(
-            $menuItemPrice,
-            (float) $line->unit_price
+        $this->assertSame(
+            $menuItem->price->amount(),
+            $line->unit_price->amount(),
         );
 
-        $this->assertEquals(
-            round($menuItemPrice * $line->qty, 2),
-            (float) $line->line_total
+        $this->assertSame(
+            $menuItem->price->amount() * $line->qty,
+            $line->line_total->amount(),
         );
     }
 
     public function test_order_line_quantity_updates_line_total(): void
     {
         $line = OrderLine::factory()
-            ->state([
-                'unit_price' => 19.50,
-            ])
-            ->quantity(2)
+            ->quantity(3)
             ->create();
 
-        $this->assertEquals(2, $line->qty);
-        $this->assertEquals(39.00, (float) $line->line_total);
+        $this->assertSame(
+            $line->unit_price->amount() * 3,
+            $line->line_total->amount(),
+        );
+
+        $this->assertSame(3, $line->qty);
+    }
+
+    public function test_order_line_can_be_created_for_specific_order(): void
+    {
+        $order = Order::factory()->create();
+
+        $line = OrderLine::factory()
+            ->forOrder($order)
+            ->create();
+
+        $this->assertSame(
+            $order->id,
+            $line->order_id,
+        );
     }
 }

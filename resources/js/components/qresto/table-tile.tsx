@@ -1,3 +1,4 @@
+import { Numeric } from '@/components/numeric';
 import type { TableState } from '@/types';
 
 type TableTileProps = {
@@ -7,7 +8,8 @@ type TableTileProps = {
 
 const stateStyles: Record<TableState, string> = {
     free: 'bg-[var(--table-free-bg)] text-[var(--table-free-fg)] border-[var(--border-subtle)]',
-    seated: 'bg-[var(--table-seated-bg)] text-[var(--table-seated-fg)] border-[var(--teal-100)]',
+    seated:
+        'bg-[var(--table-seated-bg)] text-[var(--table-seated-fg)] border-[var(--teal-100)]',
     ordered:
         'bg-[var(--table-ordered-bg)] text-[var(--table-ordered-fg)] border-[var(--saffron-100)]',
     bill: 'bg-[var(--table-bill-bg)] text-[var(--table-bill-fg)] border-[var(--clay-200)]',
@@ -26,7 +28,8 @@ export function TableTile({ table, state }: TableTileProps) {
             className={`min-h-24 rounded-[var(--radius-lg)] border p-3 ${stateStyles[state]}`}
             data-state={state}
         >
-            <div className="text-title-2 font-mono">{table}</div>
+            <Numeric className="text-title-2">{table}</Numeric>
+
             <div className="text-micro">{stateLabels[state]}</div>
         </div>
     );

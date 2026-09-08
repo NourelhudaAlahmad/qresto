@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Models;
-
+use App\Casts\MoneyCast;
 use App\Enums\OrderStatus;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -38,24 +38,28 @@ class Order extends Model
         'void_reason',
         'voided_by',
         'voided_at',
+'currency',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'status' => OrderStatus::class,
-            'placed_at' => 'datetime',
-            'paid_at' => 'datetime',
-            'voided_at' => 'datetime',
-            'subtotal' => 'decimal:2',
-            'service_pct' => 'decimal:2',
-            'service_amount' => 'decimal:2',
-            'tip_amount' => 'decimal:2',
-            'discount_amount' => 'decimal:2',
-            'total' => 'decimal:2',
-            'is_paid' => 'boolean',
-        ];
-    }
+ protected function casts(): array
+{
+    return [
+        'status' => OrderStatus::class,
+
+        'placed_at' => 'datetime',
+        'paid_at' => 'datetime',
+        'voided_at' => 'datetime',
+
+        'subtotal' => MoneyCast::class,
+        'service_pct' => 'decimal:2',
+        'service_amount' => MoneyCast::class,
+        'tip_amount' => MoneyCast::class,
+        'discount_amount' => MoneyCast::class,
+        'total' => MoneyCast::class,
+
+        'is_paid' => 'boolean',
+    ];
+}
 
     /**
      * @return BelongsTo<Restaurant, $this>
