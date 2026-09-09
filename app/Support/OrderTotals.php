@@ -2,8 +2,6 @@
 
 namespace App\Support;
 
-use InvalidArgumentException;
-
 final class OrderTotals
 {
     public function __construct(
@@ -13,7 +11,7 @@ final class OrderTotals
     ) {}
 
     /**
-     * @param array<int, array{unit_price: Money, qty: int}> $lines
+     * @param  array<int, array{unit_price: Money, qty: int}>  $lines
      */
     public static function calculate(
         array $lines,
@@ -30,12 +28,6 @@ final class OrderTotals
         } else {
             $firstPrice = $lines[array_key_first($lines)]['unit_price'];
 
-            if (! $firstPrice instanceof Money) {
-                throw new InvalidArgumentException(
-                    'Line unit_price must be an instance of Money.',
-                );
-            }
-
             $subtotal = Money::fromMinor(
                 0,
                 $firstPrice->currency(),
@@ -43,12 +35,6 @@ final class OrderTotals
         }
 
         foreach ($lines as $line) {
-            if (! $line['unit_price'] instanceof Money) {
-                throw new InvalidArgumentException(
-                    'Line unit_price must be an instance of Money.',
-                );
-            }
-
             $subtotal = $subtotal->add(
                 $line['unit_price']->multiply((int) $line['qty']),
             );

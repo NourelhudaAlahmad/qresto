@@ -8,8 +8,7 @@ type TableTileProps = {
 
 const stateStyles: Record<TableState, string> = {
     free: 'bg-[var(--table-free-bg)] text-[var(--table-free-fg)] border-[var(--border-subtle)]',
-    seated:
-        'bg-[var(--table-seated-bg)] text-[var(--table-seated-fg)] border-[var(--teal-100)]',
+    seated: 'bg-[var(--table-seated-bg)] text-[var(--table-seated-fg)] border-[var(--teal-100)]',
     ordered:
         'bg-[var(--table-ordered-bg)] text-[var(--table-ordered-fg)] border-[var(--saffron-100)]',
     bill: 'bg-[var(--table-bill-bg)] text-[var(--table-bill-fg)] border-[var(--clay-200)]',

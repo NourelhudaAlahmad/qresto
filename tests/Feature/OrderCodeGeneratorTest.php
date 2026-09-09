@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Restaurant;
 use App\Support\OrderCodeGenerator;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -110,7 +111,7 @@ class OrderCodeGeneratorTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $this->expectException(\Illuminate\Database\QueryException::class);
+        $this->expectException(QueryException::class);
 
         DB::table('order_sequences')->insert([
             'restaurant_id' => $restaurant->id,

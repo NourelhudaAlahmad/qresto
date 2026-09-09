@@ -6,6 +6,7 @@
 
 :root {
     --font-display: 'Familjen Grotesk', 'Helvetica Neue', Helvetica, sans-serif;
-    --font-ui: 'Outfit', 'Familjen Grotesk', system-ui, sans-serif;
+    --font-ui:
+        'Noto Sans Arabic', 'Outfit', 'Familjen Grotesk', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }

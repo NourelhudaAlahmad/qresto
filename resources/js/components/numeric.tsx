@@ -12,7 +12,7 @@ export function Numeric({ children, className = '', ...props }: NumericProps) {
             dir="ltr"
             data-numeric
         >
-            {children}{' '}
+            {children}
         </span>
     );
 }

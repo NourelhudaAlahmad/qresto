@@ -181,8 +181,10 @@ class AlBustanOrdersSeeder extends Seeder
                 ];
             }
 
-            $tipAmount = Money::fromDecimal($data['tip']);
-            $discountAmount = Money::fromDecimal($data['discount']);
+            $currency = strtoupper($restaurant->currency);
+
+            $tipAmount = Money::fromDecimal($data['tip'], $currency);
+            $discountAmount = Money::fromDecimal($data['discount'], $currency);
 
             $totals = OrderTotals::calculate(
                 collect($lineData)
@@ -196,13 +198,13 @@ class AlBustanOrdersSeeder extends Seeder
                 $discountAmount,
             );
 
-            $expectedTotal = Money::fromDecimal($data['total']);
+            $expectedTotal = Money::fromDecimal($data['total'], $currency);
 
             if ($totals->total->amount() !== $expectedTotal->amount()) {
                 throw new \RuntimeException(
                     "Order {$data['code']} total mismatch. ".
-                    "Expected {$expectedTotal->formatted()}, ".
-                    "calculated {$totals->total->formatted()}."
+                        "Expected {$expectedTotal->formatted()}, ".
+                        "calculated {$totals->total->formatted()}."
                 );
             }
 

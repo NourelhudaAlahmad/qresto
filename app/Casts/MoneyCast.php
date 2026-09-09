@@ -2,7 +2,6 @@
 
 namespace App\Casts;
 
-use App\Models\Order;
 use App\Support\Money;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +12,9 @@ use InvalidArgumentException;
  */
 class MoneyCast implements CastsAttributes
 {
+    /**
+     * Convert the stored integer into a Money value object.
+     */
     public function get(
         Model $model,
         string $key,
@@ -29,6 +31,9 @@ class MoneyCast implements CastsAttributes
         );
     }
 
+    /**
+     * Convert a Money value object into minor units for storage.
+     */
     public function set(
         Model $model,
         string $key,
@@ -60,8 +65,8 @@ class MoneyCast implements CastsAttributes
     }
 
     /**
-     * Resolve the currency from the model itself first,
-     * then from its restaurant relation.
+     * Resolve currency from the model itself first,
+     * then from its restaurant relationship.
      *
      * @param  array<string, mixed>  $attributes
      */
@@ -83,26 +88,10 @@ class MoneyCast implements CastsAttributes
             return strtoupper($currency);
         }
 
-        if (
-            method_exists($model, 'restaurant')
-            && $model->relationLoaded('restaurant')
-        ) {
-            $restaurant = $model->getRelation('restaurant');
-
-            if (
-                $restaurant !== null
-                && is_string($restaurant->currency)
-                && $restaurant->currency !== ''
-            ) {
-                return strtoupper($restaurant->currency);
-            }
-        }
-
-        if (
-            method_exists($model, 'restaurant')
-            && $model instanceof Order
-        ) {
-            $restaurant = $model->restaurant;
+        if (method_exists($model, 'restaurant')) {
+            $restaurant = $model->relationLoaded('restaurant')
+    ? $model->getRelation('restaurant')
+    : $model->getRelationValue('restaurant');
 
             if (
                 $restaurant !== null

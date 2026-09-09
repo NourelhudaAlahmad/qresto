@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
 import { usePage } from '@inertiajs/react';
-
+import { useEffect, useMemo, useState } from 'react';
 export type ElapsedLevel = 'normal' | 'warn' | 'late';
 
 type PageProps = {
@@ -43,9 +42,7 @@ export function useElapsed(
         }
 
         const startedAt =
-            since instanceof Date
-                ? since.getTime()
-                : new Date(since).getTime();
+            since instanceof Date ? since.getTime() : new Date(since).getTime();
 
         if (Number.isNaN(startedAt)) {
             return {
@@ -54,10 +51,7 @@ export function useElapsed(
             };
         }
 
-        const minutes = Math.max(
-            0,
-            Math.floor((now - startedAt) / 60000),
-        );
+        const minutes = Math.max(0, Math.floor((now - startedAt) / 60000));
 
         let level: ElapsedLevel = 'normal';
 
@@ -71,10 +65,5 @@ export function useElapsed(
             minutes,
             level,
         };
-    }, [
-        since,
-        now,
-        qresto.sla.warn_minutes,
-        qresto.sla.late_minutes,
-    ]);
+    }, [since, now, qresto.sla.warn_minutes, qresto.sla.late_minutes]);
 }

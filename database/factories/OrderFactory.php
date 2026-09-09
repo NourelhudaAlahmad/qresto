@@ -48,7 +48,7 @@ class OrderFactory extends Factory
     public function configure(): static
     {
         return $this->afterMaking(function (Order $order): void {
-            if ($order->code === null) {
+            if ($order->getAttribute('code') === null) {
                 $order->code = app(OrderCodeGenerator::class)
                     ->generate($order->restaurant_id);
             }

@@ -59,6 +59,6 @@ final class OrderCodeGenerator
             return $number;
         });
 
-        return '#A-' . $number;
+        return '#A-'.$number;
     }
 }

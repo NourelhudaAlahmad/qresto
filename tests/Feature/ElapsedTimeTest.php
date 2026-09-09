@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Support\ElapsedTime;
-use Carbon\Carbon;
 use Tests\TestCase;
 
 class ElapsedTimeTest extends TestCase

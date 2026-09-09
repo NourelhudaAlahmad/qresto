@@ -7,7 +7,9 @@ use Carbon\Carbon;
 final class ElapsedTime
 {
     public const NORMAL = 'normal';
+
     public const WARN = 'warn';
+
     public const LATE = 'late';
 
     public static function level(Carbon $since): string
