@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ServiceRequestKind;
 use Database\Factories\ServiceRequestFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +26,7 @@ class ServiceRequest extends Model
     protected function casts(): array
     {
         return [
+            'kind' => ServiceRequestKind::class,
             'requested_at' => 'datetime',
             'acknowledged_at' => 'datetime',
         ];

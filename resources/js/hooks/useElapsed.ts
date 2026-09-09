@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
+import { usePage } from '@inertiajs/react';
 
 export type ElapsedLevel = 'normal' | 'warn' | 'late';
 
-export type ElapsedThresholds = {
-    warnMinutes: number;
-    lateMinutes: number;
+type PageProps = {
+    qresto: {
+        sla: {
+            warn_minutes: number;
+            late_minutes: number;
+        };
+    };
 };
 
 type UseElapsedResult = {
@@ -14,8 +19,9 @@ type UseElapsedResult = {
 
 export function useElapsed(
     since: string | Date | null | undefined,
-    thresholds: ElapsedThresholds,
 ): UseElapsedResult {
+    const { qresto } = usePage<PageProps>().props;
+
     const [now, setNow] = useState(() => Date.now());
 
     useEffect(() => {
@@ -55,9 +61,9 @@ export function useElapsed(
 
         let level: ElapsedLevel = 'normal';
 
-        if (minutes >= thresholds.lateMinutes) {
+        if (minutes >= qresto.sla.late_minutes) {
             level = 'late';
-        } else if (minutes >= thresholds.warnMinutes) {
+        } else if (minutes >= qresto.sla.warn_minutes) {
             level = 'warn';
         }
 
@@ -65,5 +71,10 @@ export function useElapsed(
             minutes,
             level,
         };
-    }, [since, now, thresholds.warnMinutes, thresholds.lateMinutes]);
+    }, [
+        since,
+        now,
+        qresto.sla.warn_minutes,
+        qresto.sla.late_minutes,
+    ]);
 }

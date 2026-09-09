@@ -21,15 +21,31 @@ final class OrderTotals
         ?Money $tipAmount = null,
         ?Money $discountAmount = null,
     ): self {
-        $tipAmount ??= Money::fromMinor(0);
-        $discountAmount ??= Money::fromMinor(0);
+        if ($lines === []) {
+            $currency = $tipAmount?->currency()
+                ?? $discountAmount?->currency()
+                ?? 'TRY';
 
-        $subtotal = Money::fromMinor(0);
+            $subtotal = Money::fromMinor(0, $currency);
+        } else {
+            $firstPrice = $lines[array_key_first($lines)]['unit_price'];
+
+            if (! $firstPrice instanceof Money) {
+                throw new InvalidArgumentException(
+                    'Line unit_price must be an instance of Money.',
+                );
+            }
+
+            $subtotal = Money::fromMinor(
+                0,
+                $firstPrice->currency(),
+            );
+        }
 
         foreach ($lines as $line) {
             if (! $line['unit_price'] instanceof Money) {
                 throw new InvalidArgumentException(
-                    'Line unit_price must be an instance of Money.'
+                    'Line unit_price must be an instance of Money.',
                 );
             }
 
@@ -37,6 +53,16 @@ final class OrderTotals
                 $line['unit_price']->multiply((int) $line['qty']),
             );
         }
+
+        $tipAmount ??= Money::fromMinor(
+            0,
+            $subtotal->currency(),
+        );
+
+        $discountAmount ??= Money::fromMinor(
+            0,
+            $subtotal->currency(),
+        );
 
         $serviceAmount = $subtotal->percentage($servicePct);
 

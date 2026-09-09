@@ -5,7 +5,7 @@ namespace App\Enums;
 enum ServiceRequestKind: string
 {
     case WATER = 'water';
-    case CUTLERY = 'cutlery';
+    case BREAD = 'bread';
     case BILL = 'bill';
     case WAITER = 'waiter';
     case CLEANING = 'cleaning';
@@ -15,7 +15,7 @@ enum ServiceRequestKind: string
     {
         return match ($this) {
             self::WATER => 'Water',
-            self::CUTLERY => 'Cutlery',
+            self::BREAD => 'Bread',
             self::BILL => 'Bill',
             self::WAITER => 'Waiter',
             self::CLEANING => 'Cleaning',
@@ -27,7 +27,7 @@ enum ServiceRequestKind: string
     {
         return match ($this) {
             self::WATER => 'info',
-            self::CUTLERY => 'ink',
+            self::BREAD => 'herb',
             self::BILL => 'saffron',
             self::WAITER => 'teal',
             self::CLEANING => 'herb',

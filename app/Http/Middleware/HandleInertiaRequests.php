@@ -39,6 +39,19 @@ class HandleInertiaRequests extends Middleware
             'dir' => $dir,
 
             'available_locales' => $availableLocales,
+
+            'qresto' => [
+                'sla' => [
+                    'warn_minutes' => (int) config(
+                        'qresto.sla.warn_minutes',
+                        14,
+                    ),
+                    'late_minutes' => (int) config(
+                        'qresto.sla.late_minutes',
+                        25,
+                    ),
+                ],
+            ],
         ];
 
         if ($user === null) {
@@ -68,7 +81,10 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user,
             ],
 
-            'nav' => app(NavigationBuilder::class)->for($user, $capabilities),
+            'nav' => app(NavigationBuilder::class)->for(
+                $user,
+                $capabilities,
+            ),
 
             'capabilities' => $capabilities,
 

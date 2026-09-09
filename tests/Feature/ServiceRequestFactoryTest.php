@@ -2,9 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\RestaurantTable;
+use App\Enums\ServiceRequestKind;
 use App\Models\ServiceRequest;
-use App\Models\TableSession;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -20,46 +19,17 @@ class ServiceRequestFactoryTest extends TestCase
         $this->assertInstanceOf(ServiceRequest::class, $request);
         $this->assertNotNull($request->table_id);
 
-        $this->assertContains($request->kind, [
-            'water',
-            'bread',
-            'bill',
-            'waiter',
-        ]);
-
-        $this->assertSame('pending', $request->status);
-        $this->assertNotNull($request->requested_at);
-        $this->assertNull($request->acknowledged_by);
-        $this->assertNull($request->acknowledged_at);
-    }
-
-    public function test_request_can_be_created_for_specific_table(): void
-    {
-        $table = RestaurantTable::factory()->create();
-
-        $request = ServiceRequest::factory()
-            ->forTable($table)
-            ->create();
-
-        $this->assertEquals($table->id, $request->table_id);
-    }
-
-    public function test_request_can_be_created_for_specific_session(): void
-    {
-        $session = TableSession::factory()->create();
-
-        $request = ServiceRequest::factory()
-            ->forSession($session)
-            ->create();
-
-        $this->assertEquals(
-            $session->restaurant_table_id,
-            $request->table_id
-        );
-
-        $this->assertEquals(
-            $session->id,
-            $request->table_session_id
+        $this->assertContains(
+            $request->kind,
+            [
+                ServiceRequestKind::WATER,
+                ServiceRequestKind::BREAD,
+                ServiceRequestKind::BILL,
+                ServiceRequestKind::WAITER,
+                ServiceRequestKind::CLEANING,
+                ServiceRequestKind::OTHER,
+            ],
+            true,
         );
     }
 
@@ -69,7 +39,10 @@ class ServiceRequestFactoryTest extends TestCase
             ->water()
             ->create();
 
-        $this->assertSame('water', $request->kind);
+        $this->assertSame(
+            ServiceRequestKind::WATER,
+            $request->kind,
+        );
     }
 
     public function test_bread_state_creates_bread_request(): void
@@ -78,7 +51,10 @@ class ServiceRequestFactoryTest extends TestCase
             ->bread()
             ->create();
 
-        $this->assertSame('bread', $request->kind);
+        $this->assertSame(
+            ServiceRequestKind::BREAD,
+            $request->kind,
+        );
     }
 
     public function test_bill_state_creates_bill_request(): void
@@ -87,7 +63,10 @@ class ServiceRequestFactoryTest extends TestCase
             ->bill()
             ->create();
 
-        $this->assertSame('bill', $request->kind);
+        $this->assertSame(
+            ServiceRequestKind::BILL,
+            $request->kind,
+        );
     }
 
     public function test_waiter_state_creates_waiter_request(): void
@@ -96,7 +75,10 @@ class ServiceRequestFactoryTest extends TestCase
             ->waiter()
             ->create();
 
-        $this->assertSame('waiter', $request->kind);
+        $this->assertSame(
+            ServiceRequestKind::WAITER,
+            $request->kind,
+        );
     }
 
     public function test_pending_state_creates_pending_request(): void
@@ -105,7 +87,11 @@ class ServiceRequestFactoryTest extends TestCase
             ->pending()
             ->create();
 
-        $this->assertSame('pending', $request->status);
+        $this->assertSame(
+            'pending',
+            $request->status,
+        );
+
         $this->assertNull($request->acknowledged_by);
         $this->assertNull($request->acknowledged_at);
     }

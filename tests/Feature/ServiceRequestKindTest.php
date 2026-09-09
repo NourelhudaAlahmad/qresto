@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\ServiceRequestKind;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class ServiceRequestKindTest extends TestCase
 {
@@ -12,24 +12,24 @@ class ServiceRequestKindTest extends TestCase
         $this->assertSame(
             [
                 'water',
-                'cutlery',
+                'bread',
                 'bill',
                 'waiter',
                 'cleaning',
                 'other',
             ],
             array_map(
-                fn (ServiceRequestKind $kind) => $kind->value,
+                fn (ServiceRequestKind $kind): string => $kind->value,
                 ServiceRequestKind::cases(),
             ),
         );
     }
 
-    public function test_every_kind_has_label_and_color(): void
+    public function test_each_kind_has_label_and_color(): void
     {
         foreach (ServiceRequestKind::cases() as $kind) {
-            $this->assertNotEmpty($kind->label());
-            $this->assertNotEmpty($kind->color());
+            $this->assertNotSame('', $kind->label());
+            $this->assertNotSame('', $kind->color());
         }
     }
 }

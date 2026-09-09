@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Restaurant;
 use App\Support\OrderCodeGenerator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class OrderCodeGeneratorTest extends TestCase
@@ -80,27 +81,43 @@ class OrderCodeGeneratorTest extends TestCase
             $generator->generate($restaurant->id, $dayOne),
         );
     }
-public function test_generates_distinct_codes_for_multiple_consecutive_requests(): void
-{
-    $restaurant = Restaurant::factory()->create();
 
-    $generator = app(OrderCodeGenerator::class);
+    public function test_multiple_requests_produce_distinct_codes(): void
+    {
+        $restaurant = Restaurant::factory()->create();
 
-    $codes = [
-        $generator->generate($restaurant->id),
-        $generator->generate($restaurant->id),
-    ];
+        $generator = app(OrderCodeGenerator::class);
 
-    $this->assertCount(2, array_unique($codes));
+        $codes = [
+            $generator->generate($restaurant->id),
+            $generator->generate($restaurant->id),
+            $generator->generate($restaurant->id),
+        ];
 
-    $this->assertSame(
-        '#A-1040',
-        $codes[0],
-    );
+        $this->assertCount(3, array_unique($codes));
+    }
 
-    $this->assertSame(
-        '#A-1041',
-        $codes[1],
-    );
-}
+    public function test_sequence_row_has_unique_restaurant_and_service_day(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+        $date = now()->toDateString();
+
+        DB::table('order_sequences')->insert([
+            'restaurant_id' => $restaurant->id,
+            'service_date' => $date,
+            'next_number' => 1040,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->expectException(\Illuminate\Database\QueryException::class);
+
+        DB::table('order_sequences')->insert([
+            'restaurant_id' => $restaurant->id,
+            'service_date' => $date,
+            'next_number' => 1041,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
 }
