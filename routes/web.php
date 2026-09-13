@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LiveOrderController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\QrController;
 use Illuminate\Support\Facades\Route;
@@ -13,11 +15,13 @@ if (app()->environment('local')) {
 
 Route::post('/locale', [LocaleController::class, 'update'])
     ->name('locale.update');
-
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
-});
+    Route::get('dashboard', DashboardController::class)
+        ->name('dashboard');
 
+    Route::get('/live/orders', LiveOrderController::class)
+        ->name('live.orders');
+});
 Route::get('/qr/{qrToken}', [QrController::class, 'scan'])
     ->name('qr.scan');
 

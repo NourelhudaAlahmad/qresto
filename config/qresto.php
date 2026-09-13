@@ -14,6 +14,12 @@ return [
         'warn_minutes' => 14,
         'late_minutes' => 25,
     ],
+    'live' => [
+        'waiter_interval' => 5,
+        'floor_interval' => 8,
+        'kds_interval' => 4,
+        'guest_status_interval' => 10,
+    ],
 
     'payment_methods' => [
         'card',
