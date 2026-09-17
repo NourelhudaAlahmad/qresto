@@ -90,8 +90,8 @@ class MoneyCast implements CastsAttributes
 
         if (method_exists($model, 'restaurant')) {
             $restaurant = $model->relationLoaded('restaurant')
-    ? $model->getRelation('restaurant')
-    : $model->getRelationValue('restaurant');
+                ? $model->getRelation('restaurant')
+                : $model->getRelationValue('restaurant');
 
             if (
                 $restaurant !== null
