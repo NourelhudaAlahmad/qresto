@@ -77,3 +77,23 @@ it('detects when the live version has not changed', function (): void {
         ->and(LiveResponse::unchanged($items, null))
         ->toBeFalse();
 });
+it('changes the version when an item is updated', function (): void {
+    $timestamp = now();
+
+    $first = new Collection([
+        (object) [
+            'id' => 1,
+            'updated_at' => $timestamp,
+        ],
+    ]);
+
+    $second = new Collection([
+        (object) [
+            'id' => 1,
+            'updated_at' => $timestamp->copy()->addSecond(),
+        ],
+    ]);
+
+    expect(LiveResponse::make($first)['version'])
+        ->not->toBe(LiveResponse::make($second)['version']);
+});

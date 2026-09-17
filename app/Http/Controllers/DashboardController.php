@@ -19,7 +19,7 @@ class DashboardController extends Controller
             ->with(['table', 'assignedUser'])
             ->latest('updated_at');
 
-        if (! $user->can('see_all_orders')) {
+        if (! $user->can('viewAny', Order::class)) {
             $query->where('assigned_user_id', $user->id);
         }
 

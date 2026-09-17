@@ -51,6 +51,28 @@ class HandleInertiaRequests extends Middleware
                         25,
                     ),
                 ],
+
+                'live' => [
+                    'waiter_interval' => (int) config(
+                        'qresto.live.waiter_interval',
+                        5,
+                    ) * 1000,
+
+                    'floor_interval' => (int) config(
+                        'qresto.live.floor_interval',
+                        8,
+                    ) * 1000,
+
+                    'kds_interval' => (int) config(
+                        'qresto.live.kds_interval',
+                        4,
+                    ) * 1000,
+
+                    'guest_status_interval' => (int) config(
+                        'qresto.live.guest_status_interval',
+                        10,
+                    ) * 1000,
+                ],
             ],
         ];
 

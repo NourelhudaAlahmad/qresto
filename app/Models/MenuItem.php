@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Concerns\BelongsToRestaurant;
+use App\Support\LandingCache;
 use Database\Factories\MenuItemFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -38,6 +39,17 @@ class MenuItem extends Model
         'chef_flag',
         'updated_by',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(function (MenuItem $item): void {
+            LandingCache::invalidate($item->restaurant_id);
+        });
+
+        static::deleted(function (MenuItem $item): void {
+            LandingCache::invalidate($item->restaurant_id);
+        });
+    }
 
     protected function casts(): array
     {

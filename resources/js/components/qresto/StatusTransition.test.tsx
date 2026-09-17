@@ -1,27 +1,31 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { act, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { StatusTransition } from './StatusTransition';
 
 describe('StatusTransition', () => {
-    it('renders its children', () => {
-        render(
-            <StatusTransition status="pending">
-                <span>Order pending</span>
-            </StatusTransition>,
-        );
-
-        expect(screen.getByText('Order pending')).toBeInTheDocument();
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
-    it('uses the status as the transition key', () => {
-        const { container, rerender } = render(
+    it('renders the current status', () => {
+        render(
             <StatusTransition status="pending">
                 <span>Pending</span>
             </StatusTransition>,
         );
 
-        const firstElement = container.firstElementChild;
+        expect(screen.getByText('Pending')).toBeInTheDocument();
+    });
+
+    it('cross-fades the previous and current status', () => {
+        vi.useFakeTimers();
+
+        const { rerender } = render(
+            <StatusTransition status="pending">
+                <span>Pending</span>
+            </StatusTransition>,
+        );
 
         rerender(
             <StatusTransition status="ready">
@@ -29,23 +33,49 @@ describe('StatusTransition', () => {
             </StatusTransition>,
         );
 
-        const secondElement = container.firstElementChild;
+        const outgoing = screen.getByText('Pending').parentElement;
+        const incoming = screen.getByText('Ready').parentElement;
 
-        expect(firstElement).not.toBe(secondElement);
+        expect(outgoing).toHaveAttribute('data-transition', 'outgoing');
+        expect(outgoing).toHaveAttribute('data-status', 'pending');
+        expect(outgoing).toHaveClass('animate-out', 'fade-out');
+
+        expect(incoming).toHaveAttribute('data-transition', 'incoming');
+        expect(incoming).toHaveAttribute('data-status', 'ready');
+        expect(incoming).toHaveClass('animate-in', 'fade-in');
+
+        act(() => {
+            vi.advanceTimersByTime(200);
+        });
+
+        expect(screen.queryByText('Pending')).not.toBeInTheDocument();
         expect(screen.getByText('Ready')).toBeInTheDocument();
     });
 
-    it('applies the fade transition classes', () => {
+    it('uses the design-system motion tokens', () => {
         render(
             <StatusTransition status="pending">
-                <span>Order</span>
+                <span>Pending</span>
             </StatusTransition>,
         );
 
-        expect(screen.getByText('Order').parentElement).toHaveClass(
-            'animate-in',
-            'fade-in',
-            'duration-300',
+        const incoming = screen.getByText('Pending').parentElement;
+
+        expect(incoming).toHaveStyle({
+            animationDuration: 'var(--dur-base)',
+            animationTimingFunction: 'var(--ease-standard)',
+        });
+    });
+
+    it('respects reduced-motion preferences', () => {
+        render(
+            <StatusTransition status="pending">
+                <span>Pending</span>
+            </StatusTransition>,
+        );
+
+        expect(screen.getByText('Pending').parentElement).toHaveClass(
+            'motion-reduce:animate-none',
         );
     });
 });

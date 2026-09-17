@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { useLiveData } from '@/hooks/useLiveData';
 import { useNewItemAlert } from '@/hooks/useNewItemAlert';
 
-import Dashboard from './dashboard';
+import Dashboard from '@/pages/dashboard';
 
 vi.mock('@/hooks/useLiveData', () => ({
     useLiveData: vi.fn(() => ({
@@ -20,6 +20,15 @@ vi.mock('@/hooks/useNewItemAlert', () => ({
 
 vi.mock('@inertiajs/react', () => ({
     Head: ({ title }: { title: string }) => <title>{title}</title>,
+    usePage: () => ({
+        props: {
+            qresto: {
+                live: {
+                    waiter_interval: 5000,
+                },
+            },
+        },
+    }),
 }));
 
 vi.mock('@/routes', () => ({

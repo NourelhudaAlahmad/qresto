@@ -1,5 +1,5 @@
-import { usePoll } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { router, usePoll } from '@inertiajs/react';
+import { useCallback, useEffect, useState } from 'react';
 
 type LiveDataOptions = {
     only: string[];
@@ -18,8 +18,7 @@ export function useLiveData(
 ): LiveDataReturn {
     const [isPaused, setIsPaused] = useState(false);
 
-    const { start, stop } = usePoll(
-        intervalMs,
+    const requestOptions = useCallback(
         () => ({
             only: options.only,
             data: options.version
@@ -27,12 +26,16 @@ export function useLiveData(
                       version: options.version,
                   }
                 : {},
+            onHttpException: (response: { status: number }) =>
+                response.status === 204 ? false : undefined,
         }),
-        {
-            autoStart: true,
-            mode: 'rest',
-        },
+        [options.only, options.version],
     );
+
+    const { start, stop } = usePoll(intervalMs, requestOptions, {
+        autoStart: true,
+        mode: 'rest',
+    });
 
     useEffect(() => {
         const handleVisibilityChange = () => {
@@ -42,6 +45,8 @@ export function useLiveData(
 
                 return;
             }
+
+            router.reload(requestOptions());
 
             start();
             setIsPaused(false);
@@ -56,7 +61,7 @@ export function useLiveData(
             );
             stop();
         };
-    }, [start, stop]);
+    }, [requestOptions, start, stop]);
 
     const pause = () => {
         stop();

@@ -1,6 +1,8 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
+import { useCallback } from 'react';
 
 import { LiveIndicator } from '@/components/qresto/LiveIndicator';
+import { StatusTransition } from '@/components/qresto/StatusTransition';
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import { useLiveAlertMute } from '@/hooks/useLiveAlertMute';
 import { useLiveData } from '@/hooks/useLiveData';
@@ -28,15 +30,27 @@ type DashboardProps = {
     };
 };
 
+type PageProps = {
+    qresto: {
+        live: {
+            waiter_interval: number;
+        };
+    };
+};
+
 export default function Dashboard({ liveOrders }: DashboardProps) {
-    const { isPaused } = useLiveData(5000, {
+    const { qresto } = usePage<PageProps>().props;
+
+    const { isPaused } = useLiveData(qresto.live.waiter_interval, {
         only: ['liveOrders'],
         version: liveOrders.version,
     });
 
     const { muted, toggleMute } = useLiveAlertMute();
 
-    useNewItemAlert(liveOrders.items, (order) => order.id, {
+    const getOrderKey = useCallback((order: LiveOrder) => order.id, []);
+
+    useNewItemAlert(liveOrders.items, getOrderKey, {
         muted,
     });
 
@@ -78,7 +92,9 @@ export default function Dashboard({ liveOrders }: DashboardProps) {
 
                 <div className="border-sidebar-border/70 dark:border-sidebar-border relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border p-6 md:min-h-min">
                     <div className="mb-4">
-                        <h2 className="text-lg font-semibold">Live Orders</h2>
+                        <h2 className="text-lg font-semibold">
+                            Live Orders
+                        </h2>
 
                         <p className="text-muted-foreground text-sm">
                             {liveOrders.items.length} active orders
@@ -101,9 +117,13 @@ export default function Dashboard({ liveOrders }: DashboardProps) {
                                             {order.code}
                                         </span>
 
-                                        <span className="text-muted-foreground text-sm">
-                                            {order.status}
-                                        </span>
+                                        <StatusTransition
+                                            status={order.status}
+                                        >
+                                            <span className="text-muted-foreground text-sm">
+                                                {order.status}
+                                            </span>
+                                        </StatusTransition>
                                     </div>
 
                                     {order.table?.name && (

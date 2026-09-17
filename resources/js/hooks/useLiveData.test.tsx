@@ -1,4 +1,4 @@
-import { usePoll } from '@inertiajs/react';
+import { router, usePoll } from '@inertiajs/react';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -6,6 +6,9 @@ import { useLiveData } from './useLiveData';
 
 vi.mock('@inertiajs/react', () => ({
     usePoll: vi.fn(),
+    router: {
+        reload: vi.fn(),
+    },
 }));
 
 describe('useLiveData', () => {
@@ -33,7 +36,6 @@ describe('useLiveData', () => {
         const call = vi.mocked(usePoll).mock.calls[0];
 
         expect(call[0]).toBe(5000);
-
         expect(call[1]).toBeTypeOf('function');
 
         const requestOptions = (
@@ -42,6 +44,9 @@ describe('useLiveData', () => {
                 data: {
                     version: string;
                 };
+                onHttpException: (response: {
+                    status: number;
+                }) => false | undefined;
             }
         )();
 
@@ -50,7 +55,11 @@ describe('useLiveData', () => {
             data: {
                 version: '2026-09-13 12:00:00.000000:2',
             },
+            onHttpException: expect.any(Function),
         });
+
+        expect(requestOptions.onHttpException({ status: 204 })).toBe(false);
+        expect(requestOptions.onHttpException({ status: 500 })).toBeUndefined();
 
         expect(call[2]).toEqual({
             autoStart: true,
@@ -123,7 +132,7 @@ describe('useLiveData', () => {
         expect(result.current.isPaused).toBe(false);
     });
 
-    it('resumes polling when the tab becomes visible', () => {
+    it('reloads immediately when the tab becomes visible', () => {
         const { result } = renderHook(() =>
             useLiveData(5000, {
                 only: ['liveOrders'],
@@ -138,6 +147,14 @@ describe('useLiveData', () => {
 
         act(() => {
             document.dispatchEvent(new Event('visibilitychange'));
+        });
+
+        expect(router.reload).toHaveBeenCalledWith({
+            only: ['liveOrders'],
+            data: {
+                version: '2026-09-13 12:00:00.000000:2',
+            },
+            onHttpException: expect.any(Function),
         });
 
         expect(start).toHaveBeenCalled();

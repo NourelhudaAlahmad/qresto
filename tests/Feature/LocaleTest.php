@@ -20,6 +20,7 @@ it('switches locale for a guest and persists it', function () {
 
 it('switches locale for an authenticated staff user', function () {
     $restaurant = Restaurant::factory()->create([
+        'slug' => 'al-bustan',
         'supported_locales' => ['en', 'ar'],
         'default_locale' => 'en',
     ]);
@@ -53,6 +54,12 @@ it('rejects unsupported locales', function () {
 });
 
 it('uses the browser language for a guest', function () {
+    Restaurant::factory()->create([
+        'slug' => 'al-bustan',
+        'supported_locales' => ['en', 'ar'],
+        'default_locale' => 'en',
+    ]);
+
     $response = $this->withHeader('Accept-Language', 'ar')
         ->get('/');
 
@@ -68,6 +75,7 @@ it('uses the browser language for a guest', function () {
 
 it('prefers the saved user locale over the browser language', function () {
     $restaurant = Restaurant::factory()->create([
+        'slug' => 'al-bustan',
         'supported_locales' => ['en', 'ar'],
         'default_locale' => 'en',
     ]);
