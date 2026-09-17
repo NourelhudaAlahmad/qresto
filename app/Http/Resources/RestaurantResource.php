@@ -2,9 +2,13 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Restaurant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin Restaurant
+ */
 class RestaurantResource extends JsonResource
 {
     /**
@@ -14,13 +18,22 @@ class RestaurantResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $locale = app()->getLocale();
+        $translations = $this->translations ?? [];
+
+        $localized = function (string $field) use ($locale, $translations): ?string {
+            return $translations[$locale][$field]
+                ?? $translations['en'][$field]
+                ?? $this->{$field};
+        };
+
         return [
             'id' => $this->id,
-            'name' => $this->name,
-            'tagline' => $this->tagline,
-            'cuisine' => $this->cuisine,
-            'description' => $this->description,
-            'address' => $this->address,
+            'name' => $localized('name'),
+            'tagline' => $localized('tagline'),
+            'cuisine' => $localized('cuisine'),
+            'description' => $localized('description'),
+            'address' => $localized('address'),
             'phone' => $this->phone,
             'lat' => $this->lat,
             'lng' => $this->lng,

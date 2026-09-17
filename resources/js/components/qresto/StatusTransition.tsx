@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 
 type StatusTransitionProps = {
     status: string | number;
@@ -50,7 +51,7 @@ export function StatusTransition({ status, children }: StatusTransitionProps) {
                     data-status={String(outgoing.status)}
                     data-transition="outgoing"
                     aria-hidden="true"
-                    className="col-start-1 row-start-1 animate-out fade-out motion-reduce:animate-none"
+                    className="animate-out fade-out col-start-1 row-start-1 motion-reduce:animate-none"
                     style={{
                         animationDuration: 'var(--dur-base)',
                         animationTimingFunction: 'var(--ease-standard)',
@@ -64,7 +65,7 @@ export function StatusTransition({ status, children }: StatusTransitionProps) {
                 key={String(status)}
                 data-status={String(status)}
                 data-transition="incoming"
-                className="col-start-1 row-start-1 animate-in fade-in motion-reduce:animate-none"
+                className="animate-in fade-in col-start-1 row-start-1 motion-reduce:animate-none"
                 style={{
                     animationDuration: 'var(--dur-base)',
                     animationTimingFunction: 'var(--ease-standard)',

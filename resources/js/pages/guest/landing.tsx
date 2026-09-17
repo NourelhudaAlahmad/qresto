@@ -1,8 +1,8 @@
+import { Head, router, usePage } from '@inertiajs/react';
+import type { ReactNode } from 'react';
 import { Button } from '@/components/qresto/button';
 import { Card } from '@/components/qresto/card';
 import { Divider } from '@/components/qresto/divider';
-import { Head, router, usePage } from '@inertiajs/react';
-import type { ReactNode } from 'react';
 
 type Restaurant = {
     id: number;

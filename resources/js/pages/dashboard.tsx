@@ -92,9 +92,7 @@ export default function Dashboard({ liveOrders }: DashboardProps) {
 
                 <div className="border-sidebar-border/70 dark:border-sidebar-border relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border p-6 md:min-h-min">
                     <div className="mb-4">
-                        <h2 className="text-lg font-semibold">
-                            Live Orders
-                        </h2>
+                        <h2 className="text-lg font-semibold">Live Orders</h2>
 
                         <p className="text-muted-foreground text-sm">
                             {liveOrders.items.length} active orders
@@ -117,9 +115,7 @@ export default function Dashboard({ liveOrders }: DashboardProps) {
                                             {order.code}
                                         </span>
 
-                                        <StatusTransition
-                                            status={order.status}
-                                        >
+                                        <StatusTransition status={order.status}>
                                             <span className="text-muted-foreground text-sm">
                                                 {order.status}
                                             </span>
