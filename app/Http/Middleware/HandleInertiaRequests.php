@@ -34,6 +34,10 @@ class HandleInertiaRequests extends Middleware
 
             'name' => config('app.name'),
 
+            'flash' => [
+                'error' => fn () => $request->session()->get('error'),
+            ],
+
             'locale' => $locale,
 
             'dir' => $dir,

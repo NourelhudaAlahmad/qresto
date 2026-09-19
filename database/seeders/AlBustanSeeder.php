@@ -14,6 +14,7 @@ class AlBustanSeeder extends Seeder
             AlBustanTablesSeeder::class,
             AlBustanMenuSeeder::class,
             AlBustanStaffSeeder::class,
+            AlBustanShiftsSeeder::class,
             AlBustanOrdersSeeder::class,
         ]);
     }

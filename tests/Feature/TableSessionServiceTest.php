@@ -6,6 +6,7 @@ use App\Models\Restaurant;
 use App\Models\RestaurantTable;
 use App\Models\TableSession;
 use App\Services\TableSessionService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 test('session can be started from a table qr token', function () {
     $restaurant = Restaurant::create([
@@ -49,10 +50,12 @@ test('session cannot be started from an unknown qr token', function () {
 
     app(CurrentRestaurant::class)->set($restaurant);
 
-    expect(fn () => app(TableSessionService::class)
-        ->startFromQrToken('unknown-qr-token'))
-        ->toThrow(RuntimeException::class, 'Table not found.');
+    expect(
+        fn () => app(TableSessionService::class)
+            ->startFromQrToken('unknown-qr-token'),
+    )->toThrow(ModelNotFoundException::class);
 });
+
 test('opening a session on an active table reuses the existing session', function () {
     $restaurant = Restaurant::create([
         'name' => 'Al Bustan',

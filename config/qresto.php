@@ -14,6 +14,7 @@ return [
         'warn_minutes' => 14,
         'late_minutes' => 25,
     ],
+
     'live' => [
         'waiter_interval' => 5,
         'floor_interval' => 8,
@@ -31,4 +32,6 @@ return [
     'undo_window_seconds' => 30,
 
     'table_session_idle_minutes' => 30,
+
+    'table_session_cookie' => 'qresto_table_session',
 ];

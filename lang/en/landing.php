@@ -23,6 +23,12 @@ return [
 
     'powered_by' => 'Powered by QResto',
 
+    'session' => [
+        'missing' => 'Your table session is missing. Please scan the QR code again.',
+        'expired' => 'Your table session has expired. Please scan the QR code again.',
+        'unavailable' => 'Your table session is no longer available.',
+    ],
+
     'days' => [
         'Sunday' => 'Sunday',
         'Monday' => 'Monday',

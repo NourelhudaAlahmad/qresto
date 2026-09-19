@@ -61,8 +61,10 @@ type PageProps = {
     translations: LandingTranslations;
     locale?: 'en' | 'ar';
     dir?: 'ltr' | 'rtl';
+    flash?: {
+        error?: string | null;
+    };
 };
-
 function formatTime(time: string): string {
     const [hourText, minuteText] = time.split(':');
     const hour = Number(hourText);
@@ -119,8 +121,8 @@ export default function Landing() {
         open_now,
         translations,
         locale = 'en',
+        flash,
     } = usePage<PageProps>().props;
-
     const nextLocale = locale === 'en' ? 'ar' : 'en';
     const nextLanguageLabel = nextLocale === 'ar' ? 'العربية' : 'English';
 
@@ -151,6 +153,16 @@ export default function Landing() {
             <Head title={restaurant.name} />
 
             <div className="bg-surface-page text-text-primary min-h-[100dvh]">
+                {flash?.error && (
+                    <div
+                        role="alert"
+                        className="mx-auto max-w-[390px] px-3 pt-3"
+                    >
+                        <div className="rounded-[var(--radius-container)] border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]">
+                            {flash.error}
+                        </div>
+                    </div>
+                )}
                 <header className="border-border-subtle bg-surface-page/88 sticky top-0 z-30 h-14 border-b px-3 backdrop-blur-xl">
                     <div className="mx-auto flex h-full max-w-[390px] items-center justify-between gap-3">
                         <div className="font-ui min-w-0 truncate text-base font-semibold tracking-tight">
