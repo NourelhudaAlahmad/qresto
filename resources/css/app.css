@@ -13,6 +13,7 @@
 
 @source "../views";
 @source "../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php";
+
 @theme {
     --color-clay-50: var(--clay-50);
     --color-clay-100: var(--clay-100);
@@ -258,6 +259,7 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 }
+
 @utility qr-numeric {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
@@ -273,6 +275,7 @@
     direction: ltr;
     unicode-bidi: isolate;
 }
+
 @layer base {
     *,
     *::before,
@@ -341,7 +344,7 @@
         text-wrap: pretty;
     }
 
-    a {
+    a:not([data-slot='qresto-button']) {
         color: var(--text-link);
 
         text-decoration-thickness: 1px;
@@ -351,7 +354,7 @@
         transition: color var(--dur-fast) var(--ease-standard);
     }
 
-    a:hover {
+    a:not([data-slot='qresto-button']):hover {
         color: var(--text-link-hover);
     }
 

@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Database\Factories\PaymentFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,18 +34,34 @@ class Payment extends Model
     protected function casts(): array
     {
         return [
-            'amount' => 'decimal:2',
-            'tip_amount' => 'decimal:2',
+            'amount' => MoneyCast::class,
+            'tip_amount' => MoneyCast::class,
             'requires_3ds' => 'boolean',
             'paid_at' => 'datetime',
-            'refunded_amount' => 'decimal:2',
+            'refunded_amount' => MoneyCast::class,
             'refunded_at' => 'datetime',
         ];
     }
 
     /**
-     * الطلب المرتبط بالدفع.
+     * Resolve the currency from the parent order.
      *
+     * @return Attribute<string, never>
+     */
+    protected function currency(): Attribute
+    {
+        return Attribute::get(function (): string {
+            if ($this->relationLoaded('order')) {
+                return $this->order->currency;
+            }
+
+            return Order::query()
+                ->whereKey($this->getAttribute('order_id'))
+                ->value('currency') ?? 'TRY';
+        });
+    }
+
+    /**
      * @return BelongsTo<Order, $this>
      */
     public function order(): BelongsTo
@@ -52,8 +70,6 @@ class Payment extends Model
     }
 
     /**
-     * الموظف الذي أخذ الدفعة.
-     *
      * @return BelongsTo<User, $this>
      */
     public function takenBy(): BelongsTo

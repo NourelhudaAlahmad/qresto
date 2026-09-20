@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Database\Factories\OrderLineOptionFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,13 +24,23 @@ class OrderLineOption extends Model
     protected function casts(): array
     {
         return [
-            'price_delta' => 'decimal:2',
+            'price_delta' => MoneyCast::class,
         ];
     }
 
     /**
-     * السطر الذي ينتمي إليه هذا الخيار.
+     * Resolve the currency from the parent order line.
      *
+     * @return Attribute<string, never>
+     */
+    protected function currency(): Attribute
+    {
+        return Attribute::get(
+            fn (): string => $this->orderLine->currency,
+        );
+    }
+
+    /**
      * @return BelongsTo<OrderLine, $this>
      */
     public function orderLine(): BelongsTo

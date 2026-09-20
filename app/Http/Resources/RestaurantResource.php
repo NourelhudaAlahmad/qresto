@@ -29,6 +29,7 @@ class RestaurantResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'slug' => $this->slug,
             'name' => $localized('name'),
             'tagline' => $localized('tagline'),
             'cuisine' => $localized('cuisine'),

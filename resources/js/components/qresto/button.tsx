@@ -1,9 +1,6 @@
 import { Slot } from '@radix-ui/react-slot';
-
 import { cva } from 'class-variance-authority';
-
 import type { VariantProps } from 'class-variance-authority';
-
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
@@ -12,7 +9,6 @@ const buttonVariants = cva(
     [
         'inline-flex items-center justify-center gap-2 whitespace-nowrap',
         'min-w-[44px]',
-
         'relative isolate',
         'before:absolute before:-inset-1',
         'before:min-h-[44px] before:min-w-[44px]',
@@ -35,8 +31,10 @@ const buttonVariants = cva(
                 primary: [
                     'rounded-pill',
                     'bg-action-primary',
-                    'text-text-on-brand',
+                    '!text-[var(--text-on-brand)]',
+                    '[&_svg]:!text-[var(--text-on-brand)]',
                     'hover:bg-action-primary-hover',
+                    'hover:!text-[var(--text-on-brand)]',
                     'active:bg-action-primary-active',
                     'focus-visible:ring-action-primary/30',
                 ],
@@ -44,8 +42,10 @@ const buttonVariants = cva(
                 secondary: [
                     'rounded-pill',
                     'bg-action-secondary',
-                    'text-text-on-brand',
+                    '!text-[var(--text-on-brand)]',
+                    '[&_svg]:!text-[var(--text-on-brand)]',
                     'hover:bg-action-secondary-hover',
+                    'hover:!text-[var(--text-on-brand)]',
                     'focus-visible:ring-action-secondary/30',
                 ],
 
@@ -70,7 +70,9 @@ const buttonVariants = cva(
                 destructive: [
                     'rounded-pill',
                     'bg-danger-solid',
-                    'text-text-on-brand',
+                    '!text-[var(--text-on-brand)]',
+                    '[&_svg]:!text-[var(--text-on-brand)]',
+                    'hover:!text-[var(--text-on-brand)]',
                     'hover:opacity-90',
                     'focus-visible:ring-danger/30',
                 ],

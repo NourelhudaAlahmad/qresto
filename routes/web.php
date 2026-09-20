@@ -10,7 +10,8 @@ use Inertia\Inertia;
 
 Route::get('/', [LandingController::class, 'show'])
     ->name('home');
-
+Route::get('/r/{restaurant:slug}', [LandingController::class, 'show'])
+    ->name('restaurants.show');
 if (app()->environment('local')) {
     Route::inertia('dev/components', 'dev/components')
         ->name('dev.components');

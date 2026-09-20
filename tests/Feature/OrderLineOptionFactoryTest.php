@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\OrderLine;
 use App\Models\OrderLineOption;
+use App\Support\Money;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -22,6 +23,7 @@ class OrderLineOptionFactoryTest extends TestCase
             'addon',
         ]);
         $this->assertNotEmpty($option->label_snapshot);
+        $this->assertInstanceOf(Money::class, $option->price_delta);
     }
 
     public function test_variant_state_creates_variant_option(): void
@@ -50,7 +52,10 @@ class OrderLineOptionFactoryTest extends TestCase
             ->forOrderLine($orderLine)
             ->create();
 
-        $this->assertEquals($orderLine->id, $option->order_line_id);
+        $this->assertEquals(
+            $orderLine->id,
+            $option->order_line_id,
+        );
     }
 
     public function test_free_option_has_zero_price_delta(): void
@@ -59,15 +64,57 @@ class OrderLineOptionFactoryTest extends TestCase
             ->free()
             ->create();
 
-        $this->assertEquals(0, (float) $option->price_delta);
+        $this->assertInstanceOf(
+            Money::class,
+            $option->price_delta,
+        );
+
+        $this->assertSame(
+            0,
+            $option->price_delta->amount(),
+        );
     }
 
     public function test_price_delta_state_sets_price_correctly(): void
     {
         $option = OrderLineOption::factory()
-            ->priceDelta(3.50)
+            ->priceDelta(350)
             ->create();
 
-        $this->assertEquals(3.50, (float) $option->price_delta);
+        $this->assertInstanceOf(
+            Money::class,
+            $option->price_delta,
+        );
+
+        $this->assertSame(
+            350,
+            $option->price_delta->amount(),
+        );
+    }
+
+    public function test_price_delta_uses_parent_order_currency(): void
+    {
+        $orderLine = OrderLine::factory()->create();
+
+        $orderLine->order->update([
+            'currency' => 'USD',
+        ]);
+
+        $orderLine->unsetRelation('order');
+
+        $option = OrderLineOption::factory()
+            ->forOrderLine($orderLine)
+            ->priceDelta(350)
+            ->create();
+
+        $this->assertSame(
+            'USD',
+            $option->price_delta->currency(),
+        );
+
+        $this->assertSame(
+            350,
+            $option->price_delta->amount(),
+        );
     }
 }

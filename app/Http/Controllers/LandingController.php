@@ -14,11 +14,9 @@ use Inertia\Response;
 
 class LandingController extends Controller
 {
-    public function show(): Response|RedirectResponse
+    public function show(?Restaurant $restaurant = null): Response|RedirectResponse
     {
-        $restaurant = Restaurant::query()
-            ->where('slug', 'al-bustan')
-            ->firstOrFail();
+        $restaurant ??= Restaurant::query()->firstOrFail();
 
         $locale = app()->getLocale();
         $cacheVersion = LandingCache::version($restaurant->id);
@@ -51,7 +49,7 @@ class LandingController extends Controller
                     ->values()
                     ->all();
 
-                $featuredQuery = MenuItem::withoutGlobalScopes()
+                $featuredQuery = MenuItem::withoutGlobalScope('restaurant')
                     ->where('restaurant_id', $restaurant->id)
                     ->availableNow();
 

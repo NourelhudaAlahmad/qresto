@@ -24,7 +24,7 @@ class PaymentFactory extends Factory
                 'online',
             ]),
             'status' => 'pending',
-            'amount' => fake()->randomFloat(2, 5, 200),
+            'amount' => fake()->numberBetween(500, 20000),
             'tip_amount' => 0,
             'gateway' => null,
             'gateway_intent_id' => null,
@@ -70,11 +70,11 @@ class PaymentFactory extends Factory
         ]);
     }
 
-    public function refunded(float $amount = 0): static
+    public function refunded(int $minorUnits = 0): static
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'refunded',
-            'refunded_amount' => $amount,
+            'refunded_amount' => $minorUnits,
             'refunded_at' => now(),
         ]);
     }
@@ -86,10 +86,10 @@ class PaymentFactory extends Factory
         ]);
     }
 
-    public function withTip(float $amount): static
+    public function withTip(int $minorUnits): static
     {
         return $this->state(fn (array $attributes) => [
-            'tip_amount' => $amount,
+            'tip_amount' => $minorUnits,
         ]);
     }
 

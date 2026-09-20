@@ -22,7 +22,7 @@ class OrderLineOptionFactory extends Factory
                 'addon',
             ]),
             'label_snapshot' => fake()->words(2, true),
-            'price_delta' => fake()->randomFloat(2, -5, 10),
+            'price_delta' => fake()->numberBetween(-500, 1000),
         ];
     }
 
@@ -54,10 +54,10 @@ class OrderLineOptionFactory extends Factory
         ]);
     }
 
-    public function priceDelta(float $amount): static
+    public function priceDelta(int $minorUnits): static
     {
         return $this->state(fn (array $attributes) => [
-            'price_delta' => $amount,
+            'price_delta' => $minorUnits,
         ]);
     }
 }

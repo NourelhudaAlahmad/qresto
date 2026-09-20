@@ -2,10 +2,11 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Landing from '@/pages/guest/landing';
+import type { LandingPageProps } from '@/types/landing';
 
 const post = vi.fn();
 
-const pageProps = {
+const landingProps: LandingPageProps = {
     restaurant: {
         id: 1,
         name: 'Levantine',
@@ -20,6 +21,7 @@ const pageProps = {
         currency: 'USD',
         timezone: 'America/New_York',
     },
+
     hours: [
         {
             day: 'Sunday',
@@ -36,6 +38,7 @@ const pageProps = {
             is_today: false,
         },
     ],
+
     featured_items: [
         {
             id: 1,
@@ -52,9 +55,9 @@ const pageProps = {
             photo_path: null,
         },
     ],
+
     open_now: true,
-    locale: 'en',
-    dir: 'ltr',
+
     translations: {
         open_now: 'Open now',
         closed: 'Closed',
@@ -79,28 +82,42 @@ const pageProps = {
     },
 };
 
-let currentProps = pageProps;
+let currentSharedProps = {
+    locale: 'en' as const,
+    flash: {
+        error: null,
+    },
+};
 
 vi.mock('@inertiajs/react', () => ({
     Head: ({ title }: { title: string }) => <title>{title}</title>,
+
     router: {
         post: (...args: unknown[]) => post(...args),
     },
+
     usePage: () => ({
-        props: currentProps,
+        props: currentSharedProps,
     }),
 }));
 
 describe('Guest landing page', () => {
     beforeEach(() => {
         post.mockClear();
-        currentProps = pageProps;
+
+        currentSharedProps = {
+            locale: 'en',
+            flash: {
+                error: null,
+            },
+        };
     });
 
     it('renders the restaurant, status, featured items, and primary actions', () => {
-        render(<Landing />);
+        render(<Landing {...landingProps} />);
 
         expect(screen.getAllByText('Levantine')).toHaveLength(2);
+
         expect(screen.getByText('Open now')).toBeInTheDocument();
 
         expect(
@@ -121,19 +138,14 @@ describe('Guest landing page', () => {
     });
 
     it('renders the closed status when the restaurant is closed', () => {
-        currentProps = {
-            ...pageProps,
-            open_now: false,
-        };
-
-        render(<Landing />);
+        render(<Landing {...landingProps} open_now={false} />);
 
         expect(screen.getByText('Closed')).toBeInTheDocument();
         expect(screen.queryByText('Open now')).not.toBeInTheDocument();
     });
 
     it('keeps prices, opening times, and phone numbers left-to-right', () => {
-        render(<Landing />);
+        render(<Landing {...landingProps} />);
 
         expect(screen.getByText('$18.00')).toHaveAttribute('dir', 'ltr');
 
@@ -149,7 +161,7 @@ describe('Guest landing page', () => {
     });
 
     it('marks today and renders the room prose at 17px', () => {
-        render(<Landing />);
+        render(<Landing {...landingProps} />);
 
         const sunday = screen.getByText('Sunday');
         const todayRow = sunday.parentElement;
@@ -165,7 +177,7 @@ describe('Guest landing page', () => {
     });
 
     it('switches from English to Arabic while preserving page state', () => {
-        render(<Landing />);
+        render(<Landing {...landingProps} />);
 
         fireEvent.click(
             screen.getByRole('button', {
@@ -186,12 +198,7 @@ describe('Guest landing page', () => {
     });
 
     it('renders the empty featured-items state', () => {
-        currentProps = {
-            ...pageProps,
-            featured_items: [],
-        };
-
-        render(<Landing />);
+        render(<Landing {...landingProps} featured_items={[]} />);
 
         expect(
             screen.getByText("Tonight's featured dishes are being prepared."),

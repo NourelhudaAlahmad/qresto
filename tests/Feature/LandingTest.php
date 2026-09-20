@@ -7,7 +7,39 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
+it('renders the landing page for the restaurant passed through the route', function (): void {
+    $firstRestaurant = Restaurant::factory()->create([
+        'name' => 'Al Bustan',
+        'slug' => 'al-bustan',
+        'timezone' => 'America/New_York',
+    ]);
 
+    $secondRestaurant = Restaurant::factory()->create([
+        'name' => 'Luna Restaurant',
+        'slug' => 'luna-restaurant',
+        'timezone' => 'Europe/Istanbul',
+    ]);
+
+    $response = $this->get(
+        route('restaurants.show', [
+            'restaurant' => $secondRestaurant->slug,
+        ]),
+    );
+
+    $response->assertOk();
+
+    $response->assertInertia(
+        fn (Assert $page) => $page
+            ->component('guest/landing')
+            ->where('restaurant.id', $secondRestaurant->id)
+            ->where('restaurant.name', 'Luna Restaurant')
+            ->where('restaurant.slug', 'luna-restaurant')
+            ->where(
+                'restaurant.id',
+                fn ($id) => $id !== $firstRestaurant->id,
+            ),
+    );
+});
 it('renders the public landing page for guests', function (): void {
     Restaurant::factory()->create([
         'slug' => 'al-bustan',

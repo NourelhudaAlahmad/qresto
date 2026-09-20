@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
+use App\Support\Money;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -26,11 +27,39 @@ class PaymentFactoryTest extends TestCase
         ]);
 
         $this->assertSame('pending', $payment->status);
-        $this->assertGreaterThan(0, $payment->amount);
-        $this->assertEquals(0, (float) $payment->tip_amount);
+
+        $this->assertInstanceOf(
+            Money::class,
+            $payment->amount,
+        );
+
+        $this->assertGreaterThan(
+            0,
+            $payment->amount->amount(),
+        );
+
+        $this->assertInstanceOf(
+            Money::class,
+            $payment->tip_amount,
+        );
+
+        $this->assertSame(
+            0,
+            $payment->tip_amount->amount(),
+        );
+
         $this->assertFalse($payment->requires_3ds);
         $this->assertNull($payment->paid_at);
-        $this->assertEquals(0, (float) $payment->refunded_amount);
+
+        $this->assertInstanceOf(
+            Money::class,
+            $payment->refunded_amount,
+        );
+
+        $this->assertSame(
+            0,
+            $payment->refunded_amount->amount(),
+        );
     }
 
     public function test_payment_can_be_created_for_specific_order(): void
@@ -41,7 +70,10 @@ class PaymentFactoryTest extends TestCase
             ->forOrder($order)
             ->create();
 
-        $this->assertEquals($order->id, $payment->order_id);
+        $this->assertEquals(
+            $order->id,
+            $payment->order_id,
+        );
     }
 
     public function test_paid_state_marks_payment_as_paid(): void
@@ -71,18 +103,31 @@ class PaymentFactoryTest extends TestCase
             ->create();
 
         $this->assertSame('failed', $payment->status);
-        $this->assertSame('Card was declined', $payment->failure_reason);
+        $this->assertSame(
+            'Card was declined',
+            $payment->failure_reason,
+        );
         $this->assertNull($payment->paid_at);
     }
 
     public function test_refunded_state_stores_refunded_amount(): void
     {
         $payment = Payment::factory()
-            ->refunded(25.50)
+            ->refunded(2550)
             ->create();
 
         $this->assertSame('refunded', $payment->status);
-        $this->assertEquals(25.50, (float) $payment->refunded_amount);
+
+        $this->assertInstanceOf(
+            Money::class,
+            $payment->refunded_amount,
+        );
+
+        $this->assertSame(
+            2550,
+            $payment->refunded_amount->amount(),
+        );
+
         $this->assertNotNull($payment->refunded_at);
     }
 
@@ -94,16 +139,27 @@ class PaymentFactoryTest extends TestCase
             ->takenBy($user)
             ->create();
 
-        $this->assertEquals($user->id, $payment->taken_by);
+        $this->assertEquals(
+            $user->id,
+            $payment->taken_by,
+        );
     }
 
     public function test_payment_can_have_tip(): void
     {
         $payment = Payment::factory()
-            ->withTip(7.50)
+            ->withTip(750)
             ->create();
 
-        $this->assertEquals(7.50, (float) $payment->tip_amount);
+        $this->assertInstanceOf(
+            Money::class,
+            $payment->tip_amount,
+        );
+
+        $this->assertSame(
+            750,
+            $payment->tip_amount->amount(),
+        );
     }
 
     public function test_payment_can_use_gateway(): void
@@ -112,8 +168,15 @@ class PaymentFactoryTest extends TestCase
             ->withGateway('stripe', 'pi_test_123')
             ->create();
 
-        $this->assertSame('stripe', $payment->gateway);
-        $this->assertSame('pi_test_123', $payment->gateway_intent_id);
+        $this->assertSame(
+            'stripe',
+            $payment->gateway,
+        );
+
+        $this->assertSame(
+            'pi_test_123',
+            $payment->gateway_intent_id,
+        );
     }
 
     public function test_payment_can_require_3ds(): void
@@ -123,5 +186,50 @@ class PaymentFactoryTest extends TestCase
             ->create();
 
         $this->assertTrue($payment->requires_3ds);
+    }
+
+    public function test_payment_uses_parent_order_currency(): void
+    {
+        $order = Order::factory()->create([
+            'currency' => 'USD',
+        ]);
+
+        $payment = Payment::factory()
+            ->forOrder($order)
+            ->create([
+                'amount' => 2550,
+                'tip_amount' => 750,
+                'refunded_amount' => 500,
+            ]);
+
+        $this->assertSame(
+            'USD',
+            $payment->amount->currency(),
+        );
+
+        $this->assertSame(
+            'USD',
+            $payment->tip_amount->currency(),
+        );
+
+        $this->assertSame(
+            'USD',
+            $payment->refunded_amount->currency(),
+        );
+
+        $this->assertSame(
+            2550,
+            $payment->amount->amount(),
+        );
+
+        $this->assertSame(
+            750,
+            $payment->tip_amount->amount(),
+        );
+
+        $this->assertSame(
+            500,
+            $payment->refunded_amount->amount(),
+        );
     }
 }

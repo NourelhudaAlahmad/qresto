@@ -183,8 +183,15 @@ class AlBustanOrdersSeeder extends Seeder
 
             $currency = strtoupper($restaurant->currency);
 
-            $tipAmount = Money::fromDecimal($data['tip'], $currency);
-            $discountAmount = Money::fromDecimal($data['discount'], $currency);
+            $tipAmount = Money::fromDecimal(
+                $data['tip'],
+                $currency,
+            );
+
+            $discountAmount = Money::fromDecimal(
+                $data['discount'],
+                $currency,
+            );
 
             $totals = OrderTotals::calculate(
                 collect($lineData)
@@ -198,13 +205,16 @@ class AlBustanOrdersSeeder extends Seeder
                 $discountAmount,
             );
 
-            $expectedTotal = Money::fromDecimal($data['total'], $currency);
+            $expectedTotal = Money::fromDecimal(
+                $data['total'],
+                $currency,
+            );
 
             if ($totals->total->amount() !== $expectedTotal->amount()) {
                 throw new \RuntimeException(
                     "Order {$data['code']} total mismatch. ".
-                        "Expected {$expectedTotal->formatted()}, ".
-                        "calculated {$totals->total->formatted()}."
+                    "Expected {$expectedTotal->formatted()}, ".
+                    "calculated {$totals->total->formatted()}."
                 );
             }
 
@@ -219,8 +229,10 @@ class AlBustanOrdersSeeder extends Seeder
                     'guest_name' => $data['guest'],
                     'assigned_user_id' => $waiter?->id,
                     'status' => OrderStatus::PLACED,
-                    'placed_at' => now()->subMinutes($data['minutes_ago']),
-                    'currency' => 'TRY',
+                    'placed_at' => now()->subMinutes(
+                        $data['minutes_ago']
+                    ),
+                    'currency' => $currency,
                     'subtotal' => $totals->subtotal,
                     'service_pct' => $servicePct,
                     'service_amount' => $totals->serviceAmount,
@@ -239,16 +251,20 @@ class AlBustanOrdersSeeder extends Seeder
             foreach ($lineData as $line) {
                 $menuItem = $line['menu_item'];
                 $unitPrice = $menuItem->price;
-                $lineTotal = $unitPrice->multiply((int) $line['qty']);
+                $lineTotal = $unitPrice->multiply(
+                    (int) $line['qty']
+                );
 
                 $order->lines()->create([
                     'menu_item_id' => $menuItem->id,
                     'name_snapshot' => $menuItem->name,
-                    'unit_price' => $unitPrice->formatted(),
+                    'unit_price' => $unitPrice,
                     'qty' => $line['qty'],
-                    'line_total' => $lineTotal->formatted(),
+                    'line_total' => $lineTotal,
                     'note' => $line['note'],
-                    'station' => $this->stationFor($menuItem->name),
+                    'station' => $this->stationFor(
+                        $menuItem->name
+                    ),
                 ]);
             }
 
@@ -261,25 +277,36 @@ class AlBustanOrdersSeeder extends Seeder
             if ($data['paid']) {
                 $order->update([
                     'is_paid' => true,
-                    'paid_at' => now()->subMinutes($data['minutes_ago']),
+                    'paid_at' => now()->subMinutes(
+                        $data['minutes_ago']
+                    ),
                 ]);
 
                 $order->payments()->create([
                     'method' => 'card',
                     'status' => 'paid',
-                    'amount' => $expectedTotal->formatted(),
-                    'tip_amount' => $tipAmount->formatted(),
+                    'amount' => $expectedTotal,
+                    'tip_amount' => $tipAmount,
                     'gateway' => 'demo',
                     'gateway_intent_id' => 'demo_'.
                         strtolower(
-                            str_replace('#', '', $data['code'])
+                            str_replace(
+                                '#',
+                                '',
+                                $data['code']
+                            )
                         ),
                     'gateway_status' => 'succeeded',
                     'requires_3ds' => false,
                     'failure_reason' => null,
                     'taken_by' => $waiter?->id,
-                    'paid_at' => now()->subMinutes($data['minutes_ago']),
-                    'refunded_amount' => '0.00',
+                    'paid_at' => now()->subMinutes(
+                        $data['minutes_ago']
+                    ),
+                    'refunded_amount' => Money::fromMinor(
+                        0,
+                        $currency,
+                    ),
                     'refunded_at' => null,
                 ]);
             }
