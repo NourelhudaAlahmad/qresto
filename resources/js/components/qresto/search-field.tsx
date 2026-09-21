@@ -15,15 +15,15 @@ function SearchField({ className, ...props }: SearchFieldProps) {
                 className,
             )}
         >
+            {' '}
             <SearchIcon
                 aria-hidden="true"
-                className="text-text-tertiary pointer-events-none absolute left-3 size-4"
+                className="text-text-tertiary pointer-events-none absolute start-3 size-4"
             />
-
             <Input
                 {...props}
                 type="search"
-                className="pl-10"
+                className="ps-10"
                 aria-label={props['aria-label'] ?? 'Search'}
             />
         </div>

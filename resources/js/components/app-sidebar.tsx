@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -16,13 +16,9 @@ import {
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-];
+type PageProps = {
+    nav?: NavItem[];
+};
 
 const footerNavItems: NavItem[] = [
     {
@@ -37,7 +33,26 @@ const footerNavItems: NavItem[] = [
     },
 ];
 
+const navIcons: Record<string, typeof LayoutGrid> = {
+    dashboard: LayoutGrid,
+    waiter: LayoutGrid,
+    floor: LayoutGrid,
+    manager: LayoutGrid,
+    admin: LayoutGrid,
+    menu: LayoutGrid,
+    reports: LayoutGrid,
+    kds: LayoutGrid,
+    auth: LayoutGrid,
+};
+
 export function AppSidebar() {
+    const { nav = [] } = usePage<PageProps>().props;
+
+    const mainNavItems: NavItem[] = nav.map((item) => ({
+        ...item,
+        icon: item.icon ?? (item.id ? navIcons[item.id] : undefined),
+    }));
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>

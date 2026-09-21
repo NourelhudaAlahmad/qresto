@@ -2,46 +2,120 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\CapabilitySnapshot;
+use App\Services\NavigationBuilder;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * The root template that's loaded on the first page visit.
-     *
-     * @see https://inertiajs.com/server-side-setup#root-template
-     *
-     * @var string
-     */
     protected $rootView = 'app';
 
-    /**
-     * Determines the current asset version.
-     *
-     * @see https://inertiajs.com/asset-versioning
-     */
     public function version(Request $request): ?string
     {
         return parent::version($request);
     }
 
-    /**
-     * Define the props that are shared by default.
-     *
-     * @see https://inertiajs.com/shared-data
-     *
-     * @return array<string, mixed>
-     */
     public function share(Request $request): array
     {
-        return [
+        $user = $request->user();
+
+        $restaurant = $user?->restaurant;
+
+        $availableLocales = $restaurant->supported_locales
+            ?? ['en', 'ar'];
+
+        $locale = app()->getLocale();
+
+        $dir = $locale === 'ar' ? 'rtl' : 'ltr';
+
+        $shared = [
             ...parent::share($request),
+
             'name' => config('app.name'),
-            'auth' => [
-                'user' => $request->user(),
+
+            'flash' => [
+                'error' => fn () => $request->session()->get('error'),
             ],
-            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+
+            'locale' => $locale,
+
+            'dir' => $dir,
+
+            'available_locales' => $availableLocales,
+
+            'qresto' => [
+                'sla' => [
+                    'warn_minutes' => (int) config(
+                        'qresto.sla.warn_minutes',
+                        14,
+                    ),
+                    'late_minutes' => (int) config(
+                        'qresto.sla.late_minutes',
+                        25,
+                    ),
+                ],
+
+                'live' => [
+                    'waiter_interval' => (int) config(
+                        'qresto.live.waiter_interval',
+                        5,
+                    ) * 1000,
+
+                    'floor_interval' => (int) config(
+                        'qresto.live.floor_interval',
+                        8,
+                    ) * 1000,
+
+                    'kds_interval' => (int) config(
+                        'qresto.live.kds_interval',
+                        4,
+                    ) * 1000,
+
+                    'guest_status_interval' => (int) config(
+                        'qresto.live.guest_status_interval',
+                        10,
+                    ) * 1000,
+                ],
+            ],
+        ];
+
+        if ($user === null) {
+            return [
+                ...$shared,
+
+                'auth' => [
+                    'user' => null,
+                ],
+
+                'nav' => [],
+
+                'capabilities' => [],
+
+                'sidebarOpen' => ! $request->hasCookie('sidebar_state')
+                    || $request->cookie('sidebar_state') === 'true',
+            ];
+        }
+
+        $capabilitySnapshot = app(CapabilitySnapshot::class);
+        $capabilities = $capabilitySnapshot->get($user);
+
+        return [
+            ...$shared,
+
+            'auth' => [
+                'user' => $user,
+            ],
+
+            'nav' => app(NavigationBuilder::class)->for(
+                $user,
+                $capabilities,
+            ),
+
+            'capabilities' => $capabilities,
+
+            'sidebarOpen' => ! $request->hasCookie('sidebar_state')
+                || $request->cookie('sidebar_state') === 'true',
         ];
     }
 }

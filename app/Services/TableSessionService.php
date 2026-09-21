@@ -17,11 +17,7 @@ class TableSessionService
     {
         $table = RestaurantTable::withoutGlobalScopes()
             ->where('qr_token', $qrToken)
-            ->first();
-
-        if ($table === null) {
-            throw new RuntimeException('Table not found.');
-        }
+            ->firstOrFail();
 
         $restaurant = $table->restaurant;
 

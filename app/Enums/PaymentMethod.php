@@ -11,16 +11,18 @@ enum PaymentMethod: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::CARD => 'Card',
-            self::WALLET => 'Wallet',
-            self::CASH => 'Cash',
-            self::POS => 'POS',
-        };
+        return __(
+            'payments.methods.'.$this->value,
+        );
     }
 
     public function color(): string
     {
-        return 'ink';
+        return match ($this) {
+            self::CARD => 'ink',
+            self::WALLET => 'teal',
+            self::CASH => 'herb',
+            self::POS => 'saffron',
+        };
     }
 }

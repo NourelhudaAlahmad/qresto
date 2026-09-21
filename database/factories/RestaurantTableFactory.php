@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\TableState;
+use App\Models\Restaurant;
 use App\Models\RestaurantTable;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,7 +20,7 @@ class RestaurantTableFactory extends Factory
     public function definition(): array
     {
         return [
-            'restaurant_id' => null,
+            'restaurant_id' => Restaurant::factory(),
             'number' => fake()->unique()->numberBetween(1, 99),
             'seats' => fake()->numberBetween(2, 8),
             'state' => TableState::FREE,
@@ -28,5 +29,12 @@ class RestaurantTableFactory extends Factory
             'qr_token' => fake()->unique()->sha256(),
             'sort_order' => fake()->numberBetween(1, 99),
         ];
+    }
+
+    public function forRestaurant(Restaurant $restaurant): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'restaurant_id' => $restaurant->id,
+        ]);
     }
 }

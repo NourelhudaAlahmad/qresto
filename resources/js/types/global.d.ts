@@ -13,6 +13,15 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            locale: 'en' | 'ar';
+            dir: 'ltr' | 'rtl';
+            available_locales: string[];
+            qresto: {
+                sla: {
+                    warn_minutes: number;
+                    late_minutes: number;
+                };
+            };
             [key: string]: unknown;
         };
     }

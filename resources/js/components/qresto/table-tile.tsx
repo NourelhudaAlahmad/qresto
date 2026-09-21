@@ -1,3 +1,4 @@
+import { Numeric } from '@/components/numeric';
 import type { TableState } from '@/types';
 
 type TableTileProps = {
@@ -26,7 +27,8 @@ export function TableTile({ table, state }: TableTileProps) {
             className={`min-h-24 rounded-[var(--radius-lg)] border p-3 ${stateStyles[state]}`}
             data-state={state}
         >
-            <div className="text-title-2 font-mono">{table}</div>
+            <Numeric className="text-title-2">{table}</Numeric>
+
             <div className="text-micro">{stateLabels[state]}</div>
         </div>
     );

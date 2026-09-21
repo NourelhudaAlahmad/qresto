@@ -11,7 +11,8 @@ describe('ResponsiveOverlay', () => {
                 onOpenChange={vi.fn()}
                 title="Confirm"
             >
-                <p>Are you sure?</p>
+                {' '}
+                <p>Are you sure?</p>{' '}
             </ResponsiveOverlay>,
         );
 
@@ -32,9 +33,9 @@ describe('ResponsiveOverlay', () => {
 
         const content = getByText('Confirm').closest('[role="dialog"]');
 
-        expect(content).toHaveClass('left-1/2');
+        expect(content).toHaveClass('start-1/2');
         expect(content).toHaveClass('top-1/2');
-        expect(content).toHaveClass('max-[767px]:left-0');
+        expect(content).toHaveClass('max-[767px]:inset-x-0');
         expect(content).toHaveClass('max-[767px]:bottom-0');
     });
 });

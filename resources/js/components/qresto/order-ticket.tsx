@@ -1,3 +1,4 @@
+import { Numeric } from '@/components/numeric';
 import type { OrderStatus } from '@/types';
 
 type OrderTicketItem = {
@@ -57,17 +58,15 @@ export function OrderTicket({
             <div
                 className={`flex items-center gap-2 border-b px-3 pb-2 pt-3 ${styles.divider}`}
             >
-                <span
-                    className={`text-title-3 font-mono font-medium ${styles.code}`}
-                >
+                <Numeric className={`text-title-3 font-medium ${styles.code}`}>
                     {code}
-                </span>
+                </Numeric>
 
                 <span className="flex-1" />
 
-                <span className={`text-caption font-mono ${styles.elapsed}`}>
+                <Numeric className={`text-caption ${styles.elapsed}`}>
                     {elapsed}
-                </span>
+                </Numeric>
             </div>
 
             <div
@@ -80,7 +79,7 @@ export function OrderTicket({
                 <span aria-hidden="true">▦</span>
 
                 <span>
-                    {table} · {guest}
+                    <Numeric>{table}</Numeric> · {guest}
                 </span>
             </div>
 
@@ -88,15 +87,15 @@ export function OrderTicket({
                 {items.map((item, index) => (
                     <div key={`${item.name}-${index}`}>
                         <div className="text-body flex gap-2">
-                            <span className="font-mono text-[var(--text-tertiary)]">
+                            <Numeric className="text-[var(--text-tertiary)]">
                                 {item.qty}
-                            </span>
+                            </Numeric>
 
                             <span className="min-w-0 flex-1">{item.name}</span>
                         </div>
 
                         {item.note && (
-                            <span className="text-caption ml-[26px] inline-block text-[var(--saffron-300)]">
+                            <span className="text-caption ms-[26px] inline-block text-[var(--saffron-300)]">
                                 {item.note}
                             </span>
                         )}
@@ -123,7 +122,7 @@ export function OrderTicket({
 
                 <span className="flex-1" />
 
-                <span className="text-body font-mono font-medium">{total}</span>
+                <Numeric className="text-body font-medium">{total}</Numeric>
             </div>
 
             <div className="flex gap-2 p-3">

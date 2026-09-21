@@ -40,8 +40,8 @@ describe('DataTable', () => {
             <DataTable columns={columns} rows={rows} />,
         );
 
-        expect(getByText('22')).toHaveClass('text-right', 'font-mono');
-        expect(getByText('$2,418.00')).toHaveClass('text-right', 'font-mono');
+        expect(getByText('22')).toHaveClass('text-end', 'font-mono');
+        expect(getByText('$2,418.00')).toHaveClass('text-end', 'font-mono');
     });
 
     it('renders the optional total row', () => {

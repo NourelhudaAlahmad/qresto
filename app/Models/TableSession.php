@@ -7,6 +7,7 @@ use Database\Factories\TableSessionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class TableSession extends Model
@@ -54,6 +55,14 @@ class TableSession extends Model
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);
+    }
+
+    /**
+     * @return HasOne<Cart, $this>
+     */
+    public function cart(): HasOne
+    {
+        return $this->hasOne(Cart::class);
     }
 
     public static function openFor(RestaurantTable $table): self

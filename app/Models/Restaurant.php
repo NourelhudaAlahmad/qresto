@@ -29,6 +29,7 @@ class Restaurant extends Model
         'default_locale',
         'supported_locales',
         'timezone',
+        'translations',
     ];
 
     /**
@@ -44,6 +45,7 @@ class Restaurant extends Model
     {
         return [
             'supported_locales' => 'array',
+            'translations' => 'array',
             'service_charge_pct' => 'decimal:2',
         ];
     }
@@ -70,6 +72,19 @@ class Restaurant extends Model
     public function tables(): HasMany
     {
         return $this->hasMany(RestaurantTable::class);
+    }
+
+    public function translated(
+        string $field,
+        ?string $locale = null
+    ): ?string {
+        $locale ??= app()->getLocale();
+
+        $translations = $this->translations ?? [];
+
+        return $translations[$locale][$field]
+            ?? $translations[$this->default_locale][$field]
+            ?? $this->{$field};
     }
 
     public function isOpenAt(CarbonInterface $dateTime): bool

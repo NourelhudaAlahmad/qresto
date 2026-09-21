@@ -4,8 +4,10 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Concerns\BelongsToRestaurant;
+use App\Support\LandingCache;
 use Database\Factories\MenuItemFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -38,6 +40,17 @@ class MenuItem extends Model
         'updated_by',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (MenuItem $item): void {
+            LandingCache::invalidate($item->restaurant_id);
+        });
+
+        static::deleted(function (MenuItem $item): void {
+            LandingCache::invalidate($item->restaurant_id);
+        });
+    }
+
     protected function casts(): array
     {
         return [
@@ -52,6 +65,42 @@ class MenuItem extends Model
             'dietary_tags' => 'array',
             'chef_flag' => 'boolean',
         ];
+    }
+
+    /**
+     * Return the translated item name for the current locale.
+     *
+     * @return Attribute<string, never>
+     */
+    protected function translatedName(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                $translations = $this->translations ?? [];
+                $locale = app()->getLocale();
+
+                return $translations[$locale]
+                    ?? $translations['en']
+                    ?? $this->getRawOriginal('name')
+                    ?? '';
+            },
+        );
+    }
+
+    /**
+     * Return the menu item's description.
+     *
+     * Descriptions currently live in the dedicated description column.
+     *
+     * @return Attribute<string, never>
+     */
+    protected function translatedDescription(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                return $this->getRawOriginal('description') ?? '';
+            },
+        );
     }
 
     /**

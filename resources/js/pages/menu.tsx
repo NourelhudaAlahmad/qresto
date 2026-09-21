@@ -8,7 +8,6 @@ type MenuProps = {
         number: string;
     };
     session: {
-        token: string;
         active: boolean;
     };
 };

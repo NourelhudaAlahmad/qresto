@@ -50,7 +50,11 @@ describe('OrderTicket', () => {
 
         expect(getByText('#A-1043')).toBeInTheDocument();
         expect(getByText('14 min')).toBeInTheDocument();
-        expect(getByText('Table 12 · Rami')).toBeInTheDocument();
+        expect(
+            getByText(
+                (_, element) => element?.textContent === 'Table 12 · Rami',
+            ),
+        ).toBeInTheDocument();
         expect(getByText('$54.35')).toBeInTheDocument();
         expect(getByText('Paid')).toBeInTheDocument();
     });
