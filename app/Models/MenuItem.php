@@ -68,6 +68,8 @@ class MenuItem extends Model
     }
 
     /**
+     * Return the translated item name for the current locale.
+     *
      * @return Attribute<string, never>
      */
     protected function translatedName(): Attribute
@@ -86,19 +88,17 @@ class MenuItem extends Model
     }
 
     /**
+     * Return the menu item's description.
+     *
+     * Descriptions currently live in the dedicated description column.
+     *
      * @return Attribute<string, never>
      */
     protected function translatedDescription(): Attribute
     {
         return Attribute::make(
             get: function (): string {
-                $translations = $this->translations ?? [];
-                $locale = app()->getLocale();
-
-                return $translations[$locale]
-                    ?? $translations['en']
-                    ?? $this->getRawOriginal('description')
-                    ?? '';
+                return $this->getRawOriginal('description') ?? '';
             },
         );
     }

@@ -267,7 +267,14 @@
     direction: ltr;
     unicode-bidi: isolate;
 }
+@utility scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
 [data-numeric] {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;

@@ -23,7 +23,18 @@ class TableSessionFactory extends Factory
 
         return [
             'restaurant_id' => Restaurant::factory(),
-            'restaurant_table_id' => RestaurantTable::factory(),
+
+            'restaurant_table_id' => function (array $attributes) {
+                $restaurantId = (int) $attributes['restaurant_id'];
+
+                return RestaurantTable::factory()
+                    ->forRestaurant(
+                        Restaurant::query()->findOrFail($restaurantId),
+                    )
+                    ->create()
+                    ->id;
+            },
+
             'token' => fake()->unique()->sha256(),
             'guest_name' => fake()->firstName(),
             'party_size' => fake()->numberBetween(1, 6),
