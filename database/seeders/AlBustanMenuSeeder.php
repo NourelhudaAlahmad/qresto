@@ -220,6 +220,34 @@ class AlBustanMenuSeeder extends Seeder
             );
 
             if ($item->name === 'Lamb kofta') {
+                $variants = [
+                    [
+                        'label' => 'Single · 3 skewers',
+                        'price_delta' => 0,
+                        'is_default' => true,
+                        'sort_order' => 1,
+                    ],
+                    [
+                        'label' => 'Sharing · 6 skewers',
+                        'price_delta' => 1400,
+                        'is_default' => false,
+                        'sort_order' => 2,
+                    ],
+                ];
+
+                foreach ($variants as $variant) {
+                    $item->variants()->updateOrCreate(
+                        [
+                            'label' => $variant['label'],
+                        ],
+                        [
+                            'price_delta' => $variant['price_delta'],
+                            'is_default' => $variant['is_default'],
+                            'sort_order' => $variant['sort_order'],
+                        ],
+                    );
+                }
+
                 $addons = [
                     [
                         'label' => 'Extra taboon bread',

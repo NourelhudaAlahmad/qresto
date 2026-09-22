@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\CartLineController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MenuController;
+use App\Http\Controllers\MenuItemController;
 use App\Http\Controllers\QrController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,8 +39,15 @@ Route::middleware('throttle:30,1')->group(function () {
         ->name('table.tables');
 });
 
-Route::get('/menu', [MenuController::class, 'index'])
-    ->middleware('table.session')
-    ->name('menu');
+Route::middleware('table.session')->group(function () {
+    Route::get('/menu', [MenuController::class, 'index'])
+        ->name('menu');
+
+    Route::get('/menu/{menuItem}', [MenuItemController::class, 'show'])
+        ->name('menu.items.show');
+
+    Route::post('/cart/lines', [CartLineController::class, 'store'])
+        ->name('cart.lines.store');
+});
 
 require __DIR__.'/settings.php';

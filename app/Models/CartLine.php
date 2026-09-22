@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CartLine extends Model
 {
@@ -17,8 +18,11 @@ class CartLine extends Model
     protected $fillable = [
         'cart_id',
         'menu_item_id',
+        'menu_item_variant_id',
         'name_snapshot',
+        'variant_label_snapshot',
         'unit_price',
+        'variant_price_delta',
         'qty',
         'line_total',
         'note',
@@ -28,6 +32,7 @@ class CartLine extends Model
     {
         return [
             'unit_price' => MoneyCast::class,
+            'variant_price_delta' => MoneyCast::class,
             'qty' => 'integer',
             'line_total' => MoneyCast::class,
         ];
@@ -65,5 +70,24 @@ class CartLine extends Model
     public function menuItem(): BelongsTo
     {
         return $this->belongsTo(MenuItem::class);
+    }
+
+    /**
+     * @return BelongsTo<MenuItemVariant, $this>
+     */
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(
+            MenuItemVariant::class,
+            'menu_item_variant_id',
+        );
+    }
+
+    /**
+     * @return HasMany<CartLineAddon, $this>
+     */
+    public function addons(): HasMany
+    {
+        return $this->hasMany(CartLineAddon::class);
     }
 }

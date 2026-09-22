@@ -11,6 +11,18 @@ use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
+function menuQueryCount(): int
+{
+    return collect(DB::getQueryLog())
+        ->reject(function (array $query): bool {
+            return str_starts_with(
+                strtolower($query['query']),
+                'update "table_sessions" set "last_seen_at"',
+            );
+        })
+        ->count();
+}
+
 it('renders menu categories in sort order instead of alphabetical order', function (): void {
     $restaurant = Restaurant::factory()->create();
 
@@ -204,6 +216,7 @@ it('returns the session cart count and subtotal', function (): void {
             ->where('cart.subtotal.currency', 'TRY'),
     );
 });
+
 it('keeps a fixed query budget as the menu grows', function (): void {
     $restaurant = Restaurant::factory()->create();
 
@@ -243,7 +256,7 @@ it('keeps a fixed query budget as the menu grows', function (): void {
 
     $firstResponse->assertOk();
 
-    $smallMenuQueryCount = count(DB::getQueryLog());
+    $smallMenuQueryCount = menuQueryCount();
 
     DB::disableQueryLog();
 
@@ -264,13 +277,14 @@ it('keeps a fixed query budget as the menu grows', function (): void {
 
     $secondResponse->assertOk();
 
-    $largeMenuQueryCount = count(DB::getQueryLog());
+    $largeMenuQueryCount = menuQueryCount();
 
     DB::disableQueryLog();
 
     expect($largeMenuQueryCount)
         ->toBe($smallMenuQueryCount);
 });
+
 it('keeps a fixed query budget as the cart grows', function (): void {
     $restaurant = Restaurant::factory()->create([
         'currency' => 'TRY',
@@ -322,7 +336,7 @@ it('keeps a fixed query budget as the cart grows', function (): void {
 
     $firstResponse->assertOk();
 
-    $smallCartQueryCount = count(DB::getQueryLog());
+    $smallCartQueryCount = menuQueryCount();
 
     DB::disableQueryLog();
 
@@ -342,7 +356,7 @@ it('keeps a fixed query budget as the cart grows', function (): void {
 
     $secondResponse->assertOk();
 
-    $largeCartQueryCount = count(DB::getQueryLog());
+    $largeCartQueryCount = menuQueryCount();
 
     DB::disableQueryLog();
 

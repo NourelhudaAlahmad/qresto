@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     CircleHelp,
     ClipboardList,
@@ -84,9 +84,11 @@ export default function Menu({
     cart,
 }: MenuPageProps) {
     const [search, setSearch] = useState('');
+
     const [activeCategory, setActiveCategory] = useState<
         number | typeof ALL_CATEGORIES
     >(ALL_CATEGORIES);
+
     const [activeDietary, setActiveDietary] = useState(ALL_DIETARY);
 
     const dietaryTags = useMemo(() => {
@@ -276,6 +278,11 @@ export default function Menu({
                                                     tags={item.tags}
                                                     flag={item.flag}
                                                     available={item.available}
+                                                    onClick={() =>
+                                                        router.visit(
+                                                            `/menu/${item.id}`,
+                                                        )
+                                                    }
                                                 />
 
                                                 {item.prep_minutes !== null && (
