@@ -96,6 +96,26 @@ class MenuItemController extends Controller
                     ->values()
                     ->all(),
             ],
+
+            'translations' => [
+                'back_to_menu' => __('ui.meal.back_to_menu'),
+                'chef_pick' => __('ui.meal.chef_pick'),
+                'prep_time' => __('ui.meal.prep_time'),
+                'sold_out_message' => __('ui.meal.sold_out_message'),
+                'contains' => __('ui.meal.contains'),
+                'no_allergens' => __('ui.meal.no_allergens'),
+                'allergens_nearby' => __('ui.meal.allergens_nearby'),
+                'choose_size' => __('ui.meal.choose_size'),
+                'no_size_options' => __('ui.meal.no_size_options'),
+                'add_on' => __('ui.meal.add_on'),
+                'optional' => __('ui.meal.optional'),
+                'sold_out' => __('ui.meal.sold_out'),
+                'no_addons' => __('ui.meal.no_addons'),
+                'kitchen_note' => __('ui.meal.kitchen_note'),
+                'note_placeholder' => __('ui.meal.note_placeholder'),
+                'note_promise' => __('ui.meal.note_promise'),
+                'add_to_order' => __('ui.meal.add_to_order'),
+            ],
         ]);
     }
 }

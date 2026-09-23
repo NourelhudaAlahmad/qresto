@@ -84,7 +84,7 @@ it('calculates the line total from the item variant addons and quantity', functi
         )
         ->post(route('cart.lines.store'), [
             'menu_item_id' => $item->id,
-            'variant_id' => $variant->id,
+            'menu_item_variant_id' => $variant->id,
             'addon_ids' => [
                 $firstAddon->id,
                 $secondAddon->id,
@@ -259,4 +259,95 @@ it('persists the kitchen note and strips control characters', function (): void 
     $line = CartLine::query()->firstOrFail();
 
     expect($line->note)->toBe('No onions please');
+
+});
+it('merges the same item configuration into one cart line', function (): void {
+    $context = createCartLineTestContext();
+
+    $item = MenuItem::factory()->create([
+        'restaurant_id' => $context['restaurant']->id,
+        'menu_category_id' => $context['category']->id,
+        'name' => 'Lamb Kofta',
+        'price' => Money::fromMinor(1800, 'USD'),
+        'is_available' => true,
+        'is_scheduled' => false,
+    ]);
+
+    $variant = MenuItemVariant::factory()->create([
+        'menu_item_id' => $item->id,
+        'label' => 'Sharing',
+        'price_delta' => 1400,
+        'is_default' => false,
+    ]);
+
+    $firstAddon = MenuItemAddon::factory()->create([
+        'menu_item_id' => $item->id,
+        'label' => 'Extra Sauce',
+        'price_delta' => 200,
+        'is_available' => true,
+    ]);
+
+    $secondAddon = MenuItemAddon::factory()->create([
+        'menu_item_id' => $item->id,
+        'label' => 'Pickles',
+        'price_delta' => 150,
+        'is_available' => true,
+    ]);
+
+    $firstResponse = $this
+        ->withCookie(
+            'qresto_table_session',
+            $context['session']->token,
+        )
+        ->post(route('cart.lines.store'), [
+            'menu_item_id' => $item->id,
+            'menu_item_variant_id' => $variant->id,
+            'addon_ids' => [
+                $firstAddon->id,
+                $secondAddon->id,
+            ],
+            'qty' => 1,
+            'note' => 'No onions',
+        ]);
+
+    $firstResponse
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('cart'));
+
+    $secondResponse = $this
+        ->withCookie(
+            'qresto_table_session',
+            $context['session']->token,
+        )
+        ->post(route('cart.lines.store'), [
+            'menu_item_id' => $item->id,
+            'menu_item_variant_id' => $variant->id,
+
+            // Reversed intentionally: add-on order must not matter.
+            'addon_ids' => [
+                $secondAddon->id,
+                $firstAddon->id,
+            ],
+            'qty' => 2,
+            'note' => 'No onions',
+        ]);
+
+    $secondResponse
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('cart'));
+
+    expect(CartLine::query()->count())->toBe(1);
+
+    $line = CartLine::query()
+        ->with('addons')
+        ->firstOrFail();
+
+    expect($line->qty)
+        ->toBe(3)
+        ->and($line->line_total->amount())
+        ->toBe(10650)
+        ->and($line->note)
+        ->toBe('No onions')
+        ->and($line->addons)
+        ->toHaveCount(2);
 });

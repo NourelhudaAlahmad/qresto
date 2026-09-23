@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\CartLineController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingController;
@@ -45,6 +46,9 @@ Route::middleware('table.session')->group(function () {
 
     Route::get('/menu/{menuItem}', [MenuItemController::class, 'show'])
         ->name('menu.items.show');
+
+    Route::get('/cart', [CartController::class, 'index'])
+        ->name('cart');
 
     Route::post('/cart/lines', [CartLineController::class, 'store'])
         ->name('cart.lines.store');

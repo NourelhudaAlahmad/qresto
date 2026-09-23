@@ -24,7 +24,7 @@ class CartLineController extends Controller
 
         $validated = $request->validate([
             'menu_item_id' => ['required', 'integer'],
-            'variant_id' => ['nullable', 'integer'],
+            'menu_item_variant_id' => ['nullable', 'integer'],
             'addon_ids' => ['nullable', 'array'],
             'addon_ids.*' => ['integer', 'distinct'],
             'qty' => ['required', 'integer', 'min:1', 'max:99'],
@@ -58,16 +58,16 @@ class CartLineController extends Controller
         /** @var MenuItemVariant|null $variant */
         $variant = null;
 
-        if ($validated['variant_id'] ?? null) {
+        if ($validated['menu_item_variant_id'] ?? null) {
             /** @var MenuItemVariant|null $variant */
             $variant = MenuItemVariant::query()
                 ->with('menuItem.restaurant')
                 ->where('menu_item_id', $item->id)
-                ->find($validated['variant_id']);
+                ->find($validated['menu_item_variant_id']);
 
             if ($variant === null) {
                 throw ValidationException::withMessages([
-                    'variant_id' => __('The selected variant is invalid.'),
+                    'menu_item_variant_id' => __('The selected variant is invalid.'),
                 ]);
             }
         }
@@ -78,12 +78,14 @@ class CartLineController extends Controller
 
         if ($hasVariants && $variant === null) {
             throw ValidationException::withMessages([
-                'variant_id' => __('Please select a variant.'),
+                'menu_item_variant_id' => __('Please select a variant.'),
             ]);
         }
 
         /** @var array<int, int> $addonIds */
         $addonIds = $validated['addon_ids'] ?? [];
+
+        sort($addonIds);
 
         /** @var Collection<int, MenuItemAddon> $addons */
         $addons = MenuItemAddon::query()
@@ -132,8 +134,6 @@ class CartLineController extends Controller
         }
 
         $qty = (int) $validated['qty'];
-        $lineTotal = $unitTotal->multiply($qty);
-
         $note = $this->sanitizeNote($validated['note'] ?? null);
 
         DB::transaction(function () use (
@@ -141,10 +141,11 @@ class CartLineController extends Controller
             $item,
             $variant,
             $addons,
+            $addonIds,
             $basePrice,
             $variantPrice,
+            $unitTotal,
             $qty,
-            $lineTotal,
             $note,
             $currency,
         ): void {
@@ -158,6 +159,79 @@ class CartLineController extends Controller
                 ],
             );
 
+            $matchingLine = CartLine::query()
+                ->where('cart_id', $cart->id)
+                ->where('menu_item_id', $item->id)
+                ->where('menu_item_variant_id', $variant?->id)
+                ->where(function ($query) use ($note): void {
+                    if ($note === null) {
+                        $query->whereNull('note');
+                    } else {
+                        $query->where('note', $note);
+                    }
+                })
+                ->with('addons')
+                ->get()
+                ->first(function (CartLine $line) use ($addonIds): bool {
+                    $existingAddonIds = $line->addons
+                        ->pluck('menu_item_addon_id')
+                        ->all();
+
+                    if (in_array(null, $existingAddonIds, true)) {
+                        return false;
+                    }
+
+                    $existingAddonIds = array_map(
+                        static fn ($id): int => (int) $id,
+                        $existingAddonIds,
+                    );
+
+                    sort($existingAddonIds);
+
+                    return $existingAddonIds === $addonIds;
+                });
+
+            if ($matchingLine !== null) {
+                $newQty = $matchingLine->qty + $qty;
+
+                if ($newQty > 99) {
+                    throw ValidationException::withMessages([
+                        'qty' => __('The total quantity may not be greater than 99.'),
+                    ]);
+                }
+
+                $matchingLine->update([
+                    'name_snapshot' => $item->translated_name,
+                    'variant_label_snapshot' => $variant?->label,
+                    'unit_price' => $basePrice,
+                    'variant_price_delta' => $variantPrice,
+                    'qty' => $newQty,
+                    'line_total' => $unitTotal->multiply($newQty),
+                    'note' => $note,
+                ]);
+
+                foreach ($matchingLine->addons as $lineAddon) {
+                    $currentAddon = $addons->firstWhere(
+                        'id',
+                        $lineAddon->menu_item_addon_id,
+                    );
+
+                    if ($currentAddon === null) {
+                        continue;
+                    }
+
+                    $lineAddon->update([
+                        'label_snapshot' => $currentAddon->label,
+                        'price_delta' => Money::fromMinor(
+                            $currentAddon->price_delta->amount(),
+                            $currency,
+                        ),
+                    ]);
+                }
+
+                return;
+            }
+
             $line = CartLine::query()->create([
                 'cart_id' => $cart->id,
                 'menu_item_id' => $item->id,
@@ -167,7 +241,7 @@ class CartLineController extends Controller
                 'unit_price' => $basePrice,
                 'variant_price_delta' => $variantPrice,
                 'qty' => $qty,
-                'line_total' => $lineTotal,
+                'line_total' => $unitTotal->multiply($qty),
                 'note' => $note,
             ]);
 
@@ -183,7 +257,7 @@ class CartLineController extends Controller
             }
         });
 
-        return back();
+        return redirect()->route('cart');
     }
 
     private function sanitizeNote(?string $note): ?string
