@@ -26,6 +26,9 @@ class CartLine extends Model
         'qty',
         'line_total',
         'note',
+        'removed_at',
+        'undo_token',
+        'undo_expires_at',
     ];
 
     protected function casts(): array
@@ -35,6 +38,8 @@ class CartLine extends Model
             'variant_price_delta' => MoneyCast::class,
             'qty' => 'integer',
             'line_total' => MoneyCast::class,
+            'removed_at' => 'datetime',
+            'undo_expires_at' => 'datetime',
         ];
     }
 

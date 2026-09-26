@@ -50,8 +50,22 @@ Route::middleware('table.session')->group(function () {
     Route::get('/cart', [CartController::class, 'index'])
         ->name('cart');
 
+    Route::patch('/cart/note', [CartController::class, 'updateNote'])
+        ->name('cart.note.update');
+
     Route::post('/cart/lines', [CartLineController::class, 'store'])
         ->name('cart.lines.store');
+
+    Route::patch('/cart/lines/{line}', [CartLineController::class, 'update'])
+        ->name('cart.lines.update');
+
+    Route::delete('/cart/lines/{line}', [CartLineController::class, 'destroy'])
+        ->name('cart.lines.destroy');
+
+    Route::post(
+        '/cart/lines/{line}/restore',
+        [CartLineController::class, 'restore'],
+    )->name('cart.lines.restore');
 });
 
 require __DIR__.'/settings.php';

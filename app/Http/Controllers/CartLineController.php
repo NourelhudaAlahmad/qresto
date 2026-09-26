@@ -10,9 +10,11 @@ use App\Models\MenuItemVariant;
 use App\Models\TableSession;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class CartLineController extends Controller
@@ -67,7 +69,9 @@ class CartLineController extends Controller
 
             if ($variant === null) {
                 throw ValidationException::withMessages([
-                    'menu_item_variant_id' => __('The selected variant is invalid.'),
+                    'menu_item_variant_id' => __(
+                        'The selected variant is invalid.',
+                    ),
                 ]);
             }
         }
@@ -96,7 +100,9 @@ class CartLineController extends Controller
 
         if ($addons->count() !== count($addonIds)) {
             throw ValidationException::withMessages([
-                'addon_ids' => __('One or more selected add-ons are invalid.'),
+                'addon_ids' => __(
+                    'One or more selected add-ons are invalid.',
+                ),
             ]);
         }
 
@@ -104,7 +110,9 @@ class CartLineController extends Controller
             fn (MenuItemAddon $addon): bool => ! $addon->is_available,
         )) {
             throw ValidationException::withMessages([
-                'addon_ids' => __('One or more selected add-ons are unavailable.'),
+                'addon_ids' => __(
+                    'One or more selected add-ons are unavailable.',
+                ),
             ]);
         }
 
@@ -161,6 +169,7 @@ class CartLineController extends Controller
 
             $matchingLine = CartLine::query()
                 ->where('cart_id', $cart->id)
+                ->whereNull('removed_at')
                 ->where('menu_item_id', $item->id)
                 ->where('menu_item_variant_id', $variant?->id)
                 ->where(function ($query) use ($note): void {
@@ -196,7 +205,9 @@ class CartLineController extends Controller
 
                 if ($newQty > 99) {
                     throw ValidationException::withMessages([
-                        'qty' => __('The total quantity may not be greater than 99.'),
+                        'qty' => __(
+                            'The total quantity may not be greater than 99.',
+                        ),
                     ]);
                 }
 
@@ -258,6 +269,202 @@ class CartLineController extends Controller
         });
 
         return redirect()->route('cart');
+    }
+
+    public function update(
+        Request $request,
+        CartLine $line,
+    ): JsonResponse {
+        /** @var TableSession $session */
+        $session = $request->attributes->get('tableSession');
+
+        $line = $this->scopedLine($session, $line);
+
+        $validated = $request->validate([
+            'qty' => ['required', 'integer', 'min:0', 'max:99'],
+        ]);
+
+        $qty = (int) $validated['qty'];
+
+        if ($qty === 0) {
+            return $this->removeLine($line);
+        }
+
+        if ($line->removed_at !== null) {
+            abort(404);
+        }
+
+        $line->loadMissing('addons', 'cart');
+
+        $unitTotal = $this->configuredUnitPrice($line);
+
+        $line->update([
+            'qty' => $qty,
+            'line_total' => $unitTotal->multiply($qty),
+            'undo_token' => null,
+            'undo_expires_at' => null,
+        ]);
+
+        return response()->json([
+            'line' => [
+                'id' => $line->id,
+                'qty' => $line->qty,
+                'line_total' => $line->line_total->jsonSerialize(),
+            ],
+        ]);
+    }
+
+    public function destroy(
+        Request $request,
+        CartLine $line,
+    ): JsonResponse {
+        /** @var TableSession $session */
+        $session = $request->attributes->get('tableSession');
+
+        $line = $this->scopedLine($session, $line);
+
+        return $this->removeLine($line);
+    }
+
+    public function restore(
+        Request $request,
+        CartLine $line,
+    ): JsonResponse {
+        /** @var TableSession $session */
+        $session = $request->attributes->get('tableSession');
+
+        $line = $this->scopedLine($session, $line);
+
+        $validated = $request->validate([
+            'undo_token' => ['required', 'string', 'max:64'],
+        ]);
+
+        if (
+            $line->removed_at === null ||
+            $line->undo_token === null ||
+            ! hash_equals(
+                $line->undo_token,
+                (string) $validated['undo_token'],
+            )
+        ) {
+            abort(404);
+        }
+
+        if (
+            $line->undo_expires_at === null ||
+            now()->greaterThan($line->undo_expires_at)
+        ) {
+            abort(410);
+        }
+
+        $line->update([
+            'removed_at' => null,
+            'undo_token' => null,
+            'undo_expires_at' => null,
+        ]);
+
+        $line->loadMissing('addons');
+
+        return response()->json([
+            'restored' => true,
+            'line' => [
+                'id' => $line->id,
+                'qty' => $line->qty,
+                'note' => $line->note,
+                'line_total' => $line->line_total->jsonSerialize(),
+                'addons' => $line->addons->map(
+                    fn ($addon): array => [
+                        'id' => $addon->id,
+                        'menu_item_addon_id' => $addon->menu_item_addon_id,
+                        'label' => $addon->label_snapshot,
+                        'price_delta' => $addon
+                            ->price_delta
+                            ->jsonSerialize(),
+                    ],
+                )->values()->all(),
+            ],
+        ]);
+    }
+
+    private function scopedLine(
+        TableSession $session,
+        CartLine $line,
+    ): CartLine {
+        $scopedLine = CartLine::query()
+            ->whereKey($line->id)
+            ->whereHas(
+                'cart',
+                fn ($query) => $query->where(
+                    'table_session_id',
+                    $session->id,
+                ),
+            )
+            ->with([
+                'cart',
+                'addons',
+            ])
+            ->first();
+
+        if ($scopedLine === null) {
+            abort(404);
+        }
+
+        return $scopedLine;
+    }
+
+    private function removeLine(CartLine $line): JsonResponse
+    {
+        if ($line->removed_at !== null) {
+            abort(404);
+        }
+
+        $undoWindowSeconds = max(
+            1,
+            (int) config('qresto.undo_window_seconds', 6),
+        );
+
+        $undoToken = Str::random(64);
+        $undoExpiresAt = now()->addSeconds($undoWindowSeconds);
+
+        $line->update([
+            'removed_at' => now(),
+            'undo_token' => $undoToken,
+            'undo_expires_at' => $undoExpiresAt,
+        ]);
+
+        return response()->json([
+            'removed' => true,
+            'line_id' => $line->id,
+            'undo_token' => $undoToken,
+            'undo_expires_at' => $undoExpiresAt->toISOString(),
+            'undo_window_seconds' => $undoWindowSeconds,
+        ]);
+    }
+
+    private function configuredUnitPrice(CartLine $line): Money
+    {
+        $currency = $line->cart->currency;
+
+        $unitTotal = Money::fromMinor(
+            $line->unit_price->amount(),
+            $currency,
+        )->add(
+            Money::fromMinor(
+                $line->variant_price_delta->amount(),
+                $currency,
+            ),
+        );
+
+        foreach ($line->addons as $addon) {
+            $unitTotal = $unitTotal->add(
+                Money::fromMinor(
+                    $addon->price_delta->amount(),
+                    $currency,
+                ),
+            );
+        }
+
+        return $unitTotal;
     }
 
     private function sanitizeNote(?string $note): ?string

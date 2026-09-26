@@ -17,6 +17,7 @@ class Cart extends Model
         'restaurant_id',
         'table_session_id',
         'currency',
+        'note',
     ];
 
     /**
