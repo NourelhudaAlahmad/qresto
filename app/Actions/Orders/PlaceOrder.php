@@ -41,6 +41,8 @@ final class PlaceOrder
         Money $tipAmount,
         ?string $promoCode = null,
         array $paymentPayload = [],
+        int $splitWays = 1,
+        ?string $idempotencyKey = null,
     ): array {
         return DB::transaction(function () use (
             $cart,
@@ -48,6 +50,8 @@ final class PlaceOrder
             $tipAmount,
             $promoCode,
             $paymentPayload,
+            $splitWays,
+            $idempotencyKey,
         ): array {
             $cart->load([
                 'restaurant',
@@ -69,6 +73,43 @@ final class PlaceOrder
                 throw ValidationException::withMessages([
                     'tip' => 'The tip currency does not match the cart currency.',
                 ]);
+            }
+
+            if ($splitWays < 1 || $splitWays > 8) {
+                throw ValidationException::withMessages([
+                    'split_ways' => 'Split ways must be between 1 and 8.',
+                ]);
+            }
+
+            $idempotencyKey = $this->normalizeIdempotencyKey($idempotencyKey);
+
+            if ($idempotencyKey !== null) {
+                $existingOrder = Order::query()
+                    ->where('restaurant_id', $cart->restaurant_id)
+                    ->where('idempotency_key', $idempotencyKey)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existingOrder !== null) {
+                    $existingPayment = $existingOrder->payments()
+                        ->latest('id')
+                        ->first();
+
+                    if ($existingPayment === null) {
+                        throw ValidationException::withMessages([
+                            'checkout' => 'The existing order does not have a payment.',
+                        ]);
+                    }
+
+                    return [
+                        'order' => $existingOrder,
+                        'payment' => $existingPayment,
+                        'failure' => null,
+                        'requires_action' => $existingPayment->status
+                            === PaymentStatus::REQUIRES_ACTION->value,
+                        'client_secret' => null,
+                    ];
+                }
             }
 
             $subtotal = Money::fromMinor(0, $cart->currency);
@@ -102,6 +143,11 @@ final class PlaceOrder
                 discountAmount: $discountAmount,
             );
 
+            $shareAmount = $this->calculateShareAmount(
+                total: $totals->total,
+                splitWays: $splitWays,
+            );
+
             $session = $cart->tableSession;
 
             $order = Order::query()->create([
@@ -117,6 +163,9 @@ final class PlaceOrder
                 'service_amount' => $totals->serviceAmount,
                 'tip_amount' => $tipAmount,
                 'discount_amount' => $discountAmount,
+                'split_ways' => $splitWays,
+                'share_amount' => $shareAmount,
+                'idempotency_key' => $idempotencyKey,
                 'total' => $totals->total,
                 'is_paid' => false,
                 'paid_at' => null,
@@ -180,6 +229,7 @@ final class PlaceOrder
                 'occurred_at' => now(),
                 'meta' => [
                     'payment_method' => $method->value,
+                    'split_ways' => $splitWays,
                 ],
             ]);
 
@@ -255,6 +305,41 @@ final class PlaceOrder
                 'client_secret' => $intent->clientSecret,
             ];
         });
+    }
+
+    private function calculateShareAmount(
+        Money $total,
+        int $splitWays,
+    ): Money {
+        if ($splitWays === 1) {
+            return $total;
+        }
+
+        return Money::fromMinor(
+            (int) ceil($total->amount() / $splitWays),
+            $total->currency(),
+        );
+    }
+
+    private function normalizeIdempotencyKey(?string $key): ?string
+    {
+        if ($key === null) {
+            return null;
+        }
+
+        $key = trim($key);
+
+        if ($key === '') {
+            return null;
+        }
+
+        if (strlen($key) > 100) {
+            throw ValidationException::withMessages([
+                'idempotency_key' => 'The idempotency key may not be greater than 100 characters.',
+            ]);
+        }
+
+        return $key;
     }
 
     private function isOfflineMethod(PaymentMethod $method): bool

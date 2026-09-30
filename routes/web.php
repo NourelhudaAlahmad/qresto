@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CartLineController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LocaleController;
@@ -66,6 +67,25 @@ Route::middleware('table.session')->group(function () {
         '/cart/lines/{line}/restore',
         [CartLineController::class, 'restore'],
     )->name('cart.lines.restore');
+
+    Route::get('/checkout', [CheckoutController::class, 'show'])
+        ->name('checkout');
+
+    Route::post('/checkout', [CheckoutController::class, 'store'])
+        ->name('checkout.store');
+
+    Route::post('/checkout/confirm', [CheckoutController::class, 'confirm'])
+        ->name('checkout.confirm');
+
+    Route::post(
+        '/checkout/promo',
+        [CheckoutController::class, 'applyPromo'],
+    )->name('checkout.promo.store');
+
+    Route::delete(
+        '/checkout/promo',
+        [CheckoutController::class, 'removePromo'],
+    )->name('checkout.promo.destroy');
 });
 
 require __DIR__.'/settings.php';
