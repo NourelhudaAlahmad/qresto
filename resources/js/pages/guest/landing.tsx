@@ -1,5 +1,8 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { QrCode } from 'lucide-react';
+import type { Html5Qrcode } from 'html5-qrcode';
+import { QrCode, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
 import { ArrowIcon } from '@/components/qresto/arrow-icon';
 import { Button } from '@/components/qresto/button';
 import { Card } from '@/components/qresto/card';
@@ -18,6 +21,46 @@ function formatTime(time: string): string {
     return `${displayHour}:${minuteText} ${suffix}`;
 }
 
+function extractQrToken(value: string): string | null {
+    const scannedValue = value.trim();
+
+    if (scannedValue === '') {
+        return null;
+    }
+
+    try {
+        const url = new URL(scannedValue, window.location.origin);
+
+        const match = url.pathname.match(/^\/t\/([^/]+)\/?$/);
+
+        if (match?.[1]) {
+            return decodeURIComponent(match[1]);
+        }
+    } catch {
+        // The scanned value may be a raw token rather than a URL.
+    }
+
+    if (/^[A-Za-z0-9_-]+$/.test(scannedValue)) {
+        return scannedValue;
+    }
+
+    return null;
+}
+
+async function stopScanner(scanner: Html5Qrcode): Promise<void> {
+    try {
+        await scanner.stop();
+    } catch {
+        // The scanner may not have finished starting yet.
+    }
+
+    try {
+        scanner.clear();
+    } catch {
+        // The scanner UI may already have been cleared.
+    }
+}
+
 export default function Landing({
     restaurant,
     hours,
@@ -27,8 +70,133 @@ export default function Landing({
 }: LandingPageProps) {
     const { locale = 'en', flash } = usePage<LandingSharedProps>().props;
 
+    const [scannerOpen, setScannerOpen] = useState(false);
+    const [bookingOpen, setBookingOpen] = useState(false);
+    const [scannerError, setScannerError] = useState<string | null>(null);
+
+    const scannerInstanceRef = useRef<Html5Qrcode | null>(null);
+
     const nextLocale = locale === 'en' ? 'ar' : 'en';
     const nextLanguageLabel = nextLocale === 'ar' ? 'العربية' : 'English';
+
+    const scannerCopy =
+        locale === 'ar'
+            ? {
+                  title: 'امسح رمز الطاولة',
+                  description: 'وجّه الكاميرا نحو رمز QR الموجود على طاولتك.',
+                  close: 'إغلاق الماسح',
+                  invalid: 'هذا الرمز ليس رمز طاولة صالحًا في QResto.',
+                  cameraError:
+                      'تعذر فتح الكاميرا. اسمح بالوصول إلى الكاميرا وحاول مرة أخرى.',
+              }
+            : {
+                  title: 'Scan your table code',
+                  description:
+                      'Point your camera at the QR code on your table.',
+                  close: 'Close scanner',
+                  invalid: 'This is not a valid QResto table code.',
+                  cameraError:
+                      'The camera could not be opened. Allow camera access and try again.',
+              };
+
+    const bookingCopy =
+        locale === 'ar'
+            ? {
+                  title: 'احجز طاولة',
+                  description:
+                      'للحجز، تواصل مع المطعم مباشرة على الرقم التالي.',
+                  call: 'اتصل الآن',
+                  close: 'إغلاق نافذة الحجز',
+                  unavailable: 'رقم الهاتف غير متوفر حاليًا.',
+              }
+            : {
+                  title: 'Book a table',
+                  description:
+                      'To make a reservation, contact the restaurant directly.',
+                  call: 'Call now',
+                  close: 'Close booking dialog',
+                  unavailable: 'The phone number is currently unavailable.',
+              };
+
+    useEffect(() => {
+        if (!scannerOpen) {
+            return;
+        }
+
+        let disposed = false;
+
+        const startScanner = async () => {
+            try {
+                setScannerError(null);
+
+                const { Html5Qrcode } = await import('html5-qrcode');
+
+                if (disposed) {
+                    return;
+                }
+
+                const scanner = new Html5Qrcode('landing-qr-reader');
+
+                scannerInstanceRef.current = scanner;
+
+                await scanner.start(
+                    {
+                        facingMode: 'environment',
+                    },
+                    {
+                        fps: 10,
+                        qrbox: {
+                            width: 240,
+                            height: 240,
+                        },
+                    },
+                    (decodedText) => {
+                        const qrToken = extractQrToken(decodedText);
+
+                        if (qrToken === null) {
+                            setScannerError(scannerCopy.invalid);
+
+                            return;
+                        }
+
+                        scannerInstanceRef.current = null;
+
+                        void stopScanner(scanner).finally(() => {
+                            router.visit(`/t/${encodeURIComponent(qrToken)}`);
+                        });
+                    },
+                    () => undefined,
+                );
+
+                if (disposed) {
+                    scannerInstanceRef.current = null;
+
+                    await stopScanner(scanner);
+                }
+            } catch {
+                if (!disposed) {
+                    scannerInstanceRef.current = null;
+                    setScannerError(scannerCopy.cameraError);
+                }
+            }
+        };
+
+        void startScanner();
+
+        return () => {
+            disposed = true;
+
+            const scanner = scannerInstanceRef.current;
+
+            if (scanner === null) {
+                return;
+            }
+
+            scannerInstanceRef.current = null;
+
+            void stopScanner(scanner);
+        };
+    }, [scannerCopy.cameraError, scannerCopy.invalid, scannerOpen]);
 
     const switchLocale = () => {
         router.post(
@@ -48,10 +216,6 @@ export default function Landing({
         nextLanguageLabel,
     );
 
-    const bookingHref = restaurant.phone
-        ? `tel:${restaurant.phone.replace(/\s+/g, '')}`
-        : '#book';
-
     return (
         <GuestLayout>
             <Head title={restaurant.name} />
@@ -60,6 +224,120 @@ export default function Landing({
                 <div role="alert" className="mx-auto max-w-[390px] px-3 pt-3">
                     <div className="rounded-[var(--radius-container)] border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]">
                         {flash.error}
+                    </div>
+                </div>
+            )}
+
+            {scannerOpen && (
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="landing-scanner-title"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+                >
+                    <div className="bg-surface-card relative w-full max-w-[390px] rounded-[var(--radius-container)] p-4 shadow-xl">
+                        <button
+                            type="button"
+                            onClick={() => setScannerOpen(false)}
+                            aria-label={scannerCopy.close}
+                            className="hover:bg-action-ghost-hover focus-visible:ring-border-focus-color/30 absolute end-3 top-3 z-10 flex size-11 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2"
+                        >
+                            <X aria-hidden="true" className="size-5" />
+                        </button>
+
+                        <div className="pe-12">
+                            <h2
+                                id="landing-scanner-title"
+                                className="font-display text-[26px] font-semibold leading-tight tracking-[-0.02em]"
+                            >
+                                {scannerCopy.title}
+                            </h2>
+
+                            <p className="text-text-secondary mt-2 text-sm leading-6">
+                                {scannerCopy.description}
+                            </p>
+                        </div>
+
+                        <div className="mt-5 overflow-hidden rounded-[var(--radius-lg)] bg-black">
+                            <div
+                                id="landing-qr-reader"
+                                className="min-h-[300px] w-full"
+                            />
+                        </div>
+
+                        {scannerError && (
+                            <div
+                                role="alert"
+                                className="mt-4 rounded-[var(--radius-md)] border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]"
+                            >
+                                {scannerError}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {bookingOpen && (
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="landing-booking-title"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+                >
+                    <div className="bg-surface-card relative w-full max-w-[390px] rounded-[var(--radius-container)] p-5 shadow-xl">
+                        <button
+                            type="button"
+                            onClick={() => setBookingOpen(false)}
+                            aria-label={bookingCopy.close}
+                            className="hover:bg-action-ghost-hover focus-visible:ring-border-focus-color/30 absolute end-3 top-3 flex size-11 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2"
+                        >
+                            <X aria-hidden="true" className="size-5" />
+                        </button>
+
+                        <div className="pe-12">
+                            <h2
+                                id="landing-booking-title"
+                                className="font-display text-[26px] font-semibold leading-tight tracking-[-0.02em]"
+                            >
+                                {bookingCopy.title}
+                            </h2>
+
+                            <p className="text-text-secondary mt-2 text-sm leading-6">
+                                {bookingCopy.description}
+                            </p>
+                        </div>
+
+                        <div className="mt-6">
+                            {restaurant.phone ? (
+                                <>
+                                    <div
+                                        dir="ltr"
+                                        className="bg-surface-muted mb-4 rounded-[var(--radius-md)] px-4 py-3 text-center font-mono text-base font-semibold"
+                                    >
+                                        {restaurant.phone}
+                                    </div>
+
+                                    <Button
+                                        asChild
+                                        size="lg"
+                                        variant="primary"
+                                        fullWidth
+                                    >
+                                        <a
+                                            href={`tel:${restaurant.phone.replace(/\s+/g, '')}`}
+                                        >
+                                            <span>{bookingCopy.call}</span>
+
+                                            <PhoneIcon />
+                                        </a>
+                                    </Button>
+                                </>
+                            ) : (
+                                <p className="text-text-secondary text-sm">
+                                    {bookingCopy.unavailable}
+                                </p>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
@@ -125,29 +403,29 @@ export default function Landing({
                 <section className="px-3 py-5">
                     <div className="space-y-3">
                         <Button
-                            asChild
+                            type="button"
                             size="lg"
                             variant="primary"
                             fullWidth
+                            onClick={() => setScannerOpen(true)}
                             className="text-text-on-brand justify-between"
                         >
-                            <a href="#scan">
-                                <span>{translations.scan}</span>
-                                <QrCode aria-hidden="true" className="size-5" />
-                            </a>
+                            <span>{translations.scan}</span>
+
+                            <QrCode aria-hidden="true" className="size-5" />
                         </Button>
 
                         <Button
-                            asChild
+                            type="button"
                             size="lg"
                             variant="outline"
                             fullWidth
+                            onClick={() => setBookingOpen(true)}
                             className="justify-between"
                         >
-                            <a href={bookingHref}>
-                                <span>{translations.book}</span>
-                                <ArrowIcon />
-                            </a>
+                            <span>{translations.book}</span>
+
+                            <ArrowIcon />
                         </Button>
                     </div>
 
