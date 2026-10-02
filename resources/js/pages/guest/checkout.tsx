@@ -511,7 +511,7 @@ export default function CheckoutPage({
                                 <button
                                     type="button"
                                     aria-label="Go back"
-                                    onClick={() => window.history.back()}
+                                    onClick={() => router.visit('/cart')}
                                     className="text-text-primary hover:bg-action-ghost-hover -ms-2 flex size-11 shrink-0 items-center justify-center rounded-full transition-colors"
                                 >
                                     <BackIcon />

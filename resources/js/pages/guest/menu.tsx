@@ -321,6 +321,7 @@ export default function Menu({
                         <Button
                             size="lg"
                             fullWidth
+                            onClick={() => router.visit('/cart')}
                             className="h-14 rounded-full text-base font-semibold shadow-sm"
                         >
                             View order · {cart.count}{' '}
@@ -345,6 +346,7 @@ export default function Menu({
                                 label: 'Order',
                                 icon: <ClipboardList className="size-5" />,
                                 badge: cart.count > 0 ? cart.count : undefined,
+                                onClick: () => router.visit('/cart'),
                             },
                             {
                                 label: 'Status',
@@ -353,10 +355,12 @@ export default function Menu({
                                         02
                                     </span>
                                 ),
+                                disabled: true,
                             },
                             {
                                 label: 'Help',
                                 icon: <CircleHelp className="size-5" />,
+                                disabled: true,
                             },
                         ]}
                     />

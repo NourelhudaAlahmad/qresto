@@ -42,9 +42,10 @@ export function MenuItemCard({
         <button
             type="button"
             onClick={onClick}
+            disabled={!available}
             className={cn(
                 'flex w-full items-start gap-3 py-3 text-start transition-opacity',
-                !available && 'opacity-[0.45]',
+                !available && 'cursor-not-allowed opacity-[0.45]',
             )}
             aria-label={name}
         >

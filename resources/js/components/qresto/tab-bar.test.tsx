@@ -52,4 +52,29 @@ describe('TabBar', () => {
 
         expect(onClick).toHaveBeenCalledTimes(1);
     });
+    it('disables unavailable tabs', () => {
+        const onClick = vi.fn();
+
+        const { getByRole } = render(
+            <TabBar
+                items={[
+                    {
+                        label: 'Status',
+                        disabled: true,
+                        onClick,
+                    },
+                ]}
+            />,
+        );
+
+        const statusTab = getByRole('button', {
+            name: 'Status',
+        });
+
+        expect(statusTab).toBeDisabled();
+
+        statusTab.click();
+
+        expect(onClick).not.toHaveBeenCalled();
+    });
 });

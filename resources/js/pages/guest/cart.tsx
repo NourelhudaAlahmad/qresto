@@ -338,11 +338,7 @@ export default function CartPage({
     };
 
     const goToPayment = () => {
-        showToast({
-            type: 'success',
-            title: 'Payment is coming next',
-            description: 'Payment methods are outside this cart task.',
-        });
+        router.visit('/checkout');
     };
 
     return (

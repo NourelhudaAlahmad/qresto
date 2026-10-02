@@ -5,6 +5,7 @@ type TabBarItem = {
     icon?: ReactNode;
     badge?: ReactNode;
     active?: boolean;
+    disabled?: boolean;
     onClick?: () => void;
 };
 
@@ -23,7 +24,8 @@ export function TabBar({ items, className = '' }: TabBarProps) {
                     key={index}
                     type="button"
                     onClick={item.onClick}
-                    className={`relative flex flex-1 flex-col items-center justify-center gap-1 border-none bg-transparent ${
+                    disabled={item.disabled}
+                    className={`relative flex flex-1 flex-col items-center justify-center gap-1 border-none bg-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
                         item.active
                             ? 'text-[var(--clay-600)]'
                             : 'text-[var(--text-tertiary)]'

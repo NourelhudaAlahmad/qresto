@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import { useMemo } from 'react';
 
 import { Button } from '@/components/qresto/button';
@@ -215,7 +215,7 @@ export default function MealPage({ restaurant, item, translations }: Props) {
                             type="button"
                             variant="ghost"
                             aria-label={translations.back_to_menu}
-                            onClick={() => window.history.back()}
+                            onClick={() => router.visit('/menu')}
                             className="absolute start-3 top-3 h-10 w-10 rounded-full bg-white/95 p-0 text-stone-900 shadow-sm hover:bg-white"
                         >
                             <CloseIcon />

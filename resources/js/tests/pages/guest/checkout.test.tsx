@@ -13,6 +13,7 @@ vi.stubGlobal('ResizeObserver', ResizeObserverMock);
 
 const post = vi.fn();
 const destroy = vi.fn();
+const visit = vi.fn();
 
 let currentSharedProps: {
     errors: Record<string, string>;
@@ -26,8 +27,8 @@ vi.mock('@inertiajs/react', () => ({
     router: {
         post: (...args: unknown[]) => post(...args),
         delete: (...args: unknown[]) => destroy(...args),
+        visit: (...args: unknown[]) => visit(...args),
     },
-
     usePage: () => ({
         props: currentSharedProps,
     }),
@@ -466,5 +467,16 @@ describe('Guest checkout page', () => {
             }),
             expect.any(Object),
         );
+    });
+    it('returns to the cart from the back button', () => {
+        renderCheckout();
+
+        fireEvent.click(
+            screen.getByRole('button', {
+                name: 'Go back',
+            }),
+        );
+
+        expect(visit).toHaveBeenCalledWith('/cart');
     });
 });
