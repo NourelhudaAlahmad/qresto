@@ -582,16 +582,9 @@ class CheckoutController extends Controller
     private function statusRedirect(
         Order $order,
     ): RedirectResponse {
-        /*
-         * #19 owns the final guest status screen. Until that route exists,
-         * keep the guest inside the application and return to the menu with
-         * the placed order id. #19 can replace this single redirect.
-         */
-        return redirect()
-            ->route('menu')
-            ->with(
-                'placed_order_id',
-                $order->id,
-            );
+        return redirect()->route(
+            'guest.orders.status',
+            $order,
+        );
     }
 }

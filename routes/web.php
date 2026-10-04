@@ -8,6 +8,7 @@ use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MenuItemController;
+use App\Http\Controllers\OrderStatusController;
 use App\Http\Controllers\QrController;
 use Illuminate\Support\Facades\Route;
 
@@ -86,6 +87,11 @@ Route::middleware('table.session')->group(function () {
         '/checkout/promo',
         [CheckoutController::class, 'removePromo'],
     )->name('checkout.promo.destroy');
+
+    Route::get(
+        '/orders/{order}/status',
+        [OrderStatusController::class, 'show'],
+    )->name('guest.orders.status');
 });
 
 require __DIR__.'/settings.php';

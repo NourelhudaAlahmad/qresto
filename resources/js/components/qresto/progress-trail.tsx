@@ -19,7 +19,7 @@ const stateStyles = {
         title: 'text-[var(--text-primary)]',
     },
     current: {
-        dot: 'bg-[var(--clay-500)] border-[var(--clay-500)]',
+        dot: 'scale-110 bg-[var(--clay-500)] border-[var(--clay-500)] ring-4 ring-[var(--clay-100)]',
         line: 'bg-[var(--border-subtle)]',
         title: 'text-[var(--text-primary)]',
     },

@@ -81,17 +81,26 @@ final class PlaceOrder
                 ]);
             }
 
-            $idempotencyKey = $this->normalizeIdempotencyKey($idempotencyKey);
+            $idempotencyKey = $this->normalizeIdempotencyKey(
+                $idempotencyKey,
+            );
 
             if ($idempotencyKey !== null) {
                 $existingOrder = Order::query()
-                    ->where('restaurant_id', $cart->restaurant_id)
-                    ->where('idempotency_key', $idempotencyKey)
+                    ->where(
+                        'restaurant_id',
+                        $cart->restaurant_id,
+                    )
+                    ->where(
+                        'idempotency_key',
+                        $idempotencyKey,
+                    )
                     ->lockForUpdate()
                     ->first();
 
                 if ($existingOrder !== null) {
-                    $existingPayment = $existingOrder->payments()
+                    $existingPayment = $existingOrder
+                        ->payments()
                         ->latest('id')
                         ->first();
 
@@ -112,10 +121,15 @@ final class PlaceOrder
                 }
             }
 
-            $subtotal = Money::fromMinor(0, $cart->currency);
+            $subtotal = Money::fromMinor(
+                0,
+                $cart->currency,
+            );
 
             foreach ($lines as $line) {
-                $subtotal = $subtotal->add($line->line_total);
+                $subtotal = $subtotal->add(
+                    $line->line_total,
+                );
             }
 
             $discountAmount = $this->promotions->validate(
@@ -126,7 +140,10 @@ final class PlaceOrder
 
             $servicePct = (string) (
                 $cart->restaurant->service_charge_pct
-                ?? config('qresto.service_charge_pct', 0)
+                ?? config(
+                    'qresto.service_charge_pct',
+                    0,
+                )
             );
 
             $totalLines = $lines
@@ -150,14 +167,156 @@ final class PlaceOrder
 
             $session = $cart->tableSession;
 
+            /*
+             * ORDER MORE
+             *
+             * If this table session already has an active unpaid order,
+             * append the new cart lines to the same order/bill instead
+             * of creating another order number.
+             */
+            $openOrder = Order::query()
+                ->where(
+                    'restaurant_id',
+                    $cart->restaurant_id,
+                )
+                ->where(
+                    'table_session_id',
+                    $cart->table_session_id,
+                )
+                ->where('is_paid', false)
+                ->whereNotIn('status', [
+                    OrderStatus::PAID->value,
+                    OrderStatus::CANCELLED->value,
+                ])
+                ->latest('id')
+                ->lockForUpdate()
+                ->first();
+
+            if ($openOrder !== null) {
+                $payment = $openOrder
+                    ->payments()
+                    ->latest('id')
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($payment === null) {
+                    throw ValidationException::withMessages([
+                        'checkout' => 'The current order does not have a payment.',
+                    ]);
+                }
+
+                if (
+                    $payment->status
+                    !== PaymentStatus::PENDING->value
+                ) {
+                    throw ValidationException::withMessages([
+                        'checkout' => 'The current bill cannot accept more items.',
+                    ]);
+                }
+
+                /*
+                 * Cash/POS stay pending until settlement, so the amount
+                 * may safely grow while the guest keeps ordering.
+                 */
+                if (! $this->isOfflineMethod($method)) {
+                    throw ValidationException::withMessages([
+                        'checkout' => 'Order more requires cash or POS while the current bill is open.',
+                    ]);
+                }
+
+                $openOrderServicePct = (string) (
+                    $openOrder->service_pct
+                    ?? $servicePct
+                );
+
+                $combinedSubtotal = $openOrder
+                    ->subtotal
+                    ->add($subtotal);
+
+                $combinedDiscountAmount = $openOrder
+                    ->discount_amount
+                    ->add($discountAmount);
+
+                $combinedTipAmount = $openOrder
+                    ->tip_amount
+                    ->add($tipAmount);
+
+                $combinedTotals = OrderTotals::calculate(
+                    lines: [
+                        [
+                            'unit_price' => $combinedSubtotal,
+                            'qty' => 1,
+                        ],
+                    ],
+                    servicePct: $openOrderServicePct,
+                    tipAmount: $combinedTipAmount,
+                    discountAmount: $combinedDiscountAmount,
+                );
+
+                $combinedShareAmount = $this->calculateShareAmount(
+                    total: $combinedTotals->total,
+                    splitWays: $splitWays,
+                );
+
+                $this->copyCartLinesToOrder(
+                    order: $openOrder,
+                    lines: $lines,
+                    currency: $cart->currency,
+                );
+
+                $openOrder->update([
+                    'subtotal' => $combinedTotals->subtotal,
+                    'service_pct' => $openOrderServicePct,
+                    'service_amount' => $combinedTotals->serviceAmount,
+                    'tip_amount' => $combinedTipAmount,
+                    'discount_amount' => $combinedDiscountAmount,
+                    'split_ways' => $splitWays,
+                    'share_amount' => $combinedShareAmount,
+                    'idempotency_key' => $idempotencyKey
+                        ?? $openOrder->idempotency_key,
+                    'total' => $combinedTotals->total,
+                    'table_note' => $cart->note
+                        ?? $openOrder->table_note,
+                ]);
+
+                $payment->update([
+                    'method' => $method->value,
+                    'amount' => $combinedTotals->total,
+                    'tip_amount' => $combinedTipAmount,
+                ]);
+
+                $this->promotions->consume(
+                    restaurantId: $cart->restaurant_id,
+                    code: $promoCode,
+                );
+
+                return [
+                    'order' => $openOrder->fresh(),
+                    'payment' => $payment->fresh(),
+                    'failure' => null,
+                    'requires_action' => false,
+                    'client_secret' => null,
+                ];
+            }
+
+            /*
+             * First order for this table session.
+             */
+            $serviceTimestamp = now();
+            $serviceDate = $serviceTimestamp->toDateString();
+
             $order = Order::query()->create([
                 'restaurant_id' => $cart->restaurant_id,
                 'table_id' => $session?->restaurant_table_id,
                 'table_session_id' => $cart->table_session_id,
-                'code' => $this->orderCodes->generate($cart->restaurant_id),
+                'service_date' => $serviceDate,
+                'code' => $this->orderCodes->generate(
+                    $cart->restaurant_id,
+                    $serviceTimestamp,
+                ),
                 'guest_name' => $session?->guest_name,
                 'status' => OrderStatus::PLACED,
-                'placed_at' => now(),
+                'placed_at' => $serviceTimestamp,
                 'subtotal' => $totals->subtotal,
                 'service_pct' => $servicePct,
                 'service_amount' => $totals->serviceAmount,
@@ -173,36 +332,11 @@ final class PlaceOrder
                 'currency' => $cart->currency,
             ]);
 
-            foreach ($lines as $cartLine) {
-                $orderLine = $order->lines()->create([
-                    'menu_item_id' => $cartLine->menu_item_id,
-                    'name_snapshot' => $cartLine->name_snapshot,
-                    'unit_price' => $cartLine->unit_price,
-                    'qty' => $cartLine->qty,
-                    'line_total' => $cartLine->line_total,
-                    'note' => $cartLine->note,
-                ]);
-
-                if (
-                    $cartLine->menu_item_variant_id !== null
-                    && $cartLine->variant_label_snapshot !== null
-                ) {
-                    $orderLine->options()->create([
-                        'kind' => 'variant',
-                        'label_snapshot' => $cartLine->variant_label_snapshot,
-                        'price_delta' => $cartLine->variant_price_delta
-                            ?? Money::fromMinor(0, $cart->currency),
-                    ]);
-                }
-
-                foreach ($cartLine->addons as $addon) {
-                    $orderLine->options()->create([
-                        'kind' => 'addon',
-                        'label_snapshot' => $addon->label_snapshot,
-                        'price_delta' => $addon->price_delta,
-                    ]);
-                }
-            }
+            $this->copyCartLinesToOrder(
+                order: $order,
+                lines: $lines,
+                currency: $cart->currency,
+            );
 
             $payment = $order->payments()->create([
                 'method' => $method->value,
@@ -270,7 +404,9 @@ final class PlaceOrder
                     $intent->requiresAction => PaymentStatus::REQUIRES_ACTION->value,
                     default => PaymentStatus::PAID->value,
                 },
-                'paid_at' => $intent->succeeded() ? now() : null,
+                'paid_at' => $intent->succeeded()
+                    ? now()
+                    : null,
             ]);
 
             if ($intent->failed()) {
@@ -307,6 +443,54 @@ final class PlaceOrder
         });
     }
 
+    /**
+     * Copy cart lines and their options into an order.
+     *
+     * @param  iterable<int, mixed>  $lines
+     */
+    private function copyCartLinesToOrder(
+        Order $order,
+        iterable $lines,
+        string $currency,
+    ): void {
+        foreach ($lines as $cartLine) {
+            $orderLine = $order->lines()->create([
+                'menu_item_id' => $cartLine->menu_item_id,
+                'name_snapshot' => $cartLine->name_snapshot,
+                'unit_price' => $cartLine->unit_price,
+                'qty' => $cartLine->qty,
+                'line_total' => $cartLine->line_total,
+                'note' => $cartLine->note,
+            ]);
+
+            if (
+                $cartLine->menu_item_variant_id !== null
+                && $cartLine->variant_label_snapshot !== null
+            ) {
+                $orderLine->options()->create([
+                    'kind' => 'variant',
+                    'label_snapshot' => $cartLine
+                        ->variant_label_snapshot,
+                    'price_delta' => $cartLine
+                        ->variant_price_delta
+                        ?? Money::fromMinor(
+                            0,
+                            $currency,
+                        ),
+                ]);
+            }
+
+            foreach ($cartLine->addons as $addon) {
+                $orderLine->options()->create([
+                    'kind' => 'addon',
+                    'label_snapshot' => $addon
+                        ->label_snapshot,
+                    'price_delta' => $addon->price_delta,
+                ]);
+            }
+        }
+    }
+
     private function calculateShareAmount(
         Money $total,
         int $splitWays,
@@ -316,13 +500,16 @@ final class PlaceOrder
         }
 
         return Money::fromMinor(
-            (int) ceil($total->amount() / $splitWays),
+            (int) ceil(
+                $total->amount() / $splitWays,
+            ),
             $total->currency(),
         );
     }
 
-    private function normalizeIdempotencyKey(?string $key): ?string
-    {
+    private function normalizeIdempotencyKey(
+        ?string $key,
+    ): ?string {
         if ($key === null) {
             return null;
         }
@@ -342,8 +529,9 @@ final class PlaceOrder
         return $key;
     }
 
-    private function isOfflineMethod(PaymentMethod $method): bool
-    {
+    private function isOfflineMethod(
+        PaymentMethod $method,
+    ): bool {
         return in_array(
             $method,
             [

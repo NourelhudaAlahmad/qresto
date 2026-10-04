@@ -29,6 +29,7 @@ class OrderFactory extends Factory
             'assigned_user_id' => null,
             'status' => OrderStatus::PLACED,
             'placed_at' => now(),
+            'service_date' => now()->toDateString(),
             'currency' => 'TRY',
             'subtotal' => 0,
             'service_pct' => 0,

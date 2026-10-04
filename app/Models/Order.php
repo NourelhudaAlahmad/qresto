@@ -23,6 +23,7 @@ class Order extends Model
         'table_id',
         'table_session_id',
         'code',
+        'service_date',
         'guest_name',
         'assigned_user_id',
         'status',
