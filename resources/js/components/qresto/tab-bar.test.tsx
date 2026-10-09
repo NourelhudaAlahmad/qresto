@@ -77,4 +77,39 @@ describe('TabBar', () => {
 
         expect(onClick).not.toHaveBeenCalled();
     });
+
+    it('restarts the cart badge animation when the count changes', () => {
+        const { getByText, rerender } = render(
+            <TabBar
+                items={[
+                    {
+                        label: 'Order',
+                        icon: <span>🛍</span>,
+                        badge: 1,
+                    },
+                ]}
+            />,
+        );
+
+        const firstBadge = getByText('1');
+
+        expect(firstBadge).toHaveClass('cart-badge-bump');
+
+        rerender(
+            <TabBar
+                items={[
+                    {
+                        label: 'Order',
+                        icon: <span>🛍</span>,
+                        badge: 2,
+                    },
+                ]}
+            />,
+        );
+
+        const secondBadge = getByText('2');
+
+        expect(secondBadge).toHaveClass('cart-badge-bump');
+        expect(secondBadge).not.toBe(firstBadge);
+    });
 });

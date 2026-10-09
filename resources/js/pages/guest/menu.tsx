@@ -6,11 +6,13 @@ import {
     SearchX,
     Timer,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/qresto/button';
+import { CallWaiterSheet } from '@/components/qresto/call-waiter-sheet';
 import { ChipFilter } from '@/components/qresto/chip-filter';
 import { EmptyState } from '@/components/qresto/empty-state';
+import { HelpPanel } from '@/components/qresto/help-panel';
 import { MenuItemCard } from '@/components/qresto/menu-item-card';
 import { SearchField } from '@/components/qresto/search-field';
 import { SectionHead } from '@/components/qresto/section-head';
@@ -55,6 +57,7 @@ type MenuPageProps = {
         id: number;
         name: string;
         currency: string;
+        phone: string | null;
     };
 
     table: {
@@ -63,8 +66,15 @@ type MenuPageProps = {
     };
 
     session: {
+        id: number;
         active: boolean;
     };
+
+    latest_order_id: number | null;
+
+    restore_guest_tab: boolean;
+
+    open_requests: Array<'water' | 'bread' | 'bill' | 'waiter'>;
 
     categories: MenuCategory[];
 
@@ -77,19 +87,52 @@ type MenuPageProps = {
 const ALL_CATEGORIES = 'all';
 const ALL_DIETARY = 'all';
 
+type GuestTab = 'menu' | 'order' | 'status';
+
+function saveLastTab(sessionId: number, tab: GuestTab): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    window.localStorage.setItem(`qresto_last_tab_${sessionId}`, tab);
+}
+
 export default function Menu({
     restaurant,
     table,
     categories,
     cart,
+    open_requests,
+    session,
+    latest_order_id,
+    restore_guest_tab,
 }: MenuPageProps) {
     const [search, setSearch] = useState('');
+
+    const [helpOpen, setHelpOpen] = useState(false);
+    const [callWaiterOpen, setCallWaiterOpen] = useState(false);
 
     const [activeCategory, setActiveCategory] = useState<
         number | typeof ALL_CATEGORIES
     >(ALL_CATEGORIES);
 
     const [activeDietary, setActiveDietary] = useState(ALL_DIETARY);
+
+    useEffect(() => {
+        if (!restore_guest_tab || !session.active) {
+            return;
+        }
+
+        const lastTab = window.localStorage.getItem(
+            `qresto_last_tab_${session.id}`,
+        );
+
+        if (lastTab === 'order') {
+            router.visit('/cart');
+        } else if (lastTab === 'status' && latest_order_id != null) {
+            router.visit(`/orders/${latest_order_id}/status`);
+        }
+    }, [restore_guest_tab, session.id, session.active, latest_order_id]);
 
     const dietaryTags = useMemo(() => {
         return Array.from(
@@ -346,7 +389,10 @@ export default function Menu({
                                 label: 'Order',
                                 icon: <ClipboardList className="size-5" />,
                                 badge: cart.count > 0 ? cart.count : undefined,
-                                onClick: () => router.visit('/cart'),
+                                onClick: () => {
+                                    saveLastTab(session.id, 'order');
+                                    router.visit('/cart');
+                                },
                             },
                             {
                                 label: 'Status',
@@ -355,16 +401,45 @@ export default function Menu({
                                         02
                                     </span>
                                 ),
-                                disabled: true,
+                                disabled:
+                                    !session.active || latest_order_id == null,
+                                onClick: () => {
+                                    if (
+                                        session.active &&
+                                        latest_order_id != null
+                                    ) {
+                                        saveLastTab(session.id, 'status');
+
+                                        router.visit(
+                                            `/orders/${latest_order_id}/status`,
+                                        );
+                                    }
+                                },
                             },
                             {
                                 label: 'Help',
                                 icon: <CircleHelp className="size-5" />,
-                                disabled: true,
+                                disabled: !session.active,
+                                onClick: () => setHelpOpen(true),
                             },
                         ]}
                     />
                 </div>
+
+                {/* Help information panel */}
+                <HelpPanel
+                    open={helpOpen}
+                    onOpenChange={setHelpOpen}
+                    restaurantPhone={restaurant.phone}
+                    onCallWaiter={() => setCallWaiterOpen(true)}
+                />
+
+                {/* Existing service request sheet */}
+                <CallWaiterSheet
+                    open={callWaiterOpen}
+                    onOpenChange={setCallWaiterOpen}
+                    openRequests={open_requests}
+                />
             </div>
         </GuestLayout>
     );

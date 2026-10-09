@@ -69,6 +69,7 @@ class QrController extends Controller
 
         return redirect()
             ->route('menu')
+            ->with('restore_guest_tab', true)
             ->withCookie(
                 $this->sessionCookie($session->token),
             );
@@ -145,8 +146,8 @@ class QrController extends Controller
             name: $cookieName,
             value: $token,
             minutes: (int) config(
-                'qresto.table_session_idle_minutes',
-                30,
+                'qresto.table_session_cookie_minutes',
+                1440,
             ),
             path: '/',
             secure: null,

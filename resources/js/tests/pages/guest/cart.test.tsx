@@ -60,6 +60,15 @@ const cartProps = {
         first_name: 'Rami',
     },
 
+    session: {
+        id: 1,
+        active: true,
+    },
+
+    latest_order_id: null,
+
+    open_requests: [],
+
     cart: {
         id: 1,
         note: null,
@@ -102,6 +111,7 @@ const cartProps = {
 describe('Guest cart page', () => {
     beforeEach(() => {
         visit.mockClear();
+        window.localStorage.clear();
     });
 
     it('opens checkout from choose how to pay', () => {
@@ -134,5 +144,62 @@ describe('Guest cart page', () => {
                 name: 'Add something else',
             }),
         ).toHaveAttribute('href', '/menu');
+    });
+
+    it('shows the four navigation tabs with Order active', () => {
+        render(<CartPage {...cartProps} />);
+
+        const navigation = screen.getByRole('navigation');
+
+        expect(navigation).toBeInTheDocument();
+
+        expect(
+            screen.getByRole('button', { name: 'Menu' }),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.getByRole('button', { name: /Order/ }),
+        ).toBeInTheDocument();
+
+        expect(screen.getByRole('button', { name: /Status/ })).toBeDisabled();
+
+        expect(screen.getByRole('button', { name: 'Help' })).toBeEnabled();
+    });
+
+    it('navigates to menu and saves the last tab', () => {
+        render(<CartPage {...cartProps} />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+        expect(visit).toHaveBeenCalledWith('/menu');
+
+        expect(window.localStorage.getItem('qresto_last_tab_1')).toBe('menu');
+    });
+
+    it('navigates to the latest order status when available', () => {
+        render(<CartPage {...cartProps} latest_order_id={42} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /Status/ }));
+
+        expect(visit).toHaveBeenCalledWith('/orders/42/status');
+
+        expect(window.localStorage.getItem('qresto_last_tab_1')).toBe('status');
+    });
+
+    it('disables Status and Help when the session is inactive', () => {
+        render(
+            <CartPage
+                {...cartProps}
+                session={{
+                    id: 1,
+                    active: false,
+                }}
+                latest_order_id={42}
+            />,
+        );
+
+        expect(screen.getByRole('button', { name: /Status/ })).toBeDisabled();
+
+        expect(screen.getByRole('button', { name: 'Help' })).toBeDisabled();
     });
 });

@@ -39,6 +39,11 @@ vi.mock('@/components/ui/placeholder-pattern', () => ({
     PlaceholderPattern: () => <div data-testid="placeholder-pattern" />,
 }));
 
+const emptyServiceRequests = () => ({
+    items: [],
+    version: 'none:0',
+});
+
 describe('Dashboard', () => {
     it('renders the live orders count', () => {
         render(
@@ -58,6 +63,7 @@ describe('Dashboard', () => {
                     ],
                     version: '2026-09-13 12:00:00.000000:2',
                 }}
+                liveServiceRequests={emptyServiceRequests()}
             />,
         );
 
@@ -77,6 +83,7 @@ describe('Dashboard', () => {
                     ],
                     version: '2026-09-13 12:00:00.000000:1',
                 }}
+                liveServiceRequests={emptyServiceRequests()}
             />,
         );
 
@@ -84,16 +91,21 @@ describe('Dashboard', () => {
         expect(screen.getByText('placed')).toBeInTheDocument();
     });
 
-    it('polls live orders every 5 seconds with the current version', () => {
+    it('polls orders and service requests every 5 seconds', () => {
         const liveOrders = {
             items: [],
             version: '2026-09-13 12:00:00.000000:0',
         };
 
-        render(<Dashboard liveOrders={liveOrders} />);
+        render(
+            <Dashboard
+                liveOrders={liveOrders}
+                liveServiceRequests={emptyServiceRequests()}
+            />,
+        );
 
         expect(useLiveData).toHaveBeenLastCalledWith(5000, {
-            only: ['liveOrders'],
+            only: ['liveOrders', 'liveServiceRequests'],
             version: liveOrders.version,
         });
     });
@@ -118,6 +130,7 @@ describe('Dashboard', () => {
                     items,
                     version: '2026-09-13 12:00:00.000000:2',
                 }}
+                liveServiceRequests={emptyServiceRequests()}
             />,
         );
 
@@ -128,5 +141,65 @@ describe('Dashboard', () => {
                 muted: false,
             },
         );
+    });
+
+    it('renders pending service requests and table numbers', () => {
+        render(
+            <Dashboard
+                liveOrders={{
+                    items: [],
+                    version: 'none:0|2026-10-09 10:00:00.000000:2',
+                }}
+                liveServiceRequests={{
+                    items: [
+                        {
+                            id: 1,
+                            kind: 'water',
+                            status: 'pending',
+                            requested_at: '2026-10-09T10:00:00',
+                            table: {
+                                id: 12,
+                                number: '12',
+                                state: 'seated',
+                            },
+                        },
+                        {
+                            id: 2,
+                            kind: 'bill',
+                            status: 'pending',
+                            requested_at: '2026-10-09T10:00:00',
+                            table: {
+                                id: 13,
+                                number: '13',
+                                state: 'bill_requested',
+                            },
+                        },
+                    ],
+                    version: '2026-10-09 10:00:00.000000:2',
+                }}
+            />,
+        );
+
+        expect(screen.getByText('2 pending requests')).toBeInTheDocument();
+        expect(screen.getByText('Water')).toBeInTheDocument();
+        expect(screen.getByText('Table 12')).toBeInTheDocument();
+        expect(screen.getByText('Table 13')).toBeInTheDocument();
+        expect(screen.getAllByText('Bill requested')).toHaveLength(2);
+    });
+
+    it('renders an empty service requests state', () => {
+        render(
+            <Dashboard
+                liveOrders={{
+                    items: [],
+                    version: 'none:0',
+                }}
+                liveServiceRequests={emptyServiceRequests()}
+            />,
+        );
+
+        expect(
+            screen.getByText('No pending service requests.'),
+        ).toBeInTheDocument();
     });
 });

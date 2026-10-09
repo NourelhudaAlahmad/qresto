@@ -57,6 +57,6 @@ return [
     'undo_window_seconds' => 6,
 
     'table_session_idle_minutes' => 30,
-
+    'table_session_cookie_minutes' => 1440,
     'table_session_cookie' => 'qresto_table_session',
 ];

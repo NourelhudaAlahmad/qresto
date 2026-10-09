@@ -10,6 +10,7 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MenuItemController;
 use App\Http\Controllers\OrderStatusController;
 use App\Http\Controllers\QrController;
+use App\Http\Controllers\ServiceRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingController::class, 'show'])
@@ -29,6 +30,11 @@ Route::post('/locale', [LocaleController::class, 'update'])
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)
         ->name('dashboard');
+
+    Route::patch(
+        '/service-requests/{serviceRequest}/acknowledge',
+        [ServiceRequestController::class, 'acknowledge'],
+    )->name('service-requests.acknowledge');
 });
 
 Route::middleware('throttle:30,1')->group(function () {
@@ -87,6 +93,11 @@ Route::middleware('table.session')->group(function () {
         '/checkout/promo',
         [CheckoutController::class, 'removePromo'],
     )->name('checkout.promo.destroy');
+
+    Route::post(
+        '/service-requests',
+        [ServiceRequestController::class, 'store'],
+    )->name('guest.service-requests.store');
 
     Route::get(
         '/orders/{order}/status',

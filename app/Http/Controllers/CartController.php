@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Cart;
 use App\Models\CartLine;
+use App\Models\Order;
+use App\Models\ServiceRequest;
 use App\Models\TableSession;
 use App\Support\Money;
 use App\Support\OrderTotals;
@@ -134,10 +136,34 @@ class CartController extends Controller
         }
 
         return Inertia::render('guest/cart', [
+            'session' => [
+                'id' => $session->id,
+                'active' => $session->isActive(),
+            ],
+
+            'latest_order_id' => Order::query()
+                ->where('table_session_id', $session->id)
+                ->where('table_id', $session->restaurant_table_id)
+                ->where('status', '!=', 'voided')
+                ->latest('id')
+                ->value('id'),
+
+            'open_requests' => ServiceRequest::query()
+                ->where('table_session_id', $session->id)
+                ->where('table_id', $session->restaurant_table_id)
+                ->where('status', 'pending')
+                ->pluck('kind')
+                ->map(static fn ($kind): string => $kind instanceof \BackedEnum
+                    ? (string) $kind->value
+                    : (string) $kind)
+                ->values()
+                ->all(),
+
             'restaurant' => [
                 'id' => $restaurant->id,
                 'name' => $restaurant->name,
                 'currency' => $currency,
+                'phone' => $restaurant->phone,
             ],
 
             'table' => [

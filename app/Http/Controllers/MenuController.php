@@ -6,6 +6,8 @@ use App\Models\Allergen;
 use App\Models\Cart;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
+use App\Models\Order;
+use App\Models\ServiceRequest;
 use App\Models\TableSession;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Relations\Pivot;
@@ -96,10 +98,16 @@ class MenuController extends Controller
             : null;
 
         return Inertia::render('guest/menu', [
+            'restore_guest_tab' => (bool) $request->session()->pull(
+                'restore_guest_tab',
+                false,
+            ),
+
             'restaurant' => [
                 'id' => $session->restaurant->id,
                 'name' => $session->restaurant->name,
                 'currency' => $session->restaurant->currency,
+                'phone' => $session->restaurant->phone,
             ],
 
             'table' => [
@@ -108,8 +116,27 @@ class MenuController extends Controller
             ],
 
             'session' => [
+                'id' => $session->id,
                 'active' => $session->isActive(),
             ],
+
+            'latest_order_id' => Order::query()
+                ->where('table_session_id', $session->id)
+                ->where('table_id', $session->restaurant_table_id)
+                ->where('status', '!=', 'voided')
+                ->latest('id')
+                ->value('id'),
+
+            'open_requests' => ServiceRequest::query()
+                ->where('table_session_id', $session->id)
+                ->where('table_id', $session->restaurant_table_id)
+                ->where('status', 'pending')
+                ->pluck('kind')
+                ->map(static fn ($kind): string => $kind instanceof \BackedEnum
+                    ? (string) $kind->value
+                    : (string) $kind)
+                ->values()
+                ->all(),
 
             'categories' => $categories,
 

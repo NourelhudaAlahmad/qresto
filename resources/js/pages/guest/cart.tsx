@@ -1,12 +1,16 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { CircleHelp, ClipboardList, Menu as MenuIcon } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@/components/qresto/button';
+import { CallWaiterSheet } from '@/components/qresto/call-waiter-sheet';
 import { Card } from '@/components/qresto/card';
 import { EmptyState } from '@/components/qresto/empty-state';
+import { HelpPanel } from '@/components/qresto/help-panel';
 import { PriceSummary } from '@/components/qresto/price-summary';
 import { QuantityStepper } from '@/components/qresto/quantity-stepper';
 import { StickyDock } from '@/components/qresto/sticky-dock';
+import { TabBar } from '@/components/qresto/tab-bar';
 import { Textarea } from '@/components/qresto/textarea';
 import { showToast } from '@/components/qresto/toast';
 import GuestLayout from '@/layouts/guest-layout';
@@ -17,6 +21,7 @@ type Restaurant = {
     id: number;
     name: string;
     currency: string;
+    phone?: string | null;
 };
 
 type Table = {
@@ -28,6 +33,13 @@ type Guest = {
     name: string | null;
     first_name: string | null;
 };
+
+type Session = {
+    id: number;
+    active: boolean;
+};
+
+type ServiceRequestKind = 'water' | 'bread' | 'bill' | 'waiter';
 
 type CartLineAddon = {
     id: number;
@@ -73,6 +85,9 @@ type Props = {
     restaurant: Restaurant;
     table: Table;
     guest: Guest;
+    session: Session;
+    latest_order_id: number | null;
+    open_requests: ServiceRequestKind[];
     cart: Cart;
     undo_window_seconds: number;
     translations: Translations;
@@ -163,8 +178,12 @@ function servicePercentage(servicePct: string): string {
 }
 
 export default function CartPage({
+    restaurant,
     table,
     guest,
+    session,
+    latest_order_id,
+    open_requests,
     cart,
     undo_window_seconds,
     translations,
@@ -175,7 +194,18 @@ export default function CartPage({
 
     const [savingNote, setSavingNote] = useState(false);
 
+    const [helpOpen, setHelpOpen] = useState(false);
+    const [callWaiterOpen, setCallWaiterOpen] = useState(false);
+
     const itemCount = cart.lines.reduce((total, line) => total + line.qty, 0);
+
+    const saveLastTab = (tab: 'menu' | 'order' | 'status') => {
+        try {
+            window.localStorage.setItem(`qresto_last_tab_${session.id}`, tab);
+        } catch {
+            // Navigation must still work if local storage is unavailable.
+        }
+    };
 
     const reloadCart = () => {
         router.reload({
@@ -338,7 +368,23 @@ export default function CartPage({
     };
 
     const goToPayment = () => {
+        saveLastTab('order');
         router.visit('/checkout');
+    };
+
+    const goToMenu = () => {
+        saveLastTab('menu');
+        router.visit('/menu');
+    };
+
+    const goToStatus = () => {
+        if (!session.active || latest_order_id == null) {
+            return;
+        }
+
+        saveLastTab('status');
+
+        router.visit(`/orders/${latest_order_id}/status`);
     };
 
     return (
@@ -429,9 +475,7 @@ export default function CartPage({
                                                         aria-hidden="true"
                                                     >
                                                         <path d="M3 3h18v18H3z" />
-
                                                         <path d="m3 16 5-5 4 4 3-3 6 6" />
-
                                                         <circle
                                                             cx="8.5"
                                                             cy="8.5"
@@ -477,7 +521,6 @@ export default function CartPage({
                                                             >
                                                                 {index > 0 &&
                                                                     ', '}
-
                                                                 {addon.label}
                                                             </span>
                                                         ),
@@ -571,6 +614,57 @@ export default function CartPage({
                         </StickyDock>
                     </>
                 )}
+
+                <TabBar
+                    items={[
+                        {
+                            label: 'Menu',
+                            icon: <MenuIcon className="size-5" />,
+                            onClick: goToMenu,
+                        },
+                        {
+                            label: 'Order',
+                            icon: <ClipboardList className="size-5" />,
+                            active: true,
+                            badge: itemCount > 0 ? itemCount : undefined,
+                            onClick: () => {
+                                saveLastTab('order');
+                            },
+                        },
+                        {
+                            label: 'Status',
+                            icon: (
+                                <span className="font-mono text-base leading-none">
+                                    02
+                                </span>
+                            ),
+                            disabled:
+                                !session.active || latest_order_id == null,
+                            onClick: goToStatus,
+                        },
+                        {
+                            label: 'Help',
+                            icon: <CircleHelp className="size-5" />,
+                            disabled: !session.active,
+                            onClick: () => {
+                                setHelpOpen(true);
+                            },
+                        },
+                    ]}
+                />
+
+                <HelpPanel
+                    open={helpOpen}
+                    onOpenChange={setHelpOpen}
+                    restaurantPhone={restaurant.phone}
+                    onCallWaiter={() => setCallWaiterOpen(true)}
+                />
+
+                <CallWaiterSheet
+                    open={callWaiterOpen}
+                    onOpenChange={setCallWaiterOpen}
+                    openRequests={open_requests}
+                />
             </div>
         </GuestLayout>
     );

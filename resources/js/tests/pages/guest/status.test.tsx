@@ -16,7 +16,6 @@ vi.mock('@/components/locale-sync', () => ({
 
 vi.mock('@inertiajs/react', () => ({
     Head: () => null,
-
     Link: ({
         href,
         children,
@@ -51,13 +50,11 @@ const baseProps = {
         currency: 'USD',
         table_number: '12',
     },
-
     assigned_waiter: {
         id: 7,
         name: 'Ahmad Saleh',
         initials: 'AS',
     },
-
     lines: [
         {
             id: 1,
@@ -66,7 +63,6 @@ const baseProps = {
             total: money(3600),
         },
     ],
-
     receipt: {
         subtotal: money(3600),
         service_amount: money(0),
@@ -74,17 +70,15 @@ const baseProps = {
         discount_amount: money(0),
         total: money(3600),
     },
-
     live: {
         status: 'preparing' as const,
         stage: 'preparing' as const,
-
+        open_requests: [],
         assigned_waiter: {
             id: 7,
             name: 'Ahmad Saleh',
             initials: 'AS',
         },
-
         events: [
             {
                 status: 'placed',
@@ -97,16 +91,13 @@ const baseProps = {
                 actor: 'Ahmad Saleh',
             },
         ],
-
         eta_minutes: {
             min: 12,
             max: 17,
         },
-
         paid: false,
         payment_method: 'cash',
     },
-
     qresto: {
         live: {
             guest_status_interval: 10000,
@@ -151,7 +142,6 @@ describe('Guest order status', () => {
 
     it('shows unpaid cash payment state', () => {
         render(<Status {...baseProps} />);
-
         expect(screen.getByText('Unpaid · cash')).toBeInTheDocument();
     });
 
@@ -177,7 +167,6 @@ describe('Guest order status', () => {
         render(<Status {...baseProps} />);
 
         expect(screen.getAllByText(/12–17/).length).toBeGreaterThan(0);
-
         expect(screen.queryByText(/countdown/i)).not.toBeInTheDocument();
     });
 
@@ -195,7 +184,6 @@ describe('Guest order status', () => {
         );
 
         expect(screen.queryByText(/12–17/)).not.toBeInTheDocument();
-
         expect(
             screen.getByRole('heading', {
                 level: 1,
@@ -206,7 +194,6 @@ describe('Guest order status', () => {
 
     it('shows the waiter from the live prop', () => {
         render(<Status {...baseProps} />);
-
         expect(
             screen.getByText('Ahmad Saleh is on your table'),
         ).toBeInTheDocument();
@@ -236,7 +223,6 @@ describe('Guest order status', () => {
         expect(
             screen.getByText('Nadia Rahman is on your table'),
         ).toBeInTheDocument();
-
         expect(
             screen.queryByText('Ahmad Saleh is on your table'),
         ).not.toBeInTheDocument();

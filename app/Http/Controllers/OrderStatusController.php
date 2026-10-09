@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cart;
 use App\Models\Order;
+use App\Models\ServiceRequest;
 use App\Models\TableSession;
 use App\Services\KitchenEta;
 use Illuminate\Http\Request;
@@ -29,6 +31,22 @@ final class OrderStatusController extends Controller
         );
 
         return Inertia::render('guest/status', [
+            'restaurant' => [
+                'phone' => $session->restaurant->phone,
+            ],
+
+            'session' => [
+                'id' => $session->id,
+                'active' => $session->isActive(),
+            ],
+
+            'cart_count' => fn (): int => (int) (Cart::query()
+                ->where('table_session_id', $session->id)
+                ->first()
+                ?->lines()
+                ->whereNull('removed_at')
+                ->sum('qty') ?? 0),
+
             'order' => fn (): array => [
                 'id' => $order->id,
                 'code' => $order->code,
@@ -98,12 +116,13 @@ final class OrderStatusController extends Controller
                     ->jsonSerialize(),
             ],
 
-            /*
+            /**
              * This is the volatile slice.
              * Guest polling requests only "live".
              */
             'live' => function () use (
                 $order,
+                $session,
                 $kitchenEta,
             ): array {
                 $order->refresh();
@@ -121,6 +140,19 @@ final class OrderStatusController extends Controller
                     ->first();
 
                 return [
+                    'open_requests' => ServiceRequest::query()
+                        ->where('table_session_id', $session->id)
+                        ->where('table_id', $session->restaurant_table_id)
+                        ->where('status', 'pending')
+                        ->pluck('kind')
+                        ->map(
+                            static fn ($kind): string => $kind instanceof \BackedEnum
+                                ? (string) $kind->value
+                                : (string) $kind,
+                        )
+                        ->values()
+                        ->all(),
+
                     'status' => $order->status->value,
 
                     'stage' => $this->guestStage(
@@ -137,6 +169,7 @@ final class OrderStatusController extends Controller
                     'paid' => (bool) $order->is_paid,
 
                     'payment_method' => $latestPayment?->method,
+
                     'assigned_waiter' => $order->assignedUser === null
                         ? null
                         : [

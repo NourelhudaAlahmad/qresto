@@ -42,12 +42,18 @@ vi.mock('@/components/qresto/tab-bar', () => ({
         items: Array<{
             label: ReactNode;
             badge?: ReactNode;
+            disabled?: boolean;
             onClick?: () => void;
         }>;
     }) => (
         <nav aria-label="Guest navigation">
             {items.map((item, index) => (
-                <button key={index} type="button" onClick={item.onClick}>
+                <button
+                    key={index}
+                    type="button"
+                    onClick={item.onClick}
+                    disabled={item.disabled}
+                >
                     {item.label}
                 </button>
             ))}
@@ -60,6 +66,7 @@ const menuProps = {
         id: 1,
         name: 'Al Bustan',
         currency: 'USD',
+        phone: '+966 11 123 4567',
     },
 
     table: {
@@ -68,8 +75,13 @@ const menuProps = {
     },
 
     session: {
+        id: 1,
         active: true,
     },
+
+    open_requests: [],
+    latest_order_id: null,
+    restore_guest_tab: false,
 
     categories: [
         {
@@ -139,6 +151,7 @@ const menuProps = {
 describe('Guest menu page', () => {
     beforeEach(() => {
         visit.mockClear();
+        window.localStorage.clear();
     });
 
     it('opens a menu item', () => {
@@ -165,7 +178,7 @@ describe('Guest menu page', () => {
         expect(visit).toHaveBeenCalledWith('/cart');
     });
 
-    it('opens the cart from the Order tab', () => {
+    it('opens the cart from the Order tab and saves the last tab', () => {
         render(<Menu {...menuProps} />);
 
         fireEvent.click(
@@ -175,6 +188,8 @@ describe('Guest menu page', () => {
         );
 
         expect(visit).toHaveBeenCalledWith('/cart');
+
+        expect(window.localStorage.getItem('qresto_last_tab_1')).toBe('order');
     });
 
     it('filters menu items by search', () => {
@@ -219,5 +234,126 @@ describe('Guest menu page', () => {
         );
 
         expect(screen.getByText('Nothing found')).toBeInTheDocument();
+    });
+
+    it('disables Help when the table session is inactive', () => {
+        render(<Menu {...menuProps} session={{ id: 1, active: false }} />);
+
+        expect(screen.getByRole('button', { name: 'Help' })).toBeDisabled();
+    });
+
+    it('disables Status when there is no order', () => {
+        render(<Menu {...menuProps} />);
+
+        expect(screen.getByRole('button', { name: 'Status' })).toBeDisabled();
+    });
+
+    it('opens the latest order status and saves the last tab', () => {
+        render(<Menu {...menuProps} latest_order_id={42} />);
+
+        const statusButton = screen.getByRole('button', {
+            name: 'Status',
+        });
+
+        expect(statusButton).toBeEnabled();
+
+        fireEvent.click(statusButton);
+
+        expect(visit).toHaveBeenCalledWith('/orders/42/status');
+
+        expect(window.localStorage.getItem('qresto_last_tab_1')).toBe('status');
+    });
+
+    it('restores the Order tab after QR confirmation', () => {
+        window.localStorage.setItem('qresto_last_tab_1', 'order');
+
+        render(<Menu {...menuProps} restore_guest_tab={true} />);
+
+        expect(visit).toHaveBeenCalledWith('/cart');
+    });
+
+    it('restores the Status tab after QR confirmation', () => {
+        window.localStorage.setItem('qresto_last_tab_1', 'status');
+
+        render(
+            <Menu
+                {...menuProps}
+                restore_guest_tab={true}
+                latest_order_id={42}
+            />,
+        );
+
+        expect(visit).toHaveBeenCalledWith('/orders/42/status');
+    });
+
+    it('does not restore the last tab when the session is inactive', () => {
+        window.localStorage.setItem('qresto_last_tab_1', 'order');
+
+        render(
+            <Menu
+                {...menuProps}
+                session={{ id: 1, active: false }}
+                restore_guest_tab={true}
+            />,
+        );
+
+        expect(visit).not.toHaveBeenCalled();
+    });
+
+    it('does not restore the last tab on normal menu navigation', () => {
+        window.localStorage.setItem('qresto_last_tab_1', 'status');
+
+        render(
+            <Menu
+                {...menuProps}
+                restore_guest_tab={false}
+                latest_order_id={42}
+            />,
+        );
+
+        expect(visit).not.toHaveBeenCalled();
+    });
+
+    it('does not restore Status when there is no order', () => {
+        window.localStorage.setItem('qresto_last_tab_1', 'status');
+
+        render(
+            <Menu
+                {...menuProps}
+                restore_guest_tab={true}
+                latest_order_id={null}
+            />,
+        );
+
+        expect(visit).not.toHaveBeenCalled();
+    });
+    it('opens Help with allergen guidance, restaurant phone and waiter assistance', () => {
+        render(<Menu {...menuProps} />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Help' }));
+
+        expect(
+            screen.getByRole('dialog', { name: 'Help' }),
+        ).toBeInTheDocument();
+
+        expect(screen.getByText('Allergen information')).toBeInTheDocument();
+
+        expect(
+            screen.getByRole('link', { name: menuProps.restaurant.phone }),
+        ).toHaveAttribute('href', `tel:${menuProps.restaurant.phone}`);
+
+        expect(
+            screen.getByRole('button', { name: 'English' }),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.getByRole('button', { name: 'العربية' }),
+        ).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Call waiter' }));
+
+        expect(
+            screen.getByRole('dialog', { name: 'How can we help?' }),
+        ).toBeInTheDocument();
     });
 });
