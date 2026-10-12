@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Fortify\Features;
 
@@ -75,4 +76,48 @@ test('password cannot be reset with invalid token', function () {
     ]);
 
     $response->assertSessionHasErrors('email');
+});
+
+test('password reset token expires after 30 minutes', function () {
+    Notification::fake();
+
+    $user = User::factory()->create();
+
+    $this->post(route('password.email'), [
+        'email' => $user->email,
+    ]);
+
+    $token = null;
+
+    Notification::assertSentTo(
+        $user,
+        ResetPassword::class,
+        function ($notification) use (&$token) {
+            $token = $notification->token;
+
+            return true;
+        },
+    );
+
+    expect($token)->not->toBeNull();
+
+    // Simulate a reset link older than 30 minutes.
+    $this->travel(31)->minutes();
+
+    $response = $this->post(route('password.update'), [
+        'token' => $token,
+        'email' => $user->email,
+        'password' => 'NewPassword@123',
+        'password_confirmation' => 'NewPassword@123',
+    ]);
+
+    $response->assertSessionHasErrors('email');
+
+    // Ensure the expired token did not change the password.
+    $this->assertTrue(
+        Hash::check(
+            'password',
+            $user->fresh()->password,
+        ),
+    );
 });

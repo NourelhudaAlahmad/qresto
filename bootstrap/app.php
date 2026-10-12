@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureStaffAccountCanAuthenticate;
 use App\Http\Middleware\EnsureTableSession;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'table.session' => EnsureTableSession::class,
+            'staff.auth.check' => EnsureStaffAccountCanAuthenticate::class,
         ]);
 
         $middleware->web(append: [
@@ -31,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             SetLocale::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+            EnsureStaffAccountCanAuthenticate::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

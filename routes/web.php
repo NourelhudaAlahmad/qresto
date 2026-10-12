@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Auth\ManagerShiftQrController;
+use App\Http\Controllers\Auth\ShiftQrAuthController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CartLineController;
 use App\Http\Controllers\CheckoutController;
@@ -27,15 +29,86 @@ if (app()->environment('local')) {
 Route::post('/locale', [LocaleController::class, 'update'])
     ->name('locale.update');
 
+// Staff Shift QR Authentication
+
+Route::post(
+    '/auth/shift-qr',
+    [ShiftQrAuthController::class, 'store'],
+)->middleware([
+    'guest:web',
+    'throttle:10,1',
+])->name('auth.shift-qr.store');
+
+Route::post(
+    '/auth/shift-qr/issue',
+    [ShiftQrAuthController::class, 'issue'],
+)->middleware([
+    'auth:web',
+    'verified',
+    'throttle:10,1',
+])->name('auth.shift-qr.issue');
+
+// Manager-only Shift QR page
+
+Route::get(
+    '/manager/shift-qr',
+    [ManagerShiftQrController::class, 'index'],
+)->middleware([
+    'auth:web',
+    'verified',
+])->name('manager.shift-qr.index');
+
+// Authenticated dashboard and staff actions
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)
         ->name('dashboard');
+
+    // Temporary role landing routes for Issue #21.
+    // Full staff panels will be implemented in their own issues.
+    $staffLandings = [
+        'waiter' => [
+            'uri' => 'waiter/orders',
+            'name' => 'waiter.orders',
+            'title' => 'My Orders',
+        ],
+        'kitchen' => [
+            'uri' => 'kitchen/pass',
+            'name' => 'kitchen.pass',
+            'title' => 'Kitchen Pass',
+        ],
+        'manager' => [
+            'uri' => 'manager/overview',
+            'name' => 'manager.overview',
+            'title' => 'Manager Overview',
+        ],
+        'admin' => [
+            'uri' => 'admin/system',
+            'name' => 'admin.system',
+            'title' => 'Admin System',
+        ],
+    ];
+
+    foreach ($staffLandings as $role => $landing) {
+        Route::get($landing['uri'], function () use ($role, $landing) {
+            abort_unless(
+                request()->user()?->hasRole($role),
+                403,
+            );
+
+            return response(
+                '<h1>'.e($landing['title']).'</h1><p>This staff panel is coming soon.</p>'
+            );
+        })->name($landing['name']);
+    }
 
     Route::patch(
         '/service-requests/{serviceRequest}/acknowledge',
         [ServiceRequestController::class, 'acknowledge'],
     )->name('service-requests.acknowledge');
 });
+
+// Guest table QR routes
 
 Route::middleware('throttle:30,1')->group(function () {
     Route::get('/t/{qrToken}', [QrController::class, 'show'])
@@ -47,6 +120,8 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::get('/t/{qrToken}/tables', [QrController::class, 'tables'])
         ->name('table.tables');
 });
+
+// Guest table session routes
 
 Route::middleware('table.session')->group(function () {
     Route::get('/menu', [MenuController::class, 'index'])
@@ -86,7 +161,7 @@ Route::middleware('table.session')->group(function () {
 
     Route::post(
         '/checkout/promo',
-        [CheckoutController::class, 'applyPromo'],
+        [CheckoutController::class, 'storePromo'],
     )->name('checkout.promo.store');
 
     Route::delete(

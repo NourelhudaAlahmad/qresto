@@ -42,6 +42,9 @@ use Spatie\Permission\Traits\HasRoles;
     'is_active',
     'initials',
     'job_title',
+    'failed_attempts',
+    'locked_until',
+    'last_login_at',
 ])]
 #[Hidden([
     'password',
@@ -74,6 +77,9 @@ class User extends Authenticatable implements PasskeyUser
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'is_active' => 'boolean',
+            'failed_attempts' => 'integer',
+            'locked_until' => 'datetime',
+            'last_login_at' => 'datetime',
         ];
     }
 }
