@@ -161,7 +161,7 @@ Route::middleware('table.session')->group(function () {
 
     Route::post(
         '/checkout/promo',
-        [CheckoutController::class, 'storePromo'],
+        [CheckoutController::class, 'applyPromo'],
     )->name('checkout.promo.store');
 
     Route::delete(
