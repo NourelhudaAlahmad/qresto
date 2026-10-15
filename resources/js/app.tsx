@@ -8,6 +8,7 @@ import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import GuestLayout from '@/layouts/guest-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import StaffLayout from '@/layouts/staff-layout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -32,6 +33,11 @@ createInertiaApp({
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];
 
+            // Staff Dashboard uses the dedicated staff shell.
+            case name === 'dashboard':
+                return StaffLayout;
+            case name.startsWith('staff/'):
+                return StaffLayout;
             default:
                 return AppLayout;
         }

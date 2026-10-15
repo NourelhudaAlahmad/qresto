@@ -24,7 +24,6 @@ class NavigationBuilderTest extends TestCase
     public function test_waiter_navigation_matches_the_capability_matrix(): void
     {
         $user = User::factory()->create();
-
         $user->assignRole(Role::WAITER->value);
 
         $capabilities = [
@@ -39,19 +38,19 @@ class NavigationBuilderTest extends TestCase
         );
 
         $this->assertSame(
-            [
-                'waiter',
-                'floor',
-                'auth',
-            ],
+            ['waiter', 'floor'],
             array_column($navigation, 'id'),
+        );
+
+        $this->assertSame(
+            ['/app/my-orders', '/app/floor'],
+            array_column($navigation, 'href'),
         );
     }
 
     public function test_kitchen_navigation_only_shows_order_items(): void
     {
         $user = User::factory()->create();
-
         $user->assignRole(Role::KITCHEN->value);
 
         $capabilities = [
@@ -65,11 +64,13 @@ class NavigationBuilderTest extends TestCase
         );
 
         $this->assertSame(
-            [
-                'kds',
-                'waiter',
-            ],
+            ['kds', 'waiter'],
             array_column($navigation, 'id'),
+        );
+
+        $this->assertSame(
+            ['/app/pass', '/app/orders'],
+            array_column($navigation, 'href'),
         );
 
         $this->assertNotContains(
@@ -86,7 +87,6 @@ class NavigationBuilderTest extends TestCase
     public function test_manager_navigation_shows_manager_items(): void
     {
         $user = User::factory()->create();
-
         $user->assignRole(Role::MANAGER->value);
 
         $capabilities = [
@@ -104,21 +104,24 @@ class NavigationBuilderTest extends TestCase
         );
 
         $this->assertSame(
-            [
-                'manager',
-                'waiter',
-                'floor',
-                'reports',
-                'auth',
-            ],
+            ['manager', 'waiter', 'floor', 'reports'],
             array_column($navigation, 'id'),
+        );
+
+        $this->assertSame(
+            [
+                '/app/overview',
+                '/app/orders',
+                '/app/floor',
+                '/app/reports',
+            ],
+            array_column($navigation, 'href'),
         );
     }
 
     public function test_admin_navigation_shows_all_admin_sections(): void
     {
         $user = User::factory()->create();
-
         $user->assignRole(Role::ADMIN->value);
 
         $capabilities = array_map(
@@ -132,14 +135,18 @@ class NavigationBuilderTest extends TestCase
         );
 
         $this->assertSame(
-            [
-                'admin',
-                'menu',
-                'reports',
-                'manager',
-                'auth',
-            ],
+            ['admin', 'menu', 'reports', 'manager'],
             array_column($navigation, 'id'),
+        );
+
+        $this->assertSame(
+            [
+                '/app/system',
+                '/app/menu',
+                '/app/reports',
+                '/app/orders',
+            ],
+            array_column($navigation, 'href'),
         );
     }
 
@@ -147,7 +154,6 @@ class NavigationBuilderTest extends TestCase
     {
         foreach ([Role::RUNNER, Role::CASHIER] as $role) {
             $user = User::factory()->create();
-
             $user->assignRole($role->value);
 
             $navigation = app(NavigationBuilder::class)->for(
@@ -162,7 +168,6 @@ class NavigationBuilderTest extends TestCase
     public function test_navigation_respects_the_capability_snapshot(): void
     {
         $user = User::factory()->create();
-
         $user->assignRole(Role::MANAGER->value);
 
         $snapshot = [
@@ -176,12 +181,7 @@ class NavigationBuilderTest extends TestCase
         );
 
         $this->assertSame(
-            [
-                'manager',
-                'waiter',
-                'reports',
-                'auth',
-            ],
+            ['manager', 'waiter', 'reports'],
             array_column($navigation, 'id'),
         );
 
@@ -189,5 +189,51 @@ class NavigationBuilderTest extends TestCase
             'floor',
             array_column($navigation, 'id'),
         );
+
+        $this->assertSame(
+            [
+                '/app/overview',
+                '/app/orders',
+                '/app/reports',
+            ],
+            array_column($navigation, 'href'),
+        );
+    }
+
+    public function test_navigation_is_empty_when_snapshot_has_no_capabilities(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole(Role::MANAGER->value);
+
+        $navigation = app(NavigationBuilder::class)->for($user, []);
+
+        $this->assertSame([], $navigation);
+    }
+
+    public function test_navigation_has_no_login_link_or_fake_badges(): void
+    {
+        foreach ([Role::WAITER, Role::KITCHEN, Role::MANAGER, Role::ADMIN] as $role) {
+            $user = User::factory()->create();
+            $user->assignRole($role->value);
+
+            $capabilities = array_map(
+                fn (Capability $capability) => $capability->value,
+                Capability::cases(),
+            );
+
+            $navigation = app(NavigationBuilder::class)->for(
+                $user,
+                $capabilities,
+            );
+
+            $this->assertNotContains(
+                '/login',
+                array_column($navigation, 'href'),
+            );
+
+            foreach ($navigation as $item) {
+                $this->assertNull($item['badge']);
+            }
+        }
     }
 }

@@ -14,6 +14,7 @@ use App\Http\Controllers\OrderStatusController;
 use App\Http\Controllers\QrController;
 use App\Http\Controllers\ServiceRequestController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::get('/', [LandingController::class, 'show'])
     ->name('home');
@@ -96,9 +97,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 403,
             );
 
-            return response(
-                '<h1>'.e($landing['title']).'</h1><p>This staff panel is coming soon.</p>'
-            );
+            return Inertia::render('staff/landing', [
+                'title' => $landing['title'],
+            ]);
         })->name($landing['name']);
     }
 
@@ -106,6 +107,74 @@ Route::middleware(['auth', 'verified'])->group(function () {
         '/service-requests/{serviceRequest}/acknowledge',
         [ServiceRequestController::class, 'acknowledge'],
     )->name('service-requests.acknowledge');
+});
+
+// Staff application routes — Issue #22
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/app/overview', function () {
+        return Inertia::render('staff/landing', [
+            'title' => 'Overview',
+        ]);
+    })
+        ->middleware('can:see_all_orders')
+        ->name('app.overview');
+
+    Route::get('/app/orders', function () {
+        return Inertia::render('staff/landing', [
+            'title' => 'Live Orders',
+        ]);
+    })
+        ->middleware('can:see_all_orders')
+        ->name('app.orders');
+
+    Route::get('/app/floor', function () {
+        return Inertia::render('staff/landing', [
+            'title' => 'Floor',
+        ]);
+    })
+        ->middleware('can:see_own_tables')
+        ->name('app.floor');
+
+    Route::get('/app/reports', function () {
+        return Inertia::render('staff/landing', [
+            'title' => 'Reports',
+        ]);
+    })
+        ->middleware('can:financial_reports')
+        ->name('app.reports');
+
+    Route::get('/app/my-orders', function () {
+        return Inertia::render('staff/landing', [
+            'title' => 'My Orders',
+        ]);
+    })
+        ->middleware('can:see_own_tables')
+        ->name('app.my-orders');
+
+    Route::get('/app/system', function () {
+        return Inertia::render('staff/landing', [
+            'title' => 'System',
+        ]);
+    })
+        ->middleware('can:manage_restaurant_config')
+        ->name('app.system');
+
+    Route::get('/app/menu', function () {
+        return Inertia::render('staff/landing', [
+            'title' => 'Menu',
+        ]);
+    })
+        ->middleware('can:edit_menu_prices')
+        ->name('app.menu');
+
+    Route::get('/app/pass', function () {
+        return Inertia::render('staff/landing', [
+            'title' => 'Kitchen Pass',
+        ]);
+    })
+        ->middleware('can:see_all_orders')
+        ->name('app.pass');
 });
 
 // Guest table QR routes

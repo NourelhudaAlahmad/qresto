@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\Capability;
+use App\Enums\Role;
+use App\Models\Order;
 use App\Services\CapabilitySnapshot;
 use App\Services\NavigationBuilder;
 use Illuminate\Http\Request;
@@ -22,8 +25,9 @@ class HandleInertiaRequests extends Middleware
 
         $restaurant = $user?->restaurant;
 
-        $availableLocales = $restaurant->supported_locales
-            ?? ['en', 'ar'];
+        $availableLocales = $user === null
+            ? ['en', 'ar']
+            : ($restaurant->supported_locales ?? ['en', 'ar']);
 
         $locale = app()->getLocale();
 
@@ -50,6 +54,7 @@ class HandleInertiaRequests extends Middleware
                         'qresto.sla.warn_minutes',
                         14,
                     ),
+
                     'late_minutes' => (int) config(
                         'qresto.sla.late_minutes',
                         25,
@@ -100,6 +105,103 @@ class HandleInertiaRequests extends Middleware
         $capabilitySnapshot = app(CapabilitySnapshot::class);
         $capabilities = $capabilitySnapshot->get($user);
 
+        $role = $user->getRoleNames()->first();
+
+        $roleLabel = Role::tryFrom($role ?? '')?->label() ?? 'Staff';
+
+        $pageMeta = match ($request->route()?->getName()) {
+            'app.overview',
+            'manager.overview' => [
+                'Overview',
+                'Restaurant operations at a glance',
+            ],
+
+            'app.orders' => [
+                'Live Orders',
+                'Current restaurant orders',
+            ],
+
+            'app.floor' => [
+                'Floor',
+                'Restaurant tables and seating',
+            ],
+
+            'app.reports' => [
+                'Reports',
+                'Restaurant reports and analytics',
+            ],
+
+            'app.my-orders',
+            'waiter.orders' => [
+                'My Orders',
+                'Your assigned orders and tables',
+            ],
+
+            'app.system',
+            'admin.system' => [
+                'System',
+                'Restaurant administration',
+            ],
+
+            'app.menu' => [
+                'Menu',
+                'Restaurant menu management',
+            ],
+
+            'app.pass',
+            'kitchen.pass' => [
+                'Kitchen Pass',
+                'Live kitchen order feed',
+            ],
+
+            'manager.shift-qr.index' => [
+                'Shift QR',
+                'Issue staff sign-in codes',
+            ],
+
+            'dashboard' => [
+                'Dashboard',
+                'Restaurant overview',
+            ],
+
+            default => [
+                'Staff',
+                '',
+            ],
+        };
+
+        // Count active orders only when the user has permission
+        // to view all orders, and only within their restaurant.
+        $openOrders = fn (): ?int => (
+            $restaurant !== null
+            && in_array(
+                Capability::SEE_ALL_ORDERS->value,
+                $capabilities,
+                true,
+            )
+            && $user->can(Capability::SEE_ALL_ORDERS->value)
+        )
+            ? Order::query()
+                ->where('restaurant_id', $restaurant->id)
+                ->active()
+                ->count()
+            : null;
+
+        // Count unread notifications for the current user only.
+        $unreadNotifications = fn (): int => $user
+            ->unreadNotifications()
+            ->count();
+
+        $staffLayout = [
+            'roleLabel' => $roleLabel,
+            'restaurantName' => $restaurant->name ?? '',
+            'pageTitle' => __($pageMeta[0]),
+            'pageSubtitle' => __($pageMeta[1]),
+
+            // Compatibility with the existing Staff Layout.
+            'unreadNotifications' => $unreadNotifications,
+        ];
+
         return [
             ...$shared,
 
@@ -111,6 +213,12 @@ class HandleInertiaRequests extends Middleware
                 $user,
                 $capabilities,
             ),
+
+            'staffLayout' => $staffLayout,
+
+            // Independently reloadable Inertia props.
+            'staffOpenOrders' => $openOrders,
+            'staffUnreadNotifications' => $unreadNotifications,
 
             'capabilities' => $capabilities,
 

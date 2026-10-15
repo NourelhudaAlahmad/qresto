@@ -1,5 +1,14 @@
 import { Form, Head } from '@inertiajs/react';
-import { ArrowLeft, Eye, EyeOff, QrCode } from 'lucide-react';
+import {
+    ArrowLeft,
+    ArrowRight,
+    Eye,
+    EyeOff,
+    LockKeyhole,
+    QrCode,
+    ShieldCheck,
+    UtensilsCrossed,
+} from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 
@@ -31,63 +40,61 @@ export default function StaffLogin({
 
     const isForgot = mode === 'forgot';
 
-    const qrOption = (
-        <div className="w-full">
-            <Button
-                type="button"
-                variant="outline"
-                fullWidth
-                className="h-12 whitespace-normal text-center"
-                aria-expanded={scannerOpen}
-                onClick={() => setScannerOpen((open) => !open)}
-            >
-                <QrCode className="text-action-primary size-5 shrink-0" />
-                <span>
-                    {scannerOpen
-                        ? 'Close shift QR scanner'
-                        : 'Sign in with the shift QR at the pass'}
-                </span>
-            </Button>
-
-            {scannerOpen && (
-                <ShiftQrScanner onClose={() => setScannerOpen(false)} />
-            )}
-        </div>
-    );
-
     return (
         <>
-            <Head title="Staff sign in" />
+            <Head title={isForgot ? 'Reset password' : 'Staff sign in'} />
 
-            <main className="bg-surface-page font-ui flex min-h-screen w-full items-center justify-center px-6 py-8 min-[900px]:px-8">
-                <div className="bg-surface-card shadow-card grid w-full min-w-0 max-w-[1180px] overflow-hidden rounded-2xl min-[900px]:min-h-[700px] min-[900px]:grid-cols-[minmax(0,1.12fr)_minmax(0,1fr)]">
-                    <section className="flex min-w-0 items-center justify-center px-0 py-12 sm:px-8 min-[900px]:px-10 min-[1100px]:px-12">
-                        <div className="w-full min-w-0 max-w-[380px]">
-                            <div className="mb-9">
-                                <span className="font-display text-title-1 text-text-primary font-bold tracking-tight">
-                                    <span className="text-text-brand">Q</span>
-                                    Resto
-                                </span>
+            <main className="bg-surface-page font-ui flex min-h-screen w-full items-center justify-center px-4 py-6 sm:px-6 sm:py-8 min-[900px]:px-8">
+                <div className="bg-surface-card shadow-card grid w-full min-w-0 max-w-[1180px] overflow-hidden rounded-2xl min-[900px]:min-h-[700px] min-[900px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                    {/* Authentication form */}
+                    <section className="flex min-w-0 flex-col px-5 py-8 sm:px-8 sm:py-10 min-[900px]:px-10 min-[1100px]:px-12">
+                        {/* Brand */}
+                        <header className="mb-10 flex items-center gap-3">
+                            <div className="bg-clay-500 flex size-11 shrink-0 items-center justify-center rounded-xl text-white">
+                                <UtensilsCrossed
+                                    className="size-5"
+                                    aria-hidden="true"
+                                />
                             </div>
 
+                            <div className="min-w-0">
+                                <div className="font-display text-title-1 text-text-primary font-bold tracking-tight">
+                                    <span className="text-text-brand">Q</span>
+                                    Resto
+                                </div>
+
+                                <p className="text-caption text-text-tertiary">
+                                    Staff workspace
+                                </p>
+                            </div>
+                        </header>
+
+                        <div className="mx-auto flex w-full min-w-0 max-w-[380px] flex-1 flex-col justify-center">
                             {isForgot ? (
                                 <>
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        className="mb-5 gap-2"
+                                        className="mb-6 w-fit gap-2"
                                         onClick={() => setMode('login')}
                                     >
                                         <ArrowLeft className="size-4 rtl:rotate-180" />
                                         Back to sign in
                                     </Button>
 
-                                    <h1 className="text-text-primary">
+                                    <div className="bg-clay-100 text-clay-700 mb-6 flex size-12 items-center justify-center rounded-xl">
+                                        <LockKeyhole
+                                            className="size-6"
+                                            aria-hidden="true"
+                                        />
+                                    </div>
+
+                                    <h1 className="font-display text-title-1 text-text-primary font-bold">
                                         Reset password
                                     </h1>
 
-                                    <p className="text-body text-text-secondary mb-8 mt-3">
+                                    <p className="text-body text-text-secondary mt-3 leading-relaxed">
                                         Enter your work email and we'll send you
                                         a reset link valid for 30 minutes.
                                     </p>
@@ -95,7 +102,7 @@ export default function StaffLogin({
                                     <Form
                                         method="post"
                                         action="/forgot-password"
-                                        className="grid gap-5"
+                                        className="mt-8 grid gap-5"
                                     >
                                         {({ processing, errors }) => (
                                             <>
@@ -125,9 +132,13 @@ export default function StaffLogin({
                                                     variant="primary"
                                                     fullWidth
                                                     loading={processing}
-                                                    className="h-12"
+                                                    className="h-12 gap-2"
                                                 >
                                                     Send reset link
+                                                    <ArrowRight
+                                                        className="size-4 rtl:rotate-180"
+                                                        aria-hidden="true"
+                                                    />
                                                 </Button>
                                             </>
                                         )}
@@ -135,24 +146,28 @@ export default function StaffLogin({
                                 </>
                             ) : (
                                 <>
-                                    <h1 className="text-text-primary">
-                                        Staff sign in
-                                    </h1>
+                                    {/* Heading */}
+                                    <div className="mb-8">
+                                        <h1 className="font-display text-title-1 text-text-primary font-bold">
+                                            Staff sign in
+                                        </h1>
 
-                                    <p className="text-body text-text-secondary mb-8 mt-3">
-                                        {restaurantName
-                                            ? `${restaurantName} · Your shift starts when you sign in.`
-                                            : 'Your shift starts when you sign in.'}
-                                    </p>
+                                        <p className="text-body text-text-secondary mt-3 leading-relaxed">
+                                            {restaurantName
+                                                ? `${restaurantName} · Your shift starts when you sign in.`
+                                                : 'Your shift starts when you sign in.'}
+                                        </p>
+                                    </div>
 
+                                    {/* Email and password */}
                                     <Form
                                         {...store.form()}
                                         resetOnSuccess={['password']}
-                                        className="flex w-full min-w-0 flex-col"
+                                        className="flex w-full min-w-0 flex-col gap-5"
                                     >
                                         {({ processing, errors }) => (
                                             <>
-                                                <div className="order-1 mb-5 grid gap-2">
+                                                <div className="grid gap-2">
                                                     <Label htmlFor="email">
                                                         Work email
                                                     </Label>
@@ -173,19 +188,7 @@ export default function StaffLogin({
                                                     />
                                                 </div>
 
-                                                <div className="order-2 mb-5 min-[900px]:order-5 min-[900px]:mb-0">
-                                                    <div className="mb-5 hidden items-center gap-3 min-[900px]:flex">
-                                                        <Divider className="flex-1" />
-                                                        <span className="text-caption text-text-tertiary">
-                                                            or
-                                                        </span>
-                                                        <Divider className="flex-1" />
-                                                    </div>
-
-                                                    {qrOption}
-                                                </div>
-
-                                                <div className="order-3 mb-4 grid gap-2 min-[900px]:order-2">
+                                                <div className="grid gap-2">
                                                     <div className="flex items-center justify-between gap-3">
                                                         <Label htmlFor="password">
                                                             Password
@@ -243,9 +246,15 @@ export default function StaffLogin({
                                                             className="text-text-secondary hover:text-text-primary absolute inset-y-0 end-1 flex min-h-11 min-w-11 items-center justify-center"
                                                         >
                                                             {showPassword ? (
-                                                                <EyeOff className="size-5" />
+                                                                <EyeOff
+                                                                    className="size-5"
+                                                                    aria-hidden="true"
+                                                                />
                                                             ) : (
-                                                                <Eye className="size-5" />
+                                                                <Eye
+                                                                    className="size-5"
+                                                                    aria-hidden="true"
+                                                                />
                                                             )}
                                                         </button>
                                                     </div>
@@ -257,7 +266,7 @@ export default function StaffLogin({
                                                     />
                                                 </div>
 
-                                                <div className="order-4 mb-5 flex items-center gap-1 min-[900px]:order-3">
+                                                <div className="flex items-center gap-2">
                                                     <Checkbox
                                                         id="remember"
                                                         checked={remember}
@@ -291,21 +300,62 @@ export default function StaffLogin({
                                                     fullWidth
                                                     loading={processing}
                                                     data-test="login-button"
-                                                    className="order-5 h-12 min-[900px]:order-4"
+                                                    className="h-12 gap-2"
                                                 >
                                                     Sign in
+                                                    <ArrowRight
+                                                        className="size-4 rtl:rotate-180"
+                                                        aria-hidden="true"
+                                                    />
                                                 </Button>
-
-                                                <p className="text-caption text-text-tertiary order-6 mt-5 leading-relaxed">
-                                                    Three wrong attempts lock
-                                                    your account for 10 minutes
-                                                    and notify the manager on
-                                                    shift. Password reset links
-                                                    expire after 30 minutes.
-                                                </p>
                                             </>
                                         )}
                                     </Form>
+
+                                    {/* Alternative authentication */}
+                                    <div className="mt-7">
+                                        <div className="mb-5 flex items-center gap-3">
+                                            <Divider className="flex-1" />
+
+                                            <span className="text-caption text-text-tertiary whitespace-nowrap">
+                                                or
+                                            </span>
+
+                                            <Divider className="flex-1" />
+                                        </div>
+
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            fullWidth
+                                            className="h-12 gap-3 whitespace-normal text-center"
+                                            aria-expanded={scannerOpen}
+                                            onClick={() =>
+                                                setScannerOpen((open) => !open)
+                                            }
+                                        >
+                                            <QrCode
+                                                className="text-action-primary size-5 shrink-0"
+                                                aria-hidden="true"
+                                            />
+
+                                            <span>
+                                                {scannerOpen
+                                                    ? 'Close shift QR scanner'
+                                                    : 'Sign in with shift QR'}
+                                            </span>
+                                        </Button>
+
+                                        {scannerOpen && (
+                                            <div className="mt-4">
+                                                <ShiftQrScanner
+                                                    onClose={() =>
+                                                        setScannerOpen(false)
+                                                    }
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
 
                                     <details className="border-border-subtle mt-6 border-t pt-4">
                                         <summary className="text-label text-text-secondary cursor-pointer text-center">
@@ -316,6 +366,21 @@ export default function StaffLogin({
                                             <PasskeyVerify />
                                         </div>
                                     </details>
+
+                                    {/* Security notice */}
+                                    <div className="mt-6 flex items-start gap-2">
+                                        <ShieldCheck
+                                            className="text-success-fg mt-0.5 size-4 shrink-0"
+                                            aria-hidden="true"
+                                        />
+
+                                        <p className="text-caption text-text-tertiary leading-relaxed">
+                                            Three wrong attempts lock your
+                                            account for 10 minutes and notify
+                                            the manager on shift. Password reset
+                                            links expire after 30 minutes.
+                                        </p>
+                                    </div>
                                 </>
                             )}
 
@@ -328,20 +393,68 @@ export default function StaffLogin({
                                 </p>
                             )}
                         </div>
+
+                        <footer className="text-caption text-text-tertiary mt-10 text-center">
+                            QRestO · Secure staff access
+                        </footer>
                     </section>
 
-                    <aside className="from-clay-500 via-clay-700 to-clay-900 text-text-inverse relative hidden min-w-0 overflow-hidden bg-gradient-to-b p-10 min-[900px]:flex min-[900px]:flex-col min-[900px]:justify-end">
+                    {/* Desktop brand panel */}
+                    <aside className="from-clay-500 via-clay-700 to-clay-900 text-text-inverse relative hidden min-w-0 overflow-hidden bg-gradient-to-b p-10 min-[900px]:flex min-[900px]:flex-col min-[900px]:justify-between min-[1100px]:p-12">
+                        {/* Decorative circles */}
+                        <div className="pointer-events-none absolute -end-28 -top-28 size-80 rounded-full border border-white/20" />
+                        <div className="pointer-events-none absolute -end-16 -top-16 size-60 rounded-full border border-white/20" />
+                        <div className="pointer-events-none absolute -start-24 bottom-20 size-72 rounded-full border border-white/10" />
+
+                        <div className="relative z-10 flex items-center gap-2">
+                            <UtensilsCrossed
+                                className="size-5"
+                                aria-hidden="true"
+                            />
+
+                            <span className="text-label text-text-inverse font-medium">
+                                QRestO for teams
+                            </span>
+                        </div>
+
                         <div className="relative z-10">
-                            <p className="text-label text-text-inverse mb-3 uppercase tracking-wide">
-                                Tonight · Ready for service
+                            <div className="mb-8 flex size-20 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
+                                <UtensilsCrossed
+                                    className="size-9"
+                                    aria-hidden="true"
+                                />
+                            </div>
+
+                            <p className="text-label text-text-inverse mb-4 uppercase tracking-wide">
+                                Your team. One workspace.
                             </p>
 
                             <h2 className="font-display text-display-3 text-text-inverse leading-tight">
-                                Service starts
-                                <br />
-                                in 40 minutes.
+                                Every shift.
+                                <span className="block">Every order.</span>
+                                One QRestO.
                             </h2>
+
+                            <p className="text-body text-text-inverse mt-6 max-w-sm leading-relaxed">
+                                Keep your restaurant team connected and your
+                                service running smoothly, from the first order
+                                to the last table.
+                            </p>
+
+                            <div className="mt-8 flex flex-wrap gap-3">
+                                <span className="text-caption rounded-full border border-white/20 bg-white/10 px-4 py-2">
+                                    Staff workspace
+                                </span>
+
+                                <span className="text-caption rounded-full border border-white/20 bg-white/10 px-4 py-2">
+                                    QR shift access
+                                </span>
+                            </div>
                         </div>
+
+                        <p className="text-caption text-text-inverse relative z-10 border-t border-white/20 pt-5">
+                            Made for better service.
+                        </p>
                     </aside>
                 </div>
             </main>
@@ -349,5 +462,5 @@ export default function StaffLogin({
     );
 }
 
-// Use this page without the starter kit's narrow Auth Layout.
+// Use this page without the starter kit's Auth Layout.
 StaffLogin.layout = (page: ReactNode) => page;
