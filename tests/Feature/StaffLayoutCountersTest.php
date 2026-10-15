@@ -79,7 +79,7 @@ test('waiter cannot receive the restaurant wide order count', function () {
         ->assertOk()
         ->assertInertia(
             fn (Assert $page) => $page
-                ->component('staff/landing')
+                ->component('staff/orders/kanban')
                 ->where('staffOpenOrders', null)
         );
 });

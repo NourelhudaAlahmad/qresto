@@ -13,6 +13,7 @@ use App\Http\Controllers\MenuItemController;
 use App\Http\Controllers\OrderStatusController;
 use App\Http\Controllers\QrController;
 use App\Http\Controllers\ServiceRequestController;
+use App\Http\Controllers\WaiterOrderController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -109,7 +110,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     )->name('service-requests.acknowledge');
 });
 
-// Staff application routes — Issue #22
+// Staff application routes — Issues #22 and #23
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/app/overview', function () {
@@ -120,11 +121,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('can:see_all_orders')
         ->name('app.overview');
 
-    Route::get('/app/orders', function () {
-        return Inertia::render('staff/landing', [
-            'title' => 'Live Orders',
-        ]);
-    })
+    // Manager: view all restaurant orders.
+    Route::get(
+        '/app/orders',
+        [WaiterOrderController::class, 'index'],
+    )
         ->middleware('can:see_all_orders')
         ->name('app.orders');
 
@@ -144,13 +145,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('can:financial_reports')
         ->name('app.reports');
 
-    Route::get('/app/my-orders', function () {
-        return Inertia::render('staff/landing', [
-            'title' => 'My Orders',
-        ]);
-    })
+    // Waiter: view assigned orders only.
+    Route::get(
+        '/app/my-orders',
+        [WaiterOrderController::class, 'index'],
+    )
         ->middleware('can:see_own_tables')
         ->name('app.my-orders');
+
+    // Advance one valid order status at a time.
+    Route::patch(
+        '/app/orders/{order}/advance',
+        [WaiterOrderController::class, 'advance'],
+    )
+        ->middleware('can:change_order_status')
+        ->name('app.orders.advance');
+
+    // Void an order with a required reason.
+    Route::post(
+        '/app/orders/{order}/void',
+        [WaiterOrderController::class, 'void'],
+    )
+        ->middleware('can:change_order_status')
+        ->name('app.orders.void');
 
     Route::get('/app/system', function () {
         return Inertia::render('staff/landing', [
