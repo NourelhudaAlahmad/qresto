@@ -1,7 +1,8 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { BellRing, Ellipsis, LayoutGrid, List, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/qresto/button';
+import OrderList from './list';
 type OrderStatus = 'placed' | 'pending' | 'preparing' | 'ready' | 'served';
 type Column = 'new' | 'preparing' | 'ready' | 'served';
 type Ticket = {
@@ -118,14 +119,17 @@ export default function Kanban({
     warnMinutes,
     lateMinutes,
 }: Props) {
+    const { auth } = usePage().props as unknown as {
+        auth: { user: { id: number | string } };
+    };
+    const userId = auth.user.id;
+    const viewKey = `qresto:waiter:${userId}:view`;
     const [tickets, setTickets] = useState(orders);
     const [now, setNow] = useState(() => Date.now());
     const [filter, setFilter] = useState<Column>('new');
     const [view, setView] = useState<'kanban' | 'list'>(() => {
         try {
-            return localStorage.getItem('qresto:waiter:view') === 'list'
-                ? 'list'
-                : 'kanban';
+            return localStorage.getItem(viewKey) === 'list' ? 'list' : 'kanban';
         } catch {
             return 'kanban';
         }
@@ -204,7 +208,7 @@ export default function Kanban({
         setView(mode);
 
         try {
-            localStorage.setItem('qresto:waiter:view', mode);
+            localStorage.setItem(viewKey, mode);
         } catch {
             /* Optional preference. */
         }
@@ -421,10 +425,18 @@ export default function Kanban({
                 </p>
             </div>
             {view === 'list' ? (
-                <div className="bg-surface-card border-border-subtle text-text-secondary rounded-xl border p-6 text-center">
-                    The dedicated List view is part of Issue #24. Switch back to
-                    Kanban to manage orders.
-                </div>
+                <OrderList
+                    orders={tickets}
+                    now={now}
+                    warnMinutes={warnMinutes}
+                    lateMinutes={lateMinutes}
+                    canAdvance={canAdvance}
+                    canTakePayment={canTakePayment}
+                    busy={busy}
+                    userId={userId}
+                    onAdvance={advance}
+                    onVoid={setVoidOrder}
+                />
             ) : (
                 <>
                     <div
