@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     Bell,
@@ -192,7 +193,7 @@ export default function StaffLayout({ children }: { children: ReactNode }) {
     const overflowNav = nav.slice(visibleTabCount);
 
     return (
-        <div className="bg-surface-page font-ui text-text-primary min-h-screen">
+        <div className="bg-surface-page font-ui text-text-primary min-h-[100dvh]">
             {/* Desktop sidebar */}
             <aside className="bg-ink-800 text-text-inverse fixed inset-y-0 start-0 hidden w-[248px] flex-col min-[900px]:flex">
                 <div className="border-b border-white/10 px-5 py-6">
@@ -259,7 +260,7 @@ export default function StaffLayout({ children }: { children: ReactNode }) {
             </aside>
 
             {/* Main application area */}
-            <div className="min-h-screen min-[900px]:ps-[248px]">
+            <div className="flex min-h-[100dvh] flex-col min-[900px]:ps-[248px]">
                 {/* Topbar */}
                 <header className="border-border-subtle bg-surface-card relative z-30 flex h-16 items-center justify-between gap-3 border-b px-4 min-[900px]:px-6">
                     <div className="min-w-0 flex-1">
@@ -363,15 +364,16 @@ export default function StaffLayout({ children }: { children: ReactNode }) {
                 </header>
 
                 {/* Staff page content */}
-                <main className="mx-auto w-full max-w-[1280px] p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] min-[900px]:p-6">
+                <main className="mx-auto w-full max-w-[1280px] flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] min-[900px]:p-6">
                     {children}
                 </main>
             </div>
 
             {/* Mobile bottom tab bar */}
+            {createPortal(
             <nav
                 aria-label="Mobile staff navigation"
-                className="border-border-subtle bg-surface-card fixed inset-x-0 bottom-0 z-40 flex min-h-16 items-center justify-around border-t px-2 pb-[env(safe-area-inset-bottom)] min-[900px]:hidden"
+                className="border-border-subtle bg-surface-card fixed inset-x-0 bottom-0 z-[70] flex min-h-16 w-full items-center justify-around border-t px-2 pb-[env(safe-area-inset-bottom)] min-[900px]:hidden"
             >
                 {primaryNav.map((item) => (
                     <NavLink
@@ -399,7 +401,9 @@ export default function StaffLayout({ children }: { children: ReactNode }) {
                         More
                     </button>
                 )}
-            </nav>
+            </nav>,
+            document.body
+            )}
 
             {/* Mobile More sheet */}
             {moreOpen && overflowNav.length > 0 && (

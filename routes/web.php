@@ -6,16 +6,21 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CartLineController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmailReceiptController;
+use App\Http\Controllers\FloorController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MenuItemController;
 use App\Http\Controllers\OrderStatusController;
 use App\Http\Controllers\QrController;
+use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\WaiterOrderController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');
 
 Route::get('/', [LandingController::class, 'show'])
     ->name('home');
@@ -27,9 +32,6 @@ if (app()->environment('local')) {
     Route::inertia('dev/components', 'dev/components')
         ->name('dev.components');
 }
-
-Route::post('/locale', [LocaleController::class, 'update'])
-    ->name('locale.update');
 
 // Staff Shift QR Authentication
 
@@ -68,6 +70,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Temporary role landing routes for Issue #21.
     // Full staff panels will be implemented in their own issues.
+
     $staffLandings = [
         'waiter' => [
             'uri' => 'waiter/orders',
@@ -110,7 +113,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     )->name('service-requests.acknowledge');
 });
 
-// Staff application routes — Issues #22 and #23
+// Staff application routes — Issues #22, #23, #24 and #25
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/app/overview', function () {
@@ -122,6 +125,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('app.overview');
 
     // Manager: view all restaurant orders.
+
     Route::get(
         '/app/orders',
         [WaiterOrderController::class, 'index'],
@@ -129,13 +133,71 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('can:see_all_orders')
         ->name('app.orders');
 
-    Route::get('/app/floor', function () {
-        return Inertia::render('staff/landing', [
-            'title' => 'Floor',
-        ]);
-    })
+    // Issue #25 — Floor Map
+
+    Route::get(
+        '/app/floor',
+        [FloorController::class, 'index'],
+    )
         ->middleware('can:see_own_tables')
         ->name('app.floor');
+
+    // Table details and itemized open bill.
+
+    Route::get(
+        '/app/tables/{table}',
+        [FloorController::class, 'show'],
+    )
+        ->middleware('can:see_own_tables')
+        ->name('app.tables.show');
+
+    // Seat guests at a free table.
+
+    Route::post(
+        '/app/tables/{table}/seat',
+        [FloorController::class, 'seat'],
+    )
+        ->middleware('can:see_own_tables')
+        ->name('app.tables.seat');
+
+    // Free a table after all unpaid bills are settled.
+
+    Route::post(
+        '/app/tables/{table}/free',
+        [FloorController::class, 'free'],
+    )
+        ->middleware('can:see_own_tables')
+        ->name('app.tables.free');
+
+    // Settle cash or POS payment at a table.
+    // Supports full and partial payments.
+
+    Route::post(
+        '/app/tables/{table}/payments',
+        [FloorController::class, 'payment'],
+    )
+        ->middleware('can:take_payment')
+        ->name('app.tables.payments');
+
+    // Issue #25 — Print Receipt.
+    // Supports paid and partially paid orders.
+
+    Route::get(
+        '/app/tables/{table}/orders/{order}/receipt',
+        [ReceiptController::class, 'show'],
+    )
+        ->middleware('can:see_own_tables')
+        ->name('app.tables.orders.receipt');
+
+    // Issue #25 - Email Receipt.
+    Route::post(
+        '/app/tables/{table}/orders/{order}/receipt/email',
+        [EmailReceiptController::class, 'store'],
+    )
+        ->middleware('can:take_payment')
+        ->name('app.tables.orders.receipt.email');
+
+    // Other staff application routes
 
     Route::get('/app/reports', function () {
         return Inertia::render('staff/landing', [
@@ -146,6 +208,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('app.reports');
 
     // Waiter: view assigned orders only.
+
     Route::get(
         '/app/my-orders',
         [WaiterOrderController::class, 'index'],
@@ -154,6 +217,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('app.my-orders');
 
     // Advance one valid order status at a time.
+
     Route::patch(
         '/app/orders/{order}/advance',
         [WaiterOrderController::class, 'advance'],
@@ -162,6 +226,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('app.orders.advance');
 
     // Void an order with a required reason.
+
     Route::post(
         '/app/orders/{order}/void',
         [WaiterOrderController::class, 'void'],

@@ -36,7 +36,15 @@ final class SettlePayment
             $takenBy,
             $payload,
         ): array {
-            $payment->loadMissing('order');
+            $payment = Payment::query()
+                ->lockForUpdate()
+                ->findOrFail($payment->id);
+
+            $order = $payment->order()
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $payment->setRelation('order', $order);
 
             if ($payment->status === PaymentStatus::PAID->value) {
                 return [
@@ -46,6 +54,8 @@ final class SettlePayment
                     'client_secret' => null,
                 ];
             }
+
+            $this->validatePaymentAmount($payment);
 
             $method = PaymentMethod::from($payment->method);
 
@@ -66,10 +76,7 @@ final class SettlePayment
                     'failure_reason' => null,
                 ]);
 
-                $payment->order->update([
-                    'is_paid' => true,
-                    'paid_at' => $paidAt,
-                ]);
+                $this->syncOrderPaymentState($payment);
 
                 return [
                     'payment' => $payment->fresh(),
@@ -137,10 +144,7 @@ final class SettlePayment
                 'paid_at' => $paidAt,
             ]);
 
-            $payment->order->update([
-                'is_paid' => true,
-                'paid_at' => $paidAt,
-            ]);
+            $this->syncOrderPaymentState($payment);
 
             return [
                 'payment' => $payment->fresh(),
@@ -149,6 +153,74 @@ final class SettlePayment
                 'client_secret' => null,
             ];
         });
+    }
+
+    private function validatePaymentAmount(Payment $payment): void
+    {
+        $order = $payment->order;
+
+        $totalMinor = $order->total->amount();
+        $paymentMinor = $payment->amount->amount();
+
+        $alreadyPaidMinor = $order->payments()
+            ->where('status', PaymentStatus::PAID->value)
+            ->get()
+            ->sum(
+                fn (Payment $paidPayment): int => $paidPayment
+                    ->amount
+                    ->amount(),
+            );
+
+        $remainingMinor = $totalMinor - $alreadyPaidMinor;
+
+        if ($paymentMinor <= 0) {
+            throw ValidationException::withMessages([
+                'payment' => 'Payment amount must be greater than zero.',
+            ]);
+        }
+
+        if ($remainingMinor <= 0) {
+            throw ValidationException::withMessages([
+                'payment' => 'This order has already been fully paid.',
+            ]);
+        }
+
+        if ($paymentMinor > $remainingMinor) {
+            throw ValidationException::withMessages([
+                'payment' => 'Payment amount exceeds the remaining balance.',
+            ]);
+        }
+    }
+
+    private function syncOrderPaymentState(Payment $payment): void
+    {
+        $order = $payment->order;
+
+        $totalMinor = $order->total->amount();
+
+        $paidMinor = $order->payments()
+            ->where('status', PaymentStatus::PAID->value)
+            ->get()
+            ->sum(
+                fn (Payment $paidPayment): int => $paidPayment
+                    ->amount
+                    ->amount(),
+            );
+
+        if ($paidMinor > $totalMinor) {
+            throw ValidationException::withMessages([
+                'payment' => 'Payments exceed the order total.',
+            ]);
+        }
+
+        $isFullyPaid = $paidMinor >= $totalMinor;
+
+        $order->update([
+            'is_paid' => $isFullyPaid,
+            'paid_at' => $isFullyPaid
+                ? ($order->paid_at ?? now())
+                : null,
+        ]);
     }
 
     private function isOfflineMethod(PaymentMethod $method): bool
