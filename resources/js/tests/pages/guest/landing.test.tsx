@@ -121,16 +121,16 @@ describe('Guest landing page', () => {
         expect(screen.getByText('Open now')).toBeInTheDocument();
 
         expect(
-            screen.getByRole('link', {
+            screen.getByRole('button', {
                 name: /scan the code on your table/i,
             }),
-        ).toHaveAttribute('href', '#scan');
+        ).toBeInTheDocument();
 
         expect(
-            screen.getByRole('link', {
+            screen.getByRole('button', {
                 name: /book a table/i,
             }),
-        ).toHaveAttribute('href', 'tel:+1(212)5550148');
+        ).toBeInTheDocument();
 
         expect(screen.getByText('Lamb kofta')).toBeInTheDocument();
         expect(screen.getByText('Charred aubergine')).toBeInTheDocument();

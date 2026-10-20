@@ -20,7 +20,7 @@ function RadioCard({
         <label
             htmlFor={id}
             className={cn(
-                'flex min-h-[52px] w-full cursor-pointer items-center gap-3',
+                'min-h-13 flex w-full cursor-pointer items-center gap-3',
                 'border-border-default bg-surface-card rounded-md border px-4',
                 'duration-fast ease-standard transition-[background-color,border-color,box-shadow]',
                 'has-[[data-state=checked]]:border-border-brand',

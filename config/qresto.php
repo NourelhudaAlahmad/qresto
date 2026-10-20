@@ -29,9 +29,34 @@ return [
         'pos',
     ],
 
-    'undo_window_seconds' => 30,
+    'payments' => [
+        'driver' => env('QRESTO_PAYMENT_DRIVER', 'fake'),
+
+        'enabled_methods' => [
+            'card',
+            'wallet',
+            'cash',
+            'pos',
+        ],
+
+        'tip_presets' => [
+            0,
+            10,
+            12.5,
+            15,
+        ],
+
+        'fake' => [
+            'latency_ms' => (int) env(
+                'QRESTO_FAKE_PAYMENT_LATENCY_MS',
+                0,
+            ),
+        ],
+    ],
+
+    'undo_window_seconds' => 6,
 
     'table_session_idle_minutes' => 30,
-
+    'table_session_cookie_minutes' => 1440,
     'table_session_cookie' => 'qresto_table_session',
 ];

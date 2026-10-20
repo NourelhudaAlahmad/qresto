@@ -23,6 +23,7 @@ class Order extends Model
         'table_id',
         'table_session_id',
         'code',
+        'service_date',
         'guest_name',
         'assigned_user_id',
         'status',
@@ -32,6 +33,9 @@ class Order extends Model
         'service_amount',
         'tip_amount',
         'discount_amount',
+        'split_ways',
+        'share_amount',
+        'idempotency_key',
         'total',
         'is_paid',
         'paid_at',
@@ -56,8 +60,10 @@ class Order extends Model
             'service_amount' => MoneyCast::class,
             'tip_amount' => MoneyCast::class,
             'discount_amount' => MoneyCast::class,
+            'share_amount' => MoneyCast::class,
             'total' => MoneyCast::class,
 
+            'split_ways' => 'integer',
             'is_paid' => 'boolean',
         ];
     }
@@ -128,9 +134,7 @@ class Order extends Model
     }
 
     /**
-     * الطلبات النشطة.
-     *
-     * الطلب النشط هو كل طلب لم يصل إلى paid أو cancelled.
+     * Active orders are orders that have not reached a terminal state.
      *
      * @param  Builder<Order>  $query
      * @return Builder<Order>
@@ -144,8 +148,6 @@ class Order extends Model
     }
 
     /**
-     * الطلبات غير المدفوعة.
-     *
      * @param  Builder<Order>  $query
      * @return Builder<Order>
      */
@@ -155,8 +157,6 @@ class Order extends Model
     }
 
     /**
-     * الطلبات المعيّنة لموظف معيّن.
-     *
      * @param  Builder<Order>  $query
      * @return Builder<Order>
      */
@@ -172,8 +172,6 @@ class Order extends Model
     }
 
     /**
-     * الوقت المنقضي منذ وضع الطلب بالدقائق.
-     *
      * @return Attribute<int, never>
      */
     protected function elapsedMinutes(): Attribute
@@ -189,14 +187,6 @@ class Order extends Model
         );
     }
 
-    /**
-     * تغيير حالة الطلب بالطريقة الوحيدة المسموح بها.
-     *
-     * هذه الدالة:
-     * 1. تتحقق من أن الانتقال مسموح.
-     * 2. تحدّث حالة الطلب.
-     * 3. تنشئ OrderEvent واحد فقط.
-     */
     public function transitionTo(
         OrderStatus $next,
         User|int|string|null $actor = null,

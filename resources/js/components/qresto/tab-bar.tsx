@@ -5,6 +5,7 @@ type TabBarItem = {
     icon?: ReactNode;
     badge?: ReactNode;
     active?: boolean;
+    disabled?: boolean;
     onClick?: () => void;
 };
 
@@ -23,7 +24,8 @@ export function TabBar({ items, className = '' }: TabBarProps) {
                     key={index}
                     type="button"
                     onClick={item.onClick}
-                    className={`relative flex flex-1 flex-col items-center justify-center gap-1 border-none bg-transparent ${
+                    disabled={item.disabled}
+                    className={`relative flex flex-1 flex-col items-center justify-center gap-1 border-none bg-transparent disabled:cursor-not-allowed disabled:opacity-40 ${
                         item.active
                             ? 'text-[var(--clay-600)]'
                             : 'text-[var(--text-tertiary)]'
@@ -34,7 +36,10 @@ export function TabBar({ items, className = '' }: TabBarProps) {
                             {item.icon}
 
                             {item.badge !== undefined && (
-                                <span className="absolute -end-2.5 -top-1.5 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-[var(--clay-500)] px-1 font-mono text-[10px] text-white">
+                                <span
+                                    key={String(item.badge)}
+                                    className="cart-badge-bump absolute -end-2.5 -top-1.5 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-[var(--clay-500)] px-1 font-mono text-[10px] text-white"
+                                >
                                     {item.badge}
                                 </span>
                             )}

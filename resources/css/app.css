@@ -447,3 +447,26 @@
         transition: none !important;
     }
 }
+
+/* Cart badge spring bump */
+@keyframes cart-badge-bump {
+    0% {
+        transform: scale(1);
+    }
+    45% {
+        transform: scale(1.24);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.cart-badge-bump {
+    animation: cart-badge-bump var(--dur-base) var(--ease-spring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cart-badge-bump {
+        animation: none;
+    }
+}

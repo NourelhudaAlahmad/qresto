@@ -8,7 +8,7 @@ type StickyDockProps = {
 export function StickyDock({ children, className = '' }: StickyDockProps) {
     return (
         <div
-            className={`shrink-0 border-t border-[var(--border-subtle)] bg-[var(--surface-page)] px-4 py-3 ${className} `}
+            className={`sticky bottom-0 z-[15] shrink-0 border-t border-[var(--border-subtle)] bg-[var(--surface-page)] px-4 py-3 backdrop-blur-[12px] ${className}`}
         >
             {children}
         </div>

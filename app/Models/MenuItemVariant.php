@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use Database\Factories\MenuItemVariantFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,6 +29,26 @@ class MenuItemVariant extends Model
             'is_default' => 'boolean',
             'sort_order' => 'integer',
         ];
+    }
+
+    /**
+     * Resolve the currency from the parent menu item.
+     *
+     * @return Attribute<string, never>
+     */
+    protected function currency(): Attribute
+    {
+        return Attribute::get(function (): string {
+            $menuItem = $this->relationLoaded('menuItem')
+                ? $this->menuItem
+                : $this->menuItem()->with('restaurant')->first();
+
+            if ($menuItem === null) {
+                return 'TRY';
+            }
+
+            return $menuItem->restaurant->currency ?? 'TRY';
+        });
     }
 
     /**
