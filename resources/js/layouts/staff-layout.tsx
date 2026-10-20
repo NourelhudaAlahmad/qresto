@@ -1,4 +1,3 @@
-import { createPortal } from 'react-dom';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     Bell,
@@ -11,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 type StaffNavItem = {
     id: string;
@@ -93,11 +93,11 @@ function NavLink({
                               ? 'text-clay-700'
                               : 'text-text-tertiary hover:text-text-primary'
                       }`
-                    : `flex min-h-11 items-center justify-between rounded-lg px-3 text-sm transition-colors ${
-                          active
-                              ? 'text-text-inverse bg-white/10 font-semibold'
-                              : 'text-text-inverse/80 hover:text-text-inverse hover:bg-white/10'
-                      }`
+                   : `flex min-h-11 items-center justify-between rounded-lg px-3 text-sm transition-colors ${
+      active
+          ? 'bg-white/15 !text-white font-semibold'
+          : '!text-white/85 hover:!text-white hover:bg-white/10'
+  }`
             }
         >
             {mobile ? (
@@ -237,7 +237,7 @@ export default function StaffLayout({ children }: { children: ReactNode }) {
                     </span>
 
                     <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold">
+ <p className="truncate text-sm font-semibold !text-white">
                             {user?.name ?? 'Staff'}
                         </p>
 
