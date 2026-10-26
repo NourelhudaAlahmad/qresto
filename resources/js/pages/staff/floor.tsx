@@ -894,7 +894,7 @@ export default function Floor({ tables = [] }: Props) {
     return (
         <>
             <Head title="Floor Map" />
-            <main className="mx-auto w-full max-w-7xl space-y-6 px-4 pt-6 pb-32 sm:px-6 lg:px-8">
+            <main className="mx-auto w-full max-w-7xl space-y-6 px-4 pb-32 pt-6 sm:px-6 lg:px-8">
                 <header className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                         <p className="text-sm font-medium text-slate-500">
@@ -1010,7 +1010,7 @@ export default function Floor({ tables = [] }: Props) {
                         role="dialog"
                         aria-modal="true"
                         aria-label={`Table ${selectedTable?.number ?? ''} details`}
-                        className="relative z-10 h-[90dvh] max-h-[90dvh] w-full overflow-y-auto overscroll-contain touch-pan-y rounded-t-3xl bg-white shadow-2xl md:max-h-none md:max-w-lg md:rounded-none"
+                        className="relative z-10 h-[90dvh] max-h-[90dvh] w-full touch-pan-y overflow-y-auto overscroll-contain rounded-t-3xl bg-white shadow-2xl md:max-h-none md:max-w-lg md:rounded-none"
                     >
                         <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-slate-200 md:hidden" />
                         <div className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">

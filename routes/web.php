@@ -10,6 +10,7 @@ use App\Http\Controllers\EmailReceiptController;
 use App\Http\Controllers\FloorController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\ManagerDashboardController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MenuItemController;
 use App\Http\Controllers\OrderStatusController;
@@ -20,7 +21,8 @@ use App\Http\Controllers\WaiterOrderController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');
+Route::post('/locale', [LocaleController::class, 'update'])
+    ->name('locale.update');
 
 Route::get('/', [LandingController::class, 'show'])
     ->name('home');
@@ -68,6 +70,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)
         ->name('dashboard');
 
+    // Manager Dashboard — Issue #26
+
+    Route::get(
+        'manager/overview',
+        [ManagerDashboardController::class, 'index'],
+    )->name('manager.overview');
+
     // Temporary role landing routes for Issue #21.
     // Full staff panels will be implemented in their own issues.
 
@@ -81,11 +90,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'uri' => 'kitchen/pass',
             'name' => 'kitchen.pass',
             'title' => 'Kitchen Pass',
-        ],
-        'manager' => [
-            'uri' => 'manager/overview',
-            'name' => 'manager.overview',
-            'title' => 'Manager Overview',
         ],
         'admin' => [
             'uri' => 'admin/system',
@@ -189,7 +193,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('can:see_own_tables')
         ->name('app.tables.orders.receipt');
 
-    // Issue #25 - Email Receipt.
+    // Issue #25 — Email Receipt.
+
     Route::post(
         '/app/tables/{table}/orders/{order}/receipt/email',
         [EmailReceiptController::class, 'store'],
@@ -233,6 +238,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     )
         ->middleware('can:change_order_status')
         ->name('app.orders.void');
+
+    // Issue #26 — Manager order reassignment.
+
+    Route::patch(
+        '/app/orders/{order}/assign',
+        [ManagerDashboardController::class, 'assign'],
+    )
+        ->middleware('can:see_all_orders')
+        ->name('app.orders.assign');
 
     Route::get('/app/system', function () {
         return Inertia::render('staff/landing', [

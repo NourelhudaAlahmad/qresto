@@ -1,0 +1,1001 @@
+﻿<?php
+
+namespace Tests\Feature;
+
+use App\Enums\OrderStatus;
+use App\Enums\Role;
+use App\Models\Order;
+use App\Models\Restaurant;
+use App\Models\User;
+use App\Notifications\KitchenOrderVoided;
+use Database\Seeders\RolesSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
+use Tests\TestCase;
+
+class WaiterOrdersTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(RolesSeeder::class);
+    }
+
+    private function staff(
+        Restaurant $restaurant,
+        Role $role
+    ): User {
+        $user = User::factory()->create([
+            'restaurant_id' => $restaurant->id,
+        ]);
+
+        $user->assignRole($role->value);
+
+        return $user;
+    }
+
+    public function test_waiter_sees_only_assigned_orders(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+
+        $waiter = $this->staff(
+            $restaurant,
+            Role::WAITER
+        );
+
+        $anotherWaiter = $this->staff(
+            $restaurant,
+            Role::WAITER
+        );
+
+        $mine = Order::factory()
+            ->assignedTo($waiter)
+            ->pending()
+            ->create();
+
+        Order::factory()
+            ->assignedTo($anotherWaiter)
+            ->pending()
+            ->create();
+
+        $this->actingAs($waiter)
+            ->get('/app/my-orders')
+            ->assertOk()
+            ->assertInertia(
+                fn (Assert $page) => $page
+                    ->component('staff/orders/kanban')
+                    ->has('orders', 1)
+                    ->where('orders.0.id', $mine->id)
+                    ->where('orders.0.status', 'pending')
+                    ->etc()
+            );
+    }
+
+    public function test_manager_sees_all_orders_in_own_restaurant(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+
+        $otherRestaurant = Restaurant::factory()->create();
+
+        $manager = $this->staff(
+            $restaurant,
+            Role::MANAGER
+        );
+
+        $waiter = $this->staff(
+            $restaurant,
+            Role::WAITER
+        );
+
+        Order::factory()
+            ->assignedTo($waiter)
+            ->pending()
+            ->create();
+
+        Order::factory()
+            ->for($restaurant)
+            ->preparing()
+            ->create();
+
+        Order::factory()
+            ->for($otherRestaurant)
+            ->pending()
+            ->create();
+
+        $this->actingAs($manager)
+            ->get('/app/orders')
+            ->assertOk()
+            ->assertInertia(
+                fn (Assert $page) => $page
+                    ->component('staff/orders/kanban')
+                    ->has('orders', 2)
+                    ->etc()
+            );
+    }
+
+    public function test_waiter_cannot_open_manager_orders_page(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+
+        $waiter = $this->staff(
+            $restaurant,
+            Role::WAITER
+        );
+
+        $this->actingAs($waiter)
+            ->get('/app/orders')
+            ->assertForbidden();
+    }
+
+    public function test_advance_changes_one_status_and_records_one_event(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+
+        $waiter = $this->staff(
+            $restaurant,
+            Role::WAITER
+        );
+
+        $order = Order::factory()
+            ->assignedTo($waiter)
+            ->pending()
+            ->create();
+
+        $this->actingAs($waiter)
+            ->patch("/app/orders/{$order->id}/advance")
+            ->assertRedirect();
+
+        $order->refresh();
+
+        $this->assertSame(
+            OrderStatus::PREPARING,
+            $order->status
+        );
+
+        $this->assertSame(
+            1,
+            $order->events()->count()
+        );
+
+        $event = $order->events()->firstOrFail();
+
+        $this->assertSame(
+            'pending',
+            $event->from_status
+        );
+
+        $this->assertSame(
+            'preparing',
+            $event->to_status
+        );
+
+        $this->assertSame(
+            $waiter->id,
+            $event->actor_id
+        );
+
+        $this->assertSame(
+            'staff',
+            $event->actor_kind
+        );
+    }
+
+    public function test_placed_order_advances_to_pending_without_skipping(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+
+        $waiter = $this->staff(
+            $restaurant,
+            Role::WAITER
+        );
+
+        $order = Order::factory()
+            ->assignedTo($waiter)
+            ->placed()
+            ->create();
+
+        $this->actingAs($waiter)
+            ->patch("/app/orders/{$order->id}/advance")
+            ->assertRedirect();
+
+        $this->assertSame(
+            OrderStatus::PENDING,
+            $order->fresh()->status
+        );
+
+        $this->assertSame(
+            1,
+            $order->events()->count()
+        );
+    }
+
+    public function test_waiter_cannot_advance_another_waiters_order(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+
+        $waiter = $this->staff(
+            $restaurant,
+            Role::WAITER
+        );
+
+        $anotherWaiter = $this->staff(
+            $restaurant,
+            Role::WAITER
+        );
+
+        $order = Order::factory()
+            ->assignedTo($anotherWaiter)
+            ->pending()
+            ->create();
+
+        $this->actingAs($waiter)
+            ->patch("/app/orders/{$order->id}/advance")
+            ->assertForbidden();
+
+        $this->assertSame(
+            OrderStatus::PENDING,
+            $order->fresh()->status
+        );
+
+        $this->assertSame(
+            0,
+            $order->events()->count()
+        );
+    }
+
+    public function test_waiter_cannot_advance_order_from_another_restaurant(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+
+        $otherRestaurant = Restaurant::factory()->create();
+
+        $waiter = $this->staff(
+            $restaurant,
+            Role::WAITER
+        );
+
+        $order = Order::factory()
+            ->for($otherRestaurant)
+            ->pending()
+            ->create();
+
+        $this->actingAs($waiter)
+            ->patch("/app/orders/{$order->id}/advance")
+            ->assertNotFound();
+
+        $this->assertSame(
+            OrderStatus::PENDING,
+            $order->fresh()->status
+        );
+    }
+
+    public function test_void_requires_a_reason(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+
+        $waiter = $this->staff(
+            $restaurant,
+            Role::WAITER
+        );
+
+        $order = Order::factory()
+            ->assignedTo($waiter)
+            ->pending()
+            ->create();
+
+        $this->actingAs($waiter)
+            ->post("/app/orders/{$order->id}/void", [
+                'reason' => '',
+            ])
+            ->assertSessionHasErrors('reason');
+
+        $this->assertSame(
+            OrderStatus::PENDING,
+            $order->fresh()->status
+        );
+
+        $this->assertSame(
+            0,
+            $order->events()->count()
+        );
+    }
+
+    public function test_void_records_reason_and_actor(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+
+        $waiter = $this->staff(
+            $restaurant,
+            Role::WAITER
+        );
+
+        $order = Order::factory()
+            ->assignedTo($waiter)
+            ->pending()
+            ->create();
+
+        $reason = 'Guest requested cancellation';
+
+        $this->actingAs($waiter)
+            ->post("/app/orders/{$order->id}/void", [
+                'reason' => $reason,
+            ])
+            ->assertRedirect();
+
+        $order->refresh();
+
+        $this->assertSame(
+            OrderStatus::CANCELLED,
+            $order->status
+        );
+
+        $this->assertSame(
+            $reason,
+            $order->void_reason
+        );
+
+        $this->assertSame(
+            $waiter->id,
+            $order->voided_by
+        );
+
+        $this->assertNotNull(
+            $order->voided_at
+        );
+
+        $this->assertSame(
+            1,
+            $order->events()->count()
+        );
+
+        $event = $order->events()->firstOrFail();
+
+        $this->assertSame(
+            $waiter->id,
+            $event->actor_id
+        );
+
+        $this->assertSame(
+            'cancelled',
+            $event->to_status
+        );
+
+        $this->assertSame(
+            $reason,
+            $event->meta['reason'] ?? null
+        );
+    }
+
+    public function test_waiter_cannot_void_another_waiters_order(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+
+        $waiter = $this->staff(
+            $restaurant,
+            Role::WAITER
+        );
+
+        $anotherWaiter = $this->staff(
+            $restaurant,
+            Role::WAITER
+        );
+
+        $order = Order::factory()
+            ->assignedTo($anotherWaiter)
+            ->pending()
+            ->create();
+
+        $this->actingAs($waiter)
+            ->post("/app/orders/{$order->id}/void", [
+                'reason' => 'Guest changed mind',
+            ])
+            ->assertForbidden();
+
+        $this->assertSame(
+            OrderStatus::PENDING,
+            $order->fresh()->status
+        );
+
+        $this->assertSame(
+            0,
+            $order->events()->count()
+        );
+    }
+
+    public function test_new_order_appears_on_next_partial_reload(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+
+        $waiter = $this->staff(
+            $restaurant,
+            Role::WAITER
+        );
+
+        $first = Order::factory()
+            ->assignedTo($waiter)
+            ->pending()
+            ->create();
+
+        $this->actingAs($waiter)
+            ->get('/app/my-orders')
+            ->assertInertia(
+                fn (Assert $page) => $page
+                    ->component('staff/orders/kanban')
+                    ->has('orders', 1)
+                    ->where('orders.0.id', $first->id)
+                    ->etc()
+            );
+
+        Order::factory()
+            ->assignedTo($waiter)
+            ->pending()
+            ->create();
+
+        $this->actingAs($waiter)
+            ->get('/app/my-orders')
+            ->assertInertia(
+                fn (Assert $page) => $page
+                    ->component('staff/orders/kanban')
+                    ->reloadOnly(
+                        'orders',
+                        fn (Assert $reload) => $reload
+                            ->has('orders', 2)
+                    )
+            );
+    }
+
+    public function test_void_notifies_only_active_kitchen_staff_in_same_restaurant(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+        $otherRestaurant = Restaurant::factory()->create();
+
+        $waiter = $this->staff(
+            $restaurant,
+            Role::WAITER,
+        );
+
+        $kitchen = $this->staff(
+            $restaurant,
+            Role::KITCHEN,
+        );
+
+        $otherKitchen = $this->staff(
+            $otherRestaurant,
+            Role::KITCHEN,
+        );
+
+        $inactiveKitchen = $this->staff(
+            $restaurant,
+            Role::KITCHEN,
+        );
+
+        $inactiveKitchen->update([
+            'is_active' => false,
+        ]);
+
+        $order = Order::factory()
+            ->assignedTo($waiter)
+            ->pending()
+            ->create();
+
+        $this->actingAs($waiter)
+            ->post("/app/orders/{$order->id}/void", [
+                'reason' => 'Guest cancelled order',
+            ])
+            ->assertRedirect();
+
+        $notification = $kitchen
+            ->notifications()
+            ->firstOrFail();
+
+        $this->assertSame(
+            KitchenOrderVoided::class,
+            $notification->type,
+        );
+
+        $this->assertSame(
+            'order_voided',
+            $notification->data['type'],
+        );
+
+        $this->assertSame(
+            $order->id,
+            $notification->data['order_id'],
+        );
+
+        $this->assertSame(
+            1,
+            $kitchen->notifications()->count(),
+        );
+
+        $this->assertSame(
+            0,
+            $otherKitchen->notifications()->count(),
+        );
+
+        $this->assertSame(
+            0,
+            $inactiveKitchen->notifications()->count(),
+        );
+
+        $this->assertSame(
+            1,
+            $order->events()->count(),
+        );
+    }
+}
+========== tests/Feature/OrderPolicyTest.php ==========
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\Capability;
+use App\Enums\Role;
+use App\Models\Order;
+use App\Models\Restaurant;
+use App\Models\User;
+use Database\Seeders\RolesSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role as SpatieRole;
+use Tests\TestCase;
+
+class OrderPolicyTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function seedRoles(): void
+    {
+        $this->seed(RolesSeeder::class);
+    }
+
+    public function test_waiter_cannot_view_another_waiters_order(): void
+    {
+        $this->seedRoles();
+
+        $restaurant = Restaurant::factory()->create();
+
+        $waiterA = User::factory()->create([
+            'restaurant_id' => $restaurant->id,
+        ]);
+
+        $waiterB = User::factory()->create([
+            'restaurant_id' => $restaurant->id,
+        ]);
+
+        $waiterRole = SpatieRole::findByName(
+            Role::WAITER->value,
+            'web',
+        );
+
+        $waiterA->assignRole($waiterRole);
+        $waiterB->assignRole($waiterRole);
+
+        $order = Order::factory()->create([
+            'restaurant_id' => $restaurant->id,
+            'assigned_user_id' => $waiterB->id,
+        ]);
+
+        $this->assertFalse(
+            $waiterA->can(
+                'view',
+                $order,
+            ),
+        );
+    }
+
+    public function test_manager_can_view_any_order(): void
+    {
+        $this->seedRoles();
+
+        $restaurant = Restaurant::factory()->create();
+
+        $manager = User::factory()->create([
+            'restaurant_id' => $restaurant->id,
+        ]);
+
+        $manager->assignRole(Role::MANAGER->value);
+
+        $order = Order::factory()->create([
+            'restaurant_id' => $restaurant->id,
+        ]);
+
+        $this->assertTrue(
+            $manager->can(
+                'view',
+                $order,
+            ),
+        );
+    }
+
+    public function test_kitchen_cannot_take_payment(): void
+    {
+        $this->seedRoles();
+
+        $restaurant = Restaurant::factory()->create();
+
+        $kitchen = User::factory()->create([
+            'restaurant_id' => $restaurant->id,
+        ]);
+
+        $kitchen->assignRole(Role::KITCHEN->value);
+
+        $order = Order::factory()->create([
+            'restaurant_id' => $restaurant->id,
+        ]);
+
+        $this->assertFalse(
+            $kitchen->can(
+                'takePayment',
+                $order,
+            ),
+        );
+    }
+
+    public function test_waiter_can_change_order_status(): void
+    {
+        $this->seedRoles();
+
+        $waiter = User::factory()->create();
+
+        $waiter->assignRole(Role::WAITER->value);
+
+        $order = Order::factory()->create([
+            'assigned_user_id' => $waiter->id,
+        ]);
+
+        $this->assertTrue(
+            $waiter->can(
+                'updateStatus',
+                $order,
+            ),
+        );
+    }
+
+    public function test_waiter_can_take_payment(): void
+    {
+        $this->seedRoles();
+
+        $waiter = User::factory()->create();
+
+        $waiter->assignRole(Role::WAITER->value);
+
+        $order = Order::factory()->create([
+            'assigned_user_id' => $waiter->id,
+        ]);
+
+        $this->assertTrue(
+            $waiter->can(
+                'takePayment',
+                $order,
+            ),
+        );
+    }
+
+    public function test_manager_can_see_all_orders_capability(): void
+    {
+        $this->seedRoles();
+
+        $manager = User::factory()->create();
+
+        $manager->assignRole(Role::MANAGER->value);
+
+        $this->assertTrue(
+            $manager->can(
+                Capability::SEE_ALL_ORDERS->value,
+            ),
+        );
+    }
+
+    public function test_kitchen_does_not_have_payment_capability(): void
+    {
+        $this->seedRoles();
+
+        $kitchen = User::factory()->create();
+
+        $kitchen->assignRole(Role::KITCHEN->value);
+
+        $this->assertFalse(
+            $kitchen->can(
+                Capability::TAKE_PAYMENT->value,
+            ),
+        );
+    }
+}
+========== database/factories/OrderFactory.php ==========
+<?php
+
+namespace Database\Factories;
+
+use App\Enums\OrderStatus;
+use App\Models\Order;
+use App\Models\Restaurant;
+use App\Models\RestaurantTable;
+use App\Models\TableSession;
+use App\Models\User;
+use App\Support\OrderCodeGenerator;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends Factory<Order>
+ */
+class OrderFactory extends Factory
+{
+    protected $model = Order::class;
+
+    public function definition(): array
+    {
+        return [
+            'restaurant_id' => Restaurant::factory(),
+            'table_id' => null,
+            'table_session_id' => null,
+            'code' => null,
+            'guest_name' => fake()->optional()->name(),
+            'assigned_user_id' => null,
+            'status' => OrderStatus::PLACED,
+            'placed_at' => now(),
+            'service_date' => now()->toDateString(),
+            'currency' => 'TRY',
+            'subtotal' => 0,
+            'service_pct' => 0,
+            'service_amount' => 0,
+            'tip_amount' => 0,
+            'discount_amount' => 0,
+            'total' => 0,
+            'is_paid' => false,
+            'paid_at' => null,
+            'table_note' => fake()->optional()->sentence(),
+            'void_reason' => null,
+            'voided_by' => null,
+            'voided_at' => null,
+        ];
+    }
+
+    public function configure(): static
+    {
+        return $this->afterMaking(function (Order $order): void {
+            if ($order->getAttribute('code') === null) {
+                $order->code = app(OrderCodeGenerator::class)
+                    ->generate($order->restaurant_id);
+            }
+        });
+    }
+
+    public function placed(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => OrderStatus::PLACED,
+            'is_paid' => false,
+            'paid_at' => null,
+            'void_reason' => null,
+            'voided_at' => null,
+        ]);
+    }
+
+    public function pending(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => OrderStatus::PENDING,
+            'is_paid' => false,
+            'paid_at' => null,
+        ]);
+    }
+
+    public function preparing(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => OrderStatus::PREPARING,
+            'is_paid' => false,
+            'paid_at' => null,
+        ]);
+    }
+
+    public function ready(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => OrderStatus::READY,
+            'is_paid' => false,
+            'paid_at' => null,
+        ]);
+    }
+
+    public function served(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => OrderStatus::SERVED,
+            'is_paid' => false,
+            'paid_at' => null,
+        ]);
+    }
+
+    public function paid(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => OrderStatus::PAID,
+            'is_paid' => true,
+            'paid_at' => now(),
+        ]);
+    }
+
+    public function cancelled(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => OrderStatus::CANCELLED,
+            'is_paid' => false,
+            'paid_at' => null,
+            'void_reason' => fake()->sentence(),
+            'voided_at' => now(),
+        ]);
+    }
+
+    public function unpaid(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_paid' => false,
+            'paid_at' => null,
+        ]);
+    }
+
+    public function withTable(RestaurantTable $table): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'restaurant_id' => $table->restaurant_id,
+            'table_id' => $table->id,
+        ]);
+    }
+
+    public function withTableSession(TableSession $session): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'restaurant_id' => $session->restaurant_id,
+            'table_id' => $session->restaurant_table_id,
+            'table_session_id' => $session->id,
+        ]);
+    }
+
+    public function assignedTo(User $user): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'restaurant_id' => $user->restaurant_id,
+            'assigned_user_id' => $user->id,
+        ]);
+    }
+}
+========== database/factories/UserFactory.php ==========
+<?php
+
+namespace Database\Factories;
+
+use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+
+/**
+ * @extends Factory<User>
+ */
+class UserFactory extends Factory
+{
+    /**
+     * The current password being used by the factory.
+     */
+    protected static ?string $password;
+
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'name' => fake()->name(),
+            'email' => fake()->unique()->safeEmail(),
+            'email_verified_at' => now(),
+            'password' => static::$password ??= Hash::make('password'),
+            'remember_token' => Str::random(10),
+            'two_factor_secret' => null,
+            'two_factor_recovery_codes' => null,
+            'two_factor_confirmed_at' => null,
+        ];
+    }
+
+    /**
+     * Indicate that the model's email address should be unverified.
+     */
+    public function unverified(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Indicate that the model has two-factor authentication configured.
+     */
+    public function withTwoFactor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'two_factor_secret' => encrypt('secret'),
+            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-1'])),
+            'two_factor_confirmed_at' => now(),
+        ]);
+    }
+}
+========== database/seeders/RolesSeeder.php ==========
+<?php
+
+namespace Database\Seeders;
+
+use App\Enums\Capability;
+use App\Enums\Role;
+use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role as SpatieRole;
+use Spatie\Permission\PermissionRegistrar;
+
+class RolesSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $permissions = [];
+
+        foreach (Capability::cases() as $capability) {
+            $permissions[$capability->value] = Permission::firstOrCreate([
+                'name' => $capability->value,
+                'guard_name' => 'web',
+            ]);
+        }
+
+        $grants = [
+            Role::WAITER->value => [
+                Capability::SEE_OWN_TABLES->value,
+                Capability::CHANGE_ORDER_STATUS->value,
+                Capability::TAKE_PAYMENT->value,
+            ],
+
+            // No default grants specified in Issue #7.
+            Role::RUNNER->value => [],
+
+            // No default grants specified in Issue #7.
+            Role::CASHIER->value => [],
+
+            Role::KITCHEN->value => [
+                Capability::SEE_ALL_ORDERS->value,
+                Capability::CHANGE_ORDER_STATUS->value,
+            ],
+
+            Role::MANAGER->value => [
+                Capability::SEE_OWN_TABLES->value,
+                Capability::SEE_ALL_ORDERS->value,
+                Capability::CHANGE_ORDER_STATUS->value,
+                Capability::TAKE_PAYMENT->value,
+                Capability::MANAGE_WAITER_ACCOUNTS->value,
+                Capability::FINANCIAL_REPORTS->value,
+            ],
+
+            Role::ADMIN->value => array_map(
+                fn (Capability $capability) => $capability->value,
+                Capability::cases(),
+            ),
+        ];
+
+        foreach (Role::cases() as $roleEnum) {
+            $role = SpatieRole::firstOrCreate([
+                'name' => $roleEnum->value,
+                'guard_name' => 'web',
+            ]);
+
+            $role->syncPermissions(
+                array_map(
+                    fn (string $permission) => $permissions[$permission],
+                    $grants[$roleEnum->value],
+                ),
+            );
+        }
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+}

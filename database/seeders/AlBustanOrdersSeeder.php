@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\Restaurant;
+use App\Models\TableSession;
 use App\Models\User;
 use App\Support\Money;
 use App\Support\OrderTotals;
@@ -16,6 +17,10 @@ class AlBustanOrdersSeeder extends Seeder
     public function run(): void
     {
         $restaurant = Restaurant::where('slug', 'al-bustan')->firstOrFail();
+
+        $timezone = $restaurant->timezone ?: config('app.timezone');
+        $serviceDate = now($timezone)->toDateString();
+        $nowUtc = now('UTC');
 
         $tables = $restaurant->tables()
             ->get()
@@ -53,7 +58,6 @@ class AlBustanOrdersSeeder extends Seeder
                     ],
                 ],
             ],
-
             [
                 'code' => '#A-1043',
                 'table' => '12',
@@ -82,7 +86,6 @@ class AlBustanOrdersSeeder extends Seeder
                     ],
                 ],
             ],
-
             [
                 'code' => '#A-1042',
                 'table' => null,
@@ -105,7 +108,6 @@ class AlBustanOrdersSeeder extends Seeder
                     ],
                 ],
             ],
-
             [
                 'code' => '#A-1041',
                 'table' => '07',
@@ -129,7 +131,6 @@ class AlBustanOrdersSeeder extends Seeder
                     ],
                 ],
             ],
-
             [
                 'code' => '#A-1040',
                 'table' => '02',
@@ -143,7 +144,7 @@ class AlBustanOrdersSeeder extends Seeder
                 'paid' => true,
                 'items' => [
                     [
-                        'name' => 'Labneh & za’atar',
+                        'name' => "Labneh & za\u{2019}atar",
                         'qty' => 2,
                     ],
                     [
@@ -195,7 +196,7 @@ class AlBustanOrdersSeeder extends Seeder
 
             $totals = OrderTotals::calculate(
                 collect($lineData)
-                    ->map(fn (array $line) => [
+                    ->map(fn (array $line): array => [
                         'unit_price' => $line['menu_item']->price,
                         'qty' => $line['qty'],
                     ])
@@ -212,26 +213,47 @@ class AlBustanOrdersSeeder extends Seeder
 
             if ($totals->total->amount() !== $expectedTotal->amount()) {
                 throw new \RuntimeException(
-                    "Order {$data['code']} total mismatch. ".
-                    "Expected {$expectedTotal->formatted()}, ".
-                    "calculated {$totals->total->formatted()}."
+                    "Order {$data['code']} total mismatch. "
+                        ."Expected {$expectedTotal->formatted()}, "
+                        ."calculated {$totals->total->formatted()}."
                 );
+            }
+
+            $placedAt = $nowUtc->copy()->subMinutes(
+                $data['minutes_ago']
+            );
+
+            /*
+             * Link table orders to a table session so the dashboard
+             * can calculate covers and average sales per cover.
+             */
+            $tableSession = null;
+
+            if ($table !== null) {
+                $tableSession = TableSession::openFor($table);
+
+                $tableSession->update([
+                    'guest_name' => $data['guest'],
+                    'party_size' => 1,
+                    'opened_at' => $placedAt,
+                    'last_seen_at' => $nowUtc,
+                ]);
             }
 
             $order = Order::updateOrCreate(
                 [
                     'restaurant_id' => $restaurant->id,
+                    'service_date' => $serviceDate,
                     'code' => $data['code'],
                 ],
                 [
+                    'service_date' => $serviceDate,
                     'table_id' => $table?->id,
-                    'table_session_id' => null,
+                    'table_session_id' => $tableSession?->id,
                     'guest_name' => $data['guest'],
                     'assigned_user_id' => $waiter?->id,
                     'status' => OrderStatus::PLACED,
-                    'placed_at' => now()->subMinutes(
-                        $data['minutes_ago']
-                    ),
+                    'placed_at' => $placedAt,
                     'currency' => $currency,
                     'subtotal' => $totals->subtotal,
                     'service_pct' => $servicePct,
@@ -251,6 +273,7 @@ class AlBustanOrdersSeeder extends Seeder
             foreach ($lineData as $line) {
                 $menuItem = $line['menu_item'];
                 $unitPrice = $menuItem->price;
+
                 $lineTotal = $unitPrice->multiply(
                     (int) $line['qty']
                 );
@@ -274,12 +297,37 @@ class AlBustanOrdersSeeder extends Seeder
                 $waiter,
             );
 
+            /*
+             * Give each status event a realistic timestamp relative
+             * to the order's placed_at time.
+             *
+             * This allows the manager dashboard to calculate kitchen
+             * preparation durations instead of reporting zero minutes.
+             */
+            $eventOffsets = [
+                OrderStatus::PENDING->value => 0,
+                OrderStatus::PREPARING->value => 2,
+                OrderStatus::READY->value => 8,
+                OrderStatus::SERVED->value => 10,
+                OrderStatus::PAID->value => 12,
+            ];
+
+            foreach ($eventOffsets as $status => $minutesAfterPlaced) {
+                $order->events()
+                    ->where('to_status', $status)
+                    ->update([
+                        'occurred_at' => $placedAt
+                            ->copy()
+                            ->addMinutes($minutesAfterPlaced),
+                    ]);
+            }
+
             if ($data['paid']) {
+                $paidAt = $placedAt->copy()->addMinutes(12);
+
                 $order->update([
                     'is_paid' => true,
-                    'paid_at' => now()->subMinutes(
-                        $data['minutes_ago']
-                    ),
+                    'paid_at' => $paidAt,
                 ]);
 
                 $order->payments()->create([
@@ -288,8 +336,8 @@ class AlBustanOrdersSeeder extends Seeder
                     'amount' => $expectedTotal,
                     'tip_amount' => $tipAmount,
                     'gateway' => 'demo',
-                    'gateway_intent_id' => 'demo_'.
-                        strtolower(
+                    'gateway_intent_id' => 'demo_'
+                        .strtolower(
                             str_replace(
                                 '#',
                                 '',
@@ -300,9 +348,7 @@ class AlBustanOrdersSeeder extends Seeder
                     'requires_3ds' => false,
                     'failure_reason' => null,
                     'taken_by' => $waiter?->id,
-                    'paid_at' => now()->subMinutes(
-                        $data['minutes_ago']
-                    ),
+                    'paid_at' => $paidAt,
                     'refunded_amount' => Money::fromMinor(
                         0,
                         $currency,

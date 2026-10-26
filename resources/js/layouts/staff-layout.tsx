@@ -93,11 +93,11 @@ function NavLink({
                               ? 'text-clay-700'
                               : 'text-text-tertiary hover:text-text-primary'
                       }`
-                   : `flex min-h-11 items-center justify-between rounded-lg px-3 text-sm transition-colors ${
-      active
-          ? 'bg-white/15 !text-white font-semibold'
-          : '!text-white/85 hover:!text-white hover:bg-white/10'
-  }`
+                    : `flex min-h-11 items-center justify-between rounded-lg px-3 text-sm transition-colors ${
+                          active
+                              ? 'bg-white/15 font-semibold !text-white'
+                              : '!text-white/85 hover:bg-white/10 hover:!text-white'
+                      }`
             }
         >
             {mobile ? (
@@ -237,7 +237,7 @@ export default function StaffLayout({ children }: { children: ReactNode }) {
                     </span>
 
                     <div className="min-w-0 flex-1">
- <p className="truncate text-sm font-semibold !text-white">
+                        <p className="truncate text-sm font-semibold !text-white">
                             {user?.name ?? 'Staff'}
                         </p>
 
@@ -371,38 +371,41 @@ export default function StaffLayout({ children }: { children: ReactNode }) {
 
             {/* Mobile bottom tab bar */}
             {createPortal(
-            <nav
-                aria-label="Mobile staff navigation"
-                className="border-border-subtle bg-surface-card fixed inset-x-0 bottom-0 z-[70] flex min-h-16 w-full items-center justify-around border-t px-2 pb-[env(safe-area-inset-bottom)] min-[900px]:hidden"
-            >
-                {primaryNav.map((item) => (
-                    <NavLink
-                        key={item.id}
-                        item={item}
-                        active={active(item.href)}
-                        badgeCount={badgeFor(item)}
-                        mobile
-                    />
-                ))}
+                <nav
+                    aria-label="Mobile staff navigation"
+                    className="border-border-subtle bg-surface-card fixed inset-x-0 bottom-0 z-[70] flex min-h-16 w-full items-center justify-around border-t px-2 pb-[env(safe-area-inset-bottom)] min-[900px]:hidden"
+                >
+                    {primaryNav.map((item) => (
+                        <NavLink
+                            key={item.id}
+                            item={item}
+                            active={active(item.href)}
+                            badgeCount={badgeFor(item)}
+                            mobile
+                        />
+                    ))}
 
-                {overflowNav.length > 0 && (
-                    <button
-                        type="button"
-                        aria-label="More navigation"
-                        aria-expanded={moreOpen}
-                        aria-controls="staff-more-nav"
-                        onClick={() => {
-                            setMoreOpen((open) => !open);
-                            setUserMenuOpen(false);
-                        }}
-                        className="text-text-secondary hover:text-text-primary flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[11px]"
-                    >
-                        <MoreHorizontal className="size-5" aria-hidden="true" />
-                        More
-                    </button>
-                )}
-            </nav>,
-            document.body
+                    {overflowNav.length > 0 && (
+                        <button
+                            type="button"
+                            aria-label="More navigation"
+                            aria-expanded={moreOpen}
+                            aria-controls="staff-more-nav"
+                            onClick={() => {
+                                setMoreOpen((open) => !open);
+                                setUserMenuOpen(false);
+                            }}
+                            className="text-text-secondary hover:text-text-primary flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[11px]"
+                        >
+                            <MoreHorizontal
+                                className="size-5"
+                                aria-hidden="true"
+                            />
+                            More
+                        </button>
+                    )}
+                </nav>,
+                document.body,
             )}
 
             {/* Mobile More sheet */}

@@ -275,7 +275,6 @@ export default function Kanban({
         );
     }
     function OrderTicket({ order, column }: { order: Ticket; column: Column }) {
-      
         const minutes = elapsed(order.placed_at, now);
         const timeColor =
             minutes >= lateMinutes
@@ -288,17 +287,17 @@ export default function Kanban({
 
         return (
             <article
-className="bg-surface-card shadow-card border-border-subtle min-w-0 overflow-hidden rounded-xl border border-s-[3px]"
-style={{
-    borderInlineStartColor:
-        column === 'new'
-            ? '#E5A000'
-            : column === 'preparing'
-              ? '#009E91'
-              : column === 'ready'
-                ? '#C85A32'
-                : '#39865B',
-}}    
+                className="bg-surface-card shadow-card border-border-subtle min-w-0 overflow-hidden rounded-xl border border-s-[3px]"
+                style={{
+                    borderInlineStartColor:
+                        column === 'new'
+                            ? '#E5A000'
+                            : column === 'preparing'
+                              ? '#009E91'
+                              : column === 'ready'
+                                ? '#C85A32'
+                                : '#39865B',
+                }}
             >
                 <div className="space-y-3 p-4">
                     <div className="flex items-start justify-between gap-2">
