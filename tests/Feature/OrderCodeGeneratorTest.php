@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Order;
 use App\Models\Restaurant;
 use App\Support\OrderCodeGenerator;
+use Database\Seeders\AlBustanSeeder;
+use Database\Seeders\RolesSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -120,5 +123,52 @@ class OrderCodeGeneratorTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+    }
+
+    public function test_skips_codes_already_used_that_day_without_a_sequence_row(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+
+        foreach (['#A-1040', '#A-1041', '#A-1044'] as $code) {
+            Order::factory()->for($restaurant)->create([
+                'service_date' => now()->toDateString(),
+                'code' => $code,
+            ]);
+        }
+
+        $generator = app(OrderCodeGenerator::class);
+
+        $this->assertSame('#A-1045', $generator->generate($restaurant->id));
+        $this->assertSame('#A-1046', $generator->generate($restaurant->id));
+    }
+
+    public function test_catches_up_when_the_sequence_row_is_behind_existing_orders(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+        $generator = app(OrderCodeGenerator::class);
+
+        $this->assertSame('#A-1040', $generator->generate($restaurant->id));
+
+        Order::factory()->for($restaurant)->create([
+            'service_date' => now()->toDateString(),
+            'code' => '#A-1050',
+        ]);
+
+        $this->assertSame('#A-1051', $generator->generate($restaurant->id));
+    }
+
+    public function test_the_first_guest_order_after_seeding_the_demo_does_not_collide(): void
+    {
+        $this->seed([
+            RolesSeeder::class,
+            AlBustanSeeder::class,
+        ]);
+
+        $restaurant = Restaurant::query()->where('slug', 'al-bustan')->firstOrFail();
+
+        $this->assertSame(
+            '#A-1045',
+            app(OrderCodeGenerator::class)->generate($restaurant->id),
+        );
     }
 }
