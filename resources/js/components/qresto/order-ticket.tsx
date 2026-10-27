@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import { Numeric } from '@/components/numeric';
 import type { OrderStatus } from '@/types';
 
@@ -19,6 +21,17 @@ type OrderTicketProps = {
     variant?: 'light' | 'dark';
     onAdvance?: () => void;
     onOverflow?: () => void;
+    /** The design's verb for the next step: Start cooking, Mark ready… */
+    advanceLabel?: string;
+    advancing?: boolean;
+    /** Shown instead of the advance button when there is no next step. */
+    footerNote?: ReactNode;
+    /** Replaces the default overflow button, e.g. with a menu. */
+    overflow?: ReactNode;
+    /** SLA level; saffron at the warn threshold, berry at the late one. */
+    elapsedLevel?: 'normal' | 'warn' | 'late';
+    /** CSS colour for the 3px status edge on the inline-start side. */
+    accentColor?: string;
 };
 
 const variantStyles = {
@@ -36,6 +49,12 @@ const variantStyles = {
     },
 };
 
+const elapsedLevelStyles = {
+    normal: '',
+    warn: '!text-[var(--saffron-700)] font-semibold',
+    late: '!text-[var(--berry-500)] font-semibold',
+} as const;
+
 export function OrderTicket({
     code,
     elapsed,
@@ -48,12 +67,27 @@ export function OrderTicket({
     variant = 'light',
     onAdvance,
     onOverflow,
+    advanceLabel,
+    advancing = false,
+    footerNote,
+    overflow,
+    elapsedLevel = 'normal',
+    accentColor,
 }: OrderTicketProps) {
     const styles = variantStyles[variant];
 
     return (
         <div
-            className={`overflow-hidden rounded-[var(--radius-lg)] border ${styles.card}`}
+            className={`overflow-hidden rounded-[var(--radius-lg)] border ${
+                accentColor ? 'border-s-[3px]' : ''
+            } ${styles.card}`}
+            style={
+                accentColor
+                    ? { borderInlineStartColor: accentColor }
+                    : undefined
+            }
+            data-status={status}
+            data-elapsed-level={elapsedLevel}
         >
             <div
                 className={`flex items-center gap-2 border-b px-3 pb-2 pt-3 ${styles.divider}`}
@@ -64,13 +98,15 @@ export function OrderTicket({
 
                 <span className="flex-1" />
 
-                <Numeric className={`text-caption ${styles.elapsed}`}>
+                <Numeric
+                    className={`text-caption ${styles.elapsed} ${elapsedLevelStyles[elapsedLevel]}`}
+                >
                     {elapsed}
                 </Numeric>
             </div>
 
             <div
-                className={`text-caption flex items-center gap-1.5 px-3 ${
+                className={`text-caption flex items-center gap-1.5 px-3 pt-2 ${
                     variant === 'dark'
                         ? 'text-[var(--ink-400)]'
                         : 'text-[var(--text-secondary)]'
@@ -91,11 +127,19 @@ export function OrderTicket({
                                 {item.qty}
                             </Numeric>
 
-                            <span className="min-w-0 flex-1">{item.name}</span>
+                            <span className="min-w-0 flex-1 break-words">
+                                {item.name}
+                            </span>
                         </div>
 
                         {item.note && (
-                            <span className="text-caption ms-[26px] inline-block text-[var(--saffron-300)]">
+                            <span
+                                className={`text-caption ms-[26px] inline-block break-words ${
+                                    variant === 'dark'
+                                        ? 'text-[var(--saffron-300)]'
+                                        : 'rounded-[var(--radius-sm)] bg-[var(--saffron-50)] px-2 py-0.5 text-[var(--saffron-700)]'
+                                }`}
+                            >
                                 {item.note}
                             </span>
                         )}
@@ -125,28 +169,42 @@ export function OrderTicket({
                 <Numeric className="text-body font-medium">{total}</Numeric>
             </div>
 
-            <div className="flex gap-2 p-3">
-                <button
-                    type="button"
-                    onClick={onAdvance}
-                    aria-label={`Advance order status from ${status}`}
-                    className="text-body h-11 flex-1 rounded-full bg-[var(--action-primary)] px-3 font-semibold text-[var(--text-on-brand)]"
-                >
-                    Advance status
-                </button>
+            <div className="flex items-stretch gap-2 p-3">
+                {onAdvance ? (
+                    <button
+                        type="button"
+                        onClick={onAdvance}
+                        disabled={advancing}
+                        aria-busy={advancing || undefined}
+                        aria-label={
+                            advanceLabel
+                                ? undefined
+                                : `Advance order status from ${status}`
+                        }
+                        className="text-body min-h-11 flex-1 rounded-full bg-[var(--action-primary)] px-3 py-2 font-semibold leading-snug text-[var(--text-on-brand)] transition-transform duration-[var(--duration-fast)] hover:bg-[var(--action-primary-hover)] active:scale-[var(--press-scale)] disabled:opacity-60"
+                    >
+                        {advanceLabel ?? 'Advance status'}
+                    </button>
+                ) : (
+                    <span className="text-caption flex min-h-11 flex-1 items-center text-[var(--text-secondary)]">
+                        {footerNote}
+                    </span>
+                )}
 
-                <button
-                    type="button"
-                    onClick={onOverflow}
-                    aria-label="More actions"
-                    className={`h-11 w-11 shrink-0 rounded-full border ${
-                        variant === 'dark'
-                            ? 'border-[var(--alpha-paper-08)] bg-[var(--ink-950)] text-[var(--ink-25)]'
-                            : 'border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-secondary)]'
-                    }`}
-                >
-                    ⋮
-                </button>
+                {overflow ?? (
+                    <button
+                        type="button"
+                        onClick={onOverflow}
+                        aria-label="More actions"
+                        className={`h-11 w-11 shrink-0 rounded-full border ${
+                            variant === 'dark'
+                                ? 'border-[var(--alpha-paper-08)] bg-[var(--ink-950)] text-[var(--ink-25)]'
+                                : 'border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-secondary)]'
+                        }`}
+                    >
+                        ⋮
+                    </button>
+                )}
             </div>
         </div>
     );

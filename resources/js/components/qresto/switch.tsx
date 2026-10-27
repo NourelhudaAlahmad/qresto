@@ -30,6 +30,8 @@ function Switch({
                         'duration-fast ease-standard transition-transform',
                         'data-[state=checked]:translate-x-5',
                         'data-[state=unchecked]:translate-x-0.5',
+                        'rtl:data-[state=checked]:-translate-x-5',
+                        'rtl:data-[state=unchecked]:-translate-x-0.5',
                     )}
                 />
             </SwitchPrimitive.Root>

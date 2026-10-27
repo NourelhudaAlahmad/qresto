@@ -1,5 +1,5 @@
 import { router, usePoll } from '@inertiajs/react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type LiveDataOptions = {
     only: string[];
@@ -18,9 +18,18 @@ export function useLiveData(
 ): LiveDataReturn {
     const [isPaused, setIsPaused] = useState(false);
 
+    // Callers usually pass `{ only: ['orders'] }` inline, which is a new
+    // array on every render. Key on the contents so the request options and
+    // the visibility listener stay stable across renders.
+    const onlyKey = options.only.join('|');
+    const only = useMemo(
+        () => (onlyKey === '' ? [] : onlyKey.split('|')),
+        [onlyKey],
+    );
+
     const requestOptions = useCallback(
         () => ({
-            only: options.only,
+            only,
             data: options.version
                 ? {
                       version: options.version,
@@ -29,9 +38,11 @@ export function useLiveData(
             onHttpException: (response: { status: number }) =>
                 response.status === 204 ? false : undefined,
         }),
-        [options.only, options.version],
+        [only, options.version],
     );
 
+    // usePoll reads the latest function on every tick, so the poller itself
+    // is created once.
     const { start, stop } = usePoll(intervalMs, requestOptions, {
         autoStart: true,
         mode: 'rest',
@@ -59,19 +70,22 @@ export function useLiveData(
                 'visibilitychange',
                 handleVisibilityChange,
             );
-            stop();
         };
     }, [requestOptions, start, stop]);
 
-    const pause = () => {
+    // Stop only when the screen unmounts, never on a re-render. Before this,
+    // a re-render with a new `only` array stopped the poller for good.
+    useEffect(() => () => stop(), [stop]);
+
+    const pause = useCallback(() => {
         stop();
         setIsPaused(true);
-    };
+    }, [stop]);
 
-    const resume = () => {
+    const resume = useCallback(() => {
         start();
         setIsPaused(false);
-    };
+    }, [start]);
 
     return {
         isPaused,

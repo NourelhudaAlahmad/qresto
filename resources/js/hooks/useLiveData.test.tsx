@@ -161,3 +161,40 @@ describe('useLiveData', () => {
         expect(result.current.isPaused).toBe(false);
     });
 });
+
+describe('useLiveData re-render stability', () => {
+    const start = vi.fn();
+    const stop = vi.fn();
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+
+        vi.mocked(usePoll).mockReturnValue({
+            start,
+            stop,
+            polling: true,
+        });
+    });
+
+    it('keeps polling when re-rendered with a new but equal only array', () => {
+        const { rerender } = renderHook(
+            ({ only }: { only: string[] }) => useLiveData(5000, { only }),
+            { initialProps: { only: ['orders'] } },
+        );
+
+        rerender({ only: ['orders'] });
+        rerender({ only: ['orders'] });
+
+        expect(stop).not.toHaveBeenCalled();
+    });
+
+    it('stops polling on unmount', () => {
+        const { unmount } = renderHook(() =>
+            useLiveData(5000, { only: ['orders'] }),
+        );
+
+        unmount();
+
+        expect(stop).toHaveBeenCalled();
+    });
+});

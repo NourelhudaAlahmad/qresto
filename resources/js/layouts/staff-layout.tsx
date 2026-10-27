@@ -1,16 +1,26 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
+    BarChart3,
     Bell,
-    Circle,
+    ChefHat,
+    ClipboardList,
+    LayoutDashboard,
     LayoutGrid,
     LogOut,
     MoreHorizontal,
+    Settings2,
     UtensilsCrossed,
-    X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+
+import { Avatar } from '@/components/qresto/avatar';
+import { Badge } from '@/components/qresto/badge';
+import { LiveIndicator } from '@/components/qresto/LiveIndicator';
+import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
+import { TabBar } from '@/components/qresto/tab-bar';
+import { useLiveData } from '@/hooks/useLiveData';
 
 type StaffNavItem = {
     id: string;
@@ -29,7 +39,6 @@ type StaffShellData = {
         user?: {
             name: string;
             email: string;
-            avatar?: string;
         } | null;
     };
 
@@ -42,16 +51,29 @@ type StaffShellData = {
     };
 };
 
-const POLL_INTERVAL_MS = 15_000;
+const COUNTER_PROPS = ['staffOpenOrders', 'staffUnreadNotifications'];
 
-const NAV_DOT_COLORS: Record<string, string> = {
-    waiter: 'bg-saffron-500',
-    floor: 'bg-teal-500',
-    manager: 'bg-clay-500',
-    reports: 'bg-teal-700',
-    admin: 'bg-clay-700',
-    menu: 'bg-saffron-700',
-    kds: 'bg-clay-500',
+const COUNTER_INTERVAL_MS = 15_000;
+
+// The design's NAV colour dots, per item id.
+const NAV_DOTS: Record<string, string> = {
+    manager: 'var(--clay-400)',
+    admin: 'var(--clay-400)',
+    kds: 'var(--clay-400)',
+    waiter: 'var(--saffron-300)',
+    menu: 'var(--saffron-300)',
+    floor: 'var(--teal-300)',
+    reports: 'var(--herb-300)',
+};
+
+const NAV_ICONS: Record<string, typeof LayoutGrid> = {
+    manager: LayoutDashboard,
+    admin: Settings2,
+    kds: ChefHat,
+    waiter: ClipboardList,
+    menu: UtensilsCrossed,
+    floor: LayoutGrid,
+    reports: BarChart3,
 };
 
 function initials(name: string): string {
@@ -67,100 +89,12 @@ function formatCount(count: number): string {
     return count > 99 ? '99+' : String(count);
 }
 
-function NavLink({
-    item,
-    active,
-    badgeCount,
-    mobile = false,
-}: {
-    item: StaffNavItem;
-    active: boolean;
-    badgeCount?: number | null;
-    mobile?: boolean;
-}) {
-    const showBadge = badgeCount != null && badgeCount > 0;
-
-    const dotColor = NAV_DOT_COLORS[item.id] ?? 'bg-clay-500';
-
-    return (
-        <Link
-            href={item.href}
-            aria-current={active ? 'page' : undefined}
-            className={
-                mobile
-                    ? `relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[11px] transition-colors ${
-                          active
-                              ? 'text-clay-700'
-                              : 'text-text-tertiary hover:text-text-primary'
-                      }`
-                    : `flex min-h-11 items-center justify-between rounded-lg px-3 text-sm transition-colors ${
-                          active
-                              ? 'bg-white/15 font-semibold !text-white'
-                              : '!text-white/85 hover:bg-white/10 hover:!text-white'
-                      }`
-            }
-        >
-            {mobile ? (
-                <>
-                    <span className="relative">
-                        <LayoutGrid className="size-5" aria-hidden="true" />
-
-                        {showBadge && (
-                            <span className="bg-clay-100 text-clay-900 absolute -end-3 -top-2 rounded-full px-1 text-[10px] font-semibold">
-                                {formatCount(badgeCount)}
-                            </span>
-                        )}
-                    </span>
-
-                    <span className="max-w-full truncate">{item.title}</span>
-                </>
-            ) : (
-                <>
-                    <span className="flex min-w-0 items-center gap-3">
-                        <Circle
-                            className={`size-2 shrink-0 rounded-full ${dotColor} fill-current text-transparent`}
-                            aria-hidden="true"
-                        />
-
-                        <span className="truncate">{item.title}</span>
-                    </span>
-
-                    {showBadge && (
-                        <span className="bg-clay-100 text-clay-900 rounded-full px-2 py-0.5 text-xs font-semibold">
-                            {formatCount(badgeCount)}
-                        </span>
-                    )}
-                </>
-            )}
-        </Link>
-    );
-}
-
-/* ------------------------------------------------------------------ *
- * "Console" variant — the manager shell from the design spec
- * (docs/design/03-staff-panels.dc.html). Opt in per page with
- * `Page.layout = { variant: 'console' }`; every other staff page keeps
- * the default shell above.
- * ------------------------------------------------------------------ */
-
-const CONSOLE_DOT_COLORS: Record<string, string> = {
-    manager: 'bg-clay-400',
-    admin: 'bg-clay-400',
-    kds: 'bg-clay-400',
-    waiter: 'bg-saffron-300',
-    menu: 'bg-saffron-300',
-    floor: 'bg-teal-300',
-    reports: 'bg-herb-300',
-};
-
 function serviceDateLabel(now?: number): string {
-    const date = now ? new Date(now) : new Date();
-
     const parts = new Intl.DateTimeFormat('en-GB', {
         weekday: 'long',
         day: 'numeric',
         month: 'short',
-    }).formatToParts(date);
+    }).formatToParts(now ? new Date(now) : new Date());
 
     const pick = (type: string): string =>
         parts.find((part) => part.type === type)?.value ?? '';
@@ -168,46 +102,45 @@ function serviceDateLabel(now?: number): string {
     return `${pick('weekday')} ${pick('day')} ${pick('month')}`;
 }
 
-function ConsoleNavLink({
+function SidebarLink({
     item,
     active,
-    badgeCount,
+    badge,
 }: {
     item: StaffNavItem;
     active: boolean;
-    badgeCount?: number | null;
+    badge: number | null;
 }) {
-    const showBadge = badgeCount != null && badgeCount > 0;
-
     return (
         <Link
             href={item.href}
             aria-current={active ? 'page' : undefined}
-            className={`flex min-h-11 w-full items-center gap-3 rounded-[var(--radius-md)] px-3 text-[length:var(--text-body)] transition-colors ${
+            className={`text-body flex min-h-11 w-full items-center gap-3 rounded-[var(--radius-md)] px-3 transition-colors duration-[var(--duration-fast)] ${
                 active
-                    ? 'bg-ink-800 !text-ink-25 font-semibold'
-                    : '!text-ink-300 hover:bg-ink-800/60 hover:!text-ink-25'
+                    ? 'bg-[var(--ink-800)] font-semibold !text-[var(--ink-25)]'
+                    : 'hover:bg-[var(--ink-800)]/60 !text-[var(--ink-300)] hover:!text-[var(--ink-25)]'
             }`}
         >
             <span
                 aria-hidden="true"
                 className={`size-2 shrink-0 rounded-full ${
-                    CONSOLE_DOT_COLORS[item.id] ?? 'bg-ink-500'
-                } ${active ? 'opacity-100' : 'opacity-55'}`}
+                    active ? 'opacity-100' : 'opacity-55'
+                }`}
+                style={{
+                    backgroundColor: NAV_DOTS[item.id] ?? 'var(--ink-500)',
+                }}
             />
 
             <span className="flex-1 truncate text-start">{item.title}</span>
 
-            {showBadge && (
-                <span className="bg-clay-500 inline-flex h-5 min-w-5 items-center justify-center rounded-[var(--radius-pill)] px-1.5 font-mono text-[10px] text-white">
-                    {formatCount(badgeCount)}
-                </span>
+            {badge !== null && badge > 0 && (
+                <Badge className="h-5">{formatCount(badge)}</Badge>
             )}
         </Link>
     );
 }
 
-function ConsoleSidebar({
+function Sidebar({
     nav,
     isActive,
     badgeFor,
@@ -223,14 +156,14 @@ function ConsoleSidebar({
     userName: string;
 }) {
     return (
-        <aside className="bg-ink-900 fixed inset-y-0 start-0 hidden w-[var(--sidebar-w)] flex-col px-3 pb-4 pt-5 min-[900px]:flex">
+        <aside className="fixed inset-y-0 start-0 hidden w-[var(--sidebar-w)] flex-col bg-[var(--ink-900)] px-3 pb-4 pt-5 min-[900px]:flex">
             <div className="flex items-center gap-2 px-3 pb-5">
-                <span className="font-display text-ink-25 inline-flex items-baseline text-[19px] font-bold tracking-[-0.04em]">
-                    <span className="text-clay-300">Q</span>
+                <span className="font-display inline-flex items-baseline text-[19px] font-bold tracking-[-0.04em] text-[var(--ink-25)]">
+                    <span className="text-[var(--clay-300)]">Q</span>
                     <span>Resto</span>
                 </span>
 
-                <span className="text-ink-500 border-ink-700 rounded-[var(--radius-pill)] border px-[7px] py-0.5 text-[length:var(--text-micro)]">
+                <span className="text-micro rounded-[var(--radius-pill)] border border-[var(--ink-700)] px-[7px] py-0.5 text-[var(--ink-500)]">
                     {roleLabel}
                 </span>
             </div>
@@ -240,26 +173,23 @@ function ConsoleSidebar({
                 className="flex flex-1 flex-col gap-0.5 overflow-y-auto"
             >
                 {nav.map((item) => (
-                    <ConsoleNavLink
+                    <SidebarLink
                         key={item.id}
                         item={item}
                         active={isActive(item.href)}
-                        badgeCount={badgeFor(item)}
+                        badge={badgeFor(item)}
                     />
                 ))}
             </nav>
 
-            <div className="border-ink-800 flex items-center gap-2 border-t p-3">
-                <span className="font-display text-ink-25 grid size-8 shrink-0 place-items-center rounded-full bg-teal-700 text-[length:var(--text-caption)] font-semibold">
-                    {initials(userName)}
-                </span>
+            <div className="flex items-center gap-2 border-t border-[var(--ink-800)] p-3">
+                <Avatar initials={initials(userName)} size="sm" tone="teal" />
 
                 <span className="min-w-0 flex-1">
-                    <span className="text-ink-200 block truncate text-[length:var(--text-caption)]">
+                    <span className="text-caption block truncate text-[var(--ink-200)]">
                         {userName}
                     </span>
-
-                    <span className="text-ink-500 block truncate text-[length:var(--text-micro)]">
+                    <span className="text-micro block truncate text-[var(--ink-500)]">
                         {restaurantName}
                     </span>
                 </span>
@@ -270,7 +200,7 @@ function ConsoleSidebar({
                     as="button"
                     aria-label="Log out"
                     title="Log out"
-                    className="text-ink-500 hover:text-ink-25 shrink-0 rounded-lg p-1.5 transition-colors"
+                    className="grid size-11 shrink-0 place-items-center rounded-full text-[var(--ink-500)] transition-colors hover:text-[var(--ink-25)]"
                 >
                     <LogOut className="size-4" aria-hidden="true" />
                 </Link>
@@ -279,79 +209,78 @@ function ConsoleSidebar({
     );
 }
 
-function ConsoleHeader({
+function Topbar({
     title,
     subtitle,
     unreadNotifications,
     userName,
     userEmail,
-    menuOpen,
-    onToggleMenu,
 }: {
     title: string;
     subtitle: string;
     unreadNotifications: number;
     userName: string;
     userEmail: string;
-    menuOpen: boolean;
-    onToggleMenu: () => void;
 }) {
+    const [menuOpen, setMenuOpen] = useState(false);
+
     return (
-        <header className="border-border-subtle sticky top-0 z-20 flex min-h-[var(--topbar-h)] items-center gap-4 border-b bg-[var(--alpha-paper-88)] px-4 backdrop-blur-[12px] min-[900px]:px-6">
-            <div className="min-w-0">
-                <h1 className="font-display truncate text-[length:var(--text-title-1)] font-semibold tracking-[var(--tracking-title)]">
+        <header className="sticky top-0 z-20 flex min-h-[var(--topbar-h)] items-center gap-3 border-b border-[var(--border-subtle)] bg-[var(--surface-glass)] px-4 backdrop-blur-[12px] min-[900px]:gap-4 min-[900px]:px-6">
+            <div className="min-w-0 flex-1">
+                <h1 className="font-display text-title-1 truncate font-semibold tracking-[var(--tracking-title)]">
                     {title}
                 </h1>
 
-                <p className="text-text-tertiary truncate text-[length:var(--text-caption)]">
-                    {subtitle}
-                </p>
+                {subtitle && (
+                    <p className="text-caption truncate text-[var(--text-tertiary)]">
+                        {subtitle}
+                    </p>
+                )}
             </div>
 
-            <span className="flex-1" />
-
-            <span className="bg-success-bg text-success-fg inline-flex h-[30px] items-center gap-1.5 rounded-[var(--radius-pill)] px-3 text-[length:var(--text-caption)] font-semibold">
-                <span className="bg-herb-500 size-1.5 animate-[qr-pulse_1.6s_ease-in-out_infinite] rounded-full motion-reduce:animate-none" />
-                Live
+            <span className="hidden sm:inline-flex">
+                <LiveIndicator isPaused={false} />
             </span>
 
             <div
                 role="status"
                 aria-label={`Unread notifications: ${unreadNotifications}`}
-                className="border-border-default bg-surface-card relative grid size-11 place-items-center rounded-full border"
+                className="relative grid size-11 shrink-0 place-items-center rounded-full border border-[var(--border-default)] bg-[var(--surface-card)]"
             >
-                <Bell className="text-ink-800 size-[19px]" aria-hidden="true" />
+                <Bell
+                    className="size-[19px] text-[var(--ink-800)]"
+                    aria-hidden="true"
+                />
 
                 {unreadNotifications > 0 && (
-                    <span className="bg-clay-500 absolute -end-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-[var(--radius-pill)] px-1 font-mono text-[10px] text-white">
+                    <Badge className="absolute -end-0.5 -top-0.5 h-[18px]">
                         {formatCount(unreadNotifications)}
-                    </span>
+                    </Badge>
                 )}
             </div>
 
-            <div className="relative">
+            <div className="relative shrink-0">
                 <button
                     type="button"
                     aria-label="User menu"
                     aria-expanded={menuOpen}
                     aria-controls="staff-user-menu"
-                    onClick={onToggleMenu}
-                    className="bg-clay-100 text-clay-700 font-display grid size-9 place-items-center rounded-full text-[length:var(--text-caption)] font-semibold"
+                    onClick={() => setMenuOpen((open) => !open)}
+                    className="grid size-11 place-items-center rounded-full"
                 >
-                    {initials(userName)}
+                    <Avatar initials={initials(userName)} />
                 </button>
 
                 {menuOpen && (
                     <div
                         id="staff-user-menu"
-                        className="border-border-subtle bg-surface-card absolute end-0 top-12 z-50 w-56 rounded-xl border p-2 shadow-xl"
+                        className="absolute end-0 top-12 z-50 w-56 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2 shadow-[var(--shadow-pop)]"
                     >
-                        <div className="border-border-subtle border-b px-3 py-2">
-                            <p className="truncate text-sm font-semibold">
+                        <div className="border-b border-[var(--border-subtle)] px-3 py-2">
+                            <p className="text-body truncate font-semibold">
                                 {userName}
                             </p>
-
-                            <p className="text-text-secondary truncate text-xs">
+                            <p className="text-caption truncate text-[var(--text-secondary)]">
                                 {userEmail}
                             </p>
                         </div>
@@ -360,7 +289,7 @@ function ConsoleHeader({
                             href="/logout"
                             method="post"
                             as="button"
-                            className="text-text-link hover:bg-surface-page mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm"
+                            className="text-body mt-1 flex min-h-11 w-full items-center gap-2 rounded-[var(--radius-sm)] px-3 text-start text-[var(--text-link)] hover:bg-[var(--action-ghost-hover)]"
                         >
                             <LogOut className="size-4" aria-hidden="true" />
                             Log out
@@ -372,6 +301,14 @@ function ConsoleHeader({
     );
 }
 
+/**
+ * One shell for every staff role and width (design: the isApp frame).
+ * Sidebar ≥900px; below it the sidebar becomes a bottom tab bar with at
+ * most four slots, and anything else moves into a More sheet.
+ *
+ * Pages may set `Page.layout = { variant: 'console' }` to replace the
+ * server subtitle with the service date, as the manager overview does.
+ */
 export default function StaffLayout({
     children,
     variant = 'default',
@@ -382,17 +319,14 @@ export default function StaffLayout({
     now?: number;
 }) {
     const { url, props } = usePage();
-
     const data = props as typeof props & StaffShellData;
-
-    const isConsole = variant === 'console';
 
     const nav = data.nav ?? [];
     const user = data.auth?.user;
     const shell = data.staffLayout;
+    const userName = user?.name ?? 'Staff';
 
     const [moreOpen, setMoreOpen] = useState(false);
-    const [userMenuOpen, setUserMenuOpen] = useState(false);
 
     const canSeeAllOrders =
         data.capabilities?.includes('see_all_orders') ?? false;
@@ -405,344 +339,138 @@ export default function StaffLayout({
     const unreadNotifications =
         data.staffUnreadNotifications ?? shell?.unreadNotifications ?? 0;
 
-    // Refresh only the two live counters every 15 seconds.
-    useEffect(() => {
-        const interval = window.setInterval(() => {
-            if (document.visibilityState !== 'visible') {
-                return;
-            }
-
-            router.reload({
-                only: ['staffOpenOrders', 'staffUnreadNotifications'],
-            });
-        }, POLL_INTERVAL_MS);
-
-        return () => window.clearInterval(interval);
-    }, []);
+    // The two shell counters refresh on their own slow cadence.
+    useLiveData(COUNTER_INTERVAL_MS, { only: COUNTER_PROPS });
 
     const currentPath = url.split('?')[0].split('#')[0];
 
-    const active = (href: string): boolean =>
+    const isActive = (href: string): boolean =>
         currentPath === href || currentPath.startsWith(`${href}/`);
 
-    const badgeFor = (item: StaffNavItem): number | null => {
-        if (item.href === '/app/orders' || item.href === '/app/pass') {
-            return openOrders;
-        }
+    const badgeFor = (item: StaffNavItem): number | null =>
+        item.href === '/app/orders' || item.href === '/app/pass'
+            ? openOrders
+            : null;
 
-        return null;
-    };
-
-    // Keep at most four bottom-bar slots, including More when needed.
+    // At most four bottom-bar slots, including More when needed.
     const visibleTabCount = nav.length > 4 ? 3 : 4;
     const primaryNav = nav.slice(0, visibleTabCount);
     const overflowNav = nav.slice(visibleTabCount);
+    const overflowActive = overflowNav.some((item) => isActive(item.href));
+
+    const tabIcon = (item: StaffNavItem) => {
+        const Icon = NAV_ICONS[item.id] ?? LayoutGrid;
+
+        return <Icon className="size-5" aria-hidden="true" />;
+    };
+
+    const tabItems = [
+        ...primaryNav.map((item) => {
+            const badge = badgeFor(item);
+
+            return {
+                label: item.title,
+                icon: tabIcon(item),
+                badge:
+                    badge !== null && badge > 0
+                        ? formatCount(badge)
+                        : undefined,
+                active: isActive(item.href),
+                onClick: () => router.visit(item.href),
+            };
+        }),
+        ...(overflowNav.length > 0
+            ? [
+                  {
+                      label: 'More',
+                      icon: (
+                          <MoreHorizontal
+                              className="size-5"
+                              aria-hidden="true"
+                          />
+                      ),
+                      active: overflowActive,
+                      ariaLabel: 'More navigation',
+                      onClick: () => setMoreOpen(true),
+                  },
+              ]
+            : []),
+    ];
+
+    const subtitle =
+        variant === 'console'
+            ? `${serviceDateLabel(now)} · service in progress`
+            : (shell?.pageSubtitle ?? '');
 
     return (
-        <div className="bg-surface-page font-ui text-text-primary min-h-[100dvh]">
-            {/* Desktop sidebar */}
-            {isConsole ? (
-                <ConsoleSidebar
-                    nav={nav}
-                    isActive={active}
-                    badgeFor={badgeFor}
-                    roleLabel={shell?.roleLabel ?? 'Staff'}
-                    restaurantName={shell?.restaurantName ?? ''}
-                    userName={user?.name ?? 'Staff'}
+        <div className="font-ui min-h-[100dvh] bg-[var(--surface-page)] text-[var(--text-primary)]">
+            <Sidebar
+                nav={nav}
+                isActive={isActive}
+                badgeFor={badgeFor}
+                roleLabel={shell?.roleLabel ?? 'Staff'}
+                restaurantName={shell?.restaurantName ?? ''}
+                userName={userName}
+            />
+
+            <div className="flex min-h-[100dvh] flex-col min-[900px]:ps-[var(--sidebar-w)]">
+                <Topbar
+                    title={shell?.pageTitle ?? 'Staff'}
+                    subtitle={subtitle}
+                    unreadNotifications={unreadNotifications}
+                    userName={userName}
+                    userEmail={user?.email ?? ''}
                 />
-            ) : (
-                <aside className="bg-ink-800 text-text-inverse fixed inset-y-0 start-0 hidden w-[248px] flex-col min-[900px]:flex">
-                    <div className="border-b border-white/10 px-5 py-6">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <div className="flex items-center gap-2 text-xl font-bold tracking-tight">
-                                <UtensilsCrossed
-                                    className="text-clay-500 size-5"
-                                    aria-hidden="true"
-                                />
 
-                                <span>
-                                    <span className="text-clay-500">Q</span>
-                                    Resto
-                                </span>
-                            </div>
-
-                            <span className="text-text-inverse/70 rounded-full border border-white/15 px-2 py-0.5 text-[10px]">
-                                {shell?.roleLabel ?? 'Staff'}
-                            </span>
-                        </div>
-                    </div>
-
-                    <nav
-                        aria-label="Staff navigation"
-                        className="flex-1 space-y-1 overflow-y-auto p-3"
-                    >
-                        {nav.map((item) => (
-                            <NavLink
-                                key={item.id}
-                                item={item}
-                                active={active(item.href)}
-                                badgeCount={badgeFor(item)}
-                            />
-                        ))}
-                    </nav>
-
-                    {/* Desktop user footer */}
-                    <div className="flex items-center gap-3 border-t border-white/10 p-4">
-                        <span className="text-text-inverse flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-700 text-xs font-semibold">
-                            {initials(user?.name ?? 'Staff')}
-                        </span>
-
-                        <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold !text-white">
-                                {user?.name ?? 'Staff'}
-                            </p>
-
-                            <p className="text-text-inverse/70 truncate text-xs">
-                                {shell?.restaurantName ?? ''}
-                            </p>
-                        </div>
-
-                        <Link
-                            href="/logout"
-                            method="post"
-                            as="button"
-                            aria-label="Log out"
-                            title="Log out"
-                            className="text-text-inverse/70 shrink-0 rounded-lg p-2 transition-colors hover:bg-white/10 hover:text-white"
-                        >
-                            <LogOut className="size-4" aria-hidden="true" />
-                        </Link>
-                    </div>
-                </aside>
-            )}
-
-            {/* Main application area */}
-            <div className="flex min-h-[100dvh] flex-col min-[900px]:ps-[248px]">
-                {/* Topbar */}
-                {isConsole ? (
-                    <ConsoleHeader
-                        title={shell?.pageTitle ?? 'Staff'}
-                        subtitle={`${serviceDateLabel(now)} · service in progress`}
-                        unreadNotifications={unreadNotifications}
-                        userName={user?.name ?? 'Staff'}
-                        userEmail={user?.email ?? ''}
-                        menuOpen={userMenuOpen}
-                        onToggleMenu={() => {
-                            setUserMenuOpen((open) => !open);
-                            setMoreOpen(false);
-                        }}
-                    />
-                ) : (
-                    <header className="border-border-subtle bg-surface-card relative z-30 flex h-16 items-center justify-between gap-3 border-b px-4 min-[900px]:px-6">
-                        <div className="min-w-0 flex-1">
-                            <h1 className="truncate text-lg font-semibold">
-                                {shell?.pageTitle ?? 'Staff'}
-                            </h1>
-
-                            <p className="text-text-secondary truncate text-xs">
-                                {shell?.pageSubtitle ?? ''}
-                            </p>
-                        </div>
-
-                        <div className="flex shrink-0 items-center gap-3">
-                            {/* Live indicator */}
-                            <span className="text-success-fg hidden items-center gap-2 text-xs font-medium sm:flex">
-                                <span className="relative flex size-2">
-                                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-teal-500 opacity-40" />
-                                    <span className="relative inline-flex size-2 rounded-full bg-teal-700" />
-                                </span>
-                                Live
-                            </span>
-
-                            {/* Real open orders */}
-                            {openOrders !== null && (
-                                <span
-                                    aria-label={`Open orders: ${openOrders}`}
-                                    className="bg-clay-100 text-clay-700 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium"
-                                >
-                                    <span className="hidden sm:inline">
-                                        Open orders
-                                    </span>
-
-                                    <span className="sm:hidden">Orders</span>
-
-                                    <strong>{formatCount(openOrders)}</strong>
-                                </span>
-                            )}
-
-                            {/* Real unread notifications */}
-                            <div
-                                className="relative"
-                                role="status"
-                                aria-label={`Unread notifications: ${unreadNotifications}`}
-                            >
-                                <Bell className="size-5" aria-hidden="true" />
-
-                                {unreadNotifications > 0 && (
-                                    <span className="bg-clay-100 text-clay-900 absolute -end-2 -top-2 rounded-full px-1 text-[10px] font-semibold">
-                                        {formatCount(unreadNotifications)}
-                                    </span>
-                                )}
-                            </div>
-
-                            {/* User avatar and menu */}
-                            <div className="relative">
-                                <button
-                                    type="button"
-                                    aria-label="User menu"
-                                    aria-expanded={userMenuOpen}
-                                    aria-controls="staff-user-menu"
-                                    onClick={() => {
-                                        setUserMenuOpen((open) => !open);
-                                        setMoreOpen(false);
-                                    }}
-                                    className="bg-clay-100 text-clay-700 hover:bg-clay-100 flex size-9 items-center justify-center rounded-full text-xs font-semibold transition-colors"
-                                >
-                                    {initials(user?.name ?? 'Staff')}
-                                </button>
-
-                                {userMenuOpen && (
-                                    <div
-                                        id="staff-user-menu"
-                                        className="border-border-subtle bg-surface-card absolute end-0 top-12 z-50 w-56 rounded-xl border p-2 shadow-xl"
-                                    >
-                                        <div className="border-border-subtle border-b px-3 py-2">
-                                            <p className="truncate text-sm font-semibold">
-                                                {user?.name ?? 'Staff'}
-                                            </p>
-
-                                            <p className="text-text-secondary truncate text-xs">
-                                                {user?.email ?? ''}
-                                            </p>
-                                        </div>
-
-                                        <Link
-                                            href="/logout"
-                                            method="post"
-                                            as="button"
-                                            className="text-text-link hover:bg-surface-page mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm"
-                                        >
-                                            <LogOut
-                                                className="size-4"
-                                                aria-hidden="true"
-                                            />
-                                            Log out
-                                        </Link>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </header>
-                )}
-
-                {/* Staff page content */}
-                <main
-                    className={`mx-auto w-full max-w-[1280px] flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] min-[900px]:p-6 ${
-                        isConsole ? 'min-[900px]:pb-10' : ''
-                    }`}
-                >
+                <main className="mx-auto w-full max-w-[1280px] flex-1 p-4 pb-[calc(var(--tabbar-h)+var(--space-4)+env(safe-area-inset-bottom))] min-[900px]:p-6 min-[900px]:pb-10">
                     {children}
                 </main>
             </div>
 
-            {/* Mobile bottom tab bar */}
-            {createPortal(
+            {nav.length > 0 &&
+                createPortal(
+                    <TabBar
+                        ariaLabel="Mobile staff navigation"
+                        items={tabItems}
+                        className="fixed inset-x-0 bottom-0 z-[70] h-auto min-h-[var(--tabbar-h)] pb-[env(safe-area-inset-bottom)] min-[900px]:hidden"
+                    />,
+                    document.body,
+                )}
+
+            <ResponsiveOverlay
+                open={moreOpen && overflowNav.length > 0}
+                onOpenChange={setMoreOpen}
+                title="More"
+            >
                 <nav
-                    aria-label="Mobile staff navigation"
-                    className="border-border-subtle bg-surface-card fixed inset-x-0 bottom-0 z-[70] flex min-h-16 w-full items-center justify-around border-t px-2 pb-[env(safe-area-inset-bottom)] min-[900px]:hidden"
+                    aria-label="More navigation"
+                    className="flex flex-col gap-1"
                 >
-                    {primaryNav.map((item) => (
-                        <NavLink
-                            key={item.id}
-                            item={item}
-                            active={active(item.href)}
-                            badgeCount={badgeFor(item)}
-                            mobile
-                        />
-                    ))}
+                    {overflowNav.map((item) => {
+                        const badge = badgeFor(item);
 
-                    {overflowNav.length > 0 && (
-                        <button
-                            type="button"
-                            aria-label="More navigation"
-                            aria-expanded={moreOpen}
-                            aria-controls="staff-more-nav"
-                            onClick={() => {
-                                setMoreOpen((open) => !open);
-                                setUserMenuOpen(false);
-                            }}
-                            className="text-text-secondary hover:text-text-primary flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[11px]"
-                        >
-                            <MoreHorizontal
-                                className="size-5"
-                                aria-hidden="true"
-                            />
-                            More
-                        </button>
-                    )}
-                </nav>,
-                document.body,
-            )}
-
-            {/* Mobile More sheet */}
-            {moreOpen && overflowNav.length > 0 && (
-                <>
-                    <button
-                        type="button"
-                        aria-label="Close more navigation"
-                        onClick={() => setMoreOpen(false)}
-                        className="fixed inset-0 z-40 bg-black/20 min-[900px]:hidden"
-                    />
-
-                    <div
-                        id="staff-more-nav"
-                        role="dialog"
-                        aria-label="More navigation"
-                        className="border-border-subtle bg-surface-card fixed inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-50 rounded-xl border p-3 shadow-xl min-[900px]:hidden"
-                    >
-                        <div className="mb-2 flex items-center justify-between px-2">
-                            <h2 className="text-sm font-semibold">More</h2>
-
-                            <button
-                                type="button"
-                                aria-label="Close"
+                        return (
+                            <Link
+                                key={item.id}
+                                href={item.href}
+                                aria-current={
+                                    isActive(item.href) ? 'page' : undefined
+                                }
                                 onClick={() => setMoreOpen(false)}
-                                className="text-text-secondary hover:bg-surface-page rounded-lg p-1"
+                                className="text-body flex min-h-11 items-center gap-3 rounded-[var(--radius-md)] px-3 hover:bg-[var(--action-ghost-hover)]"
                             >
-                                <X className="size-5" aria-hidden="true" />
-                            </button>
-                        </div>
-
-                        <nav className="flex flex-col gap-1">
-                            {overflowNav.map((item) => {
-                                const badge = badgeFor(item);
-
-                                return (
-                                    <Link
-                                        key={item.id}
-                                        href={item.href}
-                                        aria-current={
-                                            active(item.href)
-                                                ? 'page'
-                                                : undefined
-                                        }
-                                        onClick={() => setMoreOpen(false)}
-                                        className="hover:bg-surface-page flex items-center justify-between rounded-lg px-4 py-3 text-sm"
-                                    >
-                                        <span>{item.title}</span>
-
-                                        {badge !== null && badge > 0 && (
-                                            <span className="bg-clay-100 text-clay-700 rounded-full px-2 py-0.5 text-xs font-semibold">
-                                                {formatCount(badge)}
-                                            </span>
-                                        )}
-                                    </Link>
-                                );
-                            })}
-                        </nav>
-                    </div>
-                </>
-            )}
+                                {tabIcon(item)}
+                                <span className="flex-1">{item.title}</span>
+                                {badge !== null && badge > 0 && (
+                                    <Badge className="h-5">
+                                        {formatCount(badge)}
+                                    </Badge>
+                                )}
+                            </Link>
+                        );
+                    })}
+                </nav>
+            </ResponsiveOverlay>
         </div>
     );
 }

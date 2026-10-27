@@ -1,18 +1,36 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     Banknote,
     Check,
-    ChevronRight,
-    Clock3,
     CreditCard,
-    LoaderCircle,
-    RefreshCw,
+    Mail,
+    Printer,
+    Split,
     Users,
-    X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-type TableState = 'free' | 'seated' | 'ordered' | 'bill';
+import type { FormEvent, ReactNode } from 'react';
+
+import { Numeric } from '@/components/numeric';
+import { Button } from '@/components/qresto/button';
+import { Card } from '@/components/qresto/card';
+import { ChipFilter } from '@/components/qresto/chip-filter';
+import { EmptyState } from '@/components/qresto/empty-state';
+import { Input } from '@/components/qresto/input';
+import { Label } from '@/components/qresto/label';
+import { PriceSummary } from '@/components/qresto/price-summary';
+import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
+import { Skeleton } from '@/components/qresto/skeleton';
+import { StatusPill } from '@/components/qresto/status-pill';
+import { TableTile, tableStateLabels } from '@/components/qresto/table-tile';
+import { showToast } from '@/components/qresto/toast';
+import { Tooltip } from '@/components/qresto/tooltip';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useLiveData } from '@/hooks/useLiveData';
+import type { OrderStatus, TableState } from '@/types';
+
 type PaymentMethod = 'cash' | 'pos';
+
 type FloorTable = {
     id: number;
     number: string | number;
@@ -26,6 +44,7 @@ type FloorTable = {
     has_bill_request: boolean;
     currency: string;
 };
+
 type BillLine = {
     id: number;
     name: string;
@@ -34,6 +53,7 @@ type BillLine = {
     line_total_minor: number;
     note: string | null;
 };
+
 type BillPayment = {
     id: number;
     method: string;
@@ -42,9 +62,10 @@ type BillPayment = {
     taken_by?: number | null;
     paid_at?: string | null;
 };
+
 type BillOrder = {
     id: number;
-    status: string;
+    status: OrderStatus;
     currency: string;
     is_paid: boolean;
     lines: BillLine[];
@@ -53,12 +74,14 @@ type BillOrder = {
     paid_minor?: number;
     balance_minor: number;
 };
+
 type ServiceRequest = {
     id: number;
     kind: string;
     status: string;
     requested_at: string | null;
 };
+
 type TableDetail = {
     table: {
         id: number;
@@ -73,44 +96,47 @@ type TableDetail = {
     currency: string;
     service_requests: ServiceRequest[];
 };
+
 type Props = {
     tables: FloorTable[];
 };
-type Action = {
-    type: 'free' | 'seat' | 'payment' | 'acknowledge';
-    id: number;
-} | null;
-const STATE_LABELS: Record<TableState, string> = {
-    free: 'Free',
-    seated: 'Seated',
-    ordered: 'Ordered',
-    bill: 'Bill requested',
+
+type Busy = 'free' | 'seat' | `pay-${number}` | `ack-${number}` | null;
+
+type StateFilter = 'all' | TableState;
+
+const STATES: TableState[] = ['free', 'seated', 'ordered', 'bill'];
+
+// Legend dots use the occupancy tokens' foreground colours.
+const STATE_DOT: Record<TableState, string> = {
+    free: 'var(--table-free-fg)',
+    seated: 'var(--table-seated-fg)',
+    ordered: 'var(--table-ordered-fg)',
+    bill: 'var(--table-bill-fg)',
 };
-const STATE_STYLES: Record<TableState, string> = {
-    free: 'border-emerald-200 bg-emerald-50 text-emerald-900',
-    seated: 'border-sky-200 bg-sky-50 text-sky-900',
-    ordered: 'border-amber-200 bg-amber-50 text-amber-900',
-    bill: 'border-orange-300 bg-orange-50 text-orange-950',
+
+const REQUEST_LABELS: Record<string, string> = {
+    water: 'Water',
+    bread: 'Bread',
+    bill: 'Bill',
+    waiter: 'Waiter',
 };
-const DOT_STYLES: Record<TableState, string> = {
-    free: 'bg-emerald-500',
-    seated: 'bg-sky-500',
-    ordered: 'bg-amber-500',
-    bill: 'bg-orange-600',
-};
-function money(minor: number, currency = 'TRY'): string {
+
+function money(minor: number, currency: string): string {
     try {
         return new Intl.NumberFormat('en', {
             style: 'currency',
-            currency,
+            currency: currency || 'USD',
         }).format(minor / 100);
     } catch {
         return `${(minor / 100).toFixed(2)} ${currency}`;
     }
 }
+
 function amountInput(minor: number): string {
     return (minor / 100).toFixed(2);
 }
+
 function parseAmountMinor(value: string): number | null {
     const normalized = value.trim();
 
@@ -127,102 +153,49 @@ function parseAmountMinor(value: string): number | null {
 
     return minor;
 }
-function seatedDuration(seatedAt: string | null, now: number): string | null {
-    if (!seatedAt || now === 0) {
+
+function minutesSince(timestamp: string | null, now: number): number | null {
+    if (!timestamp || now === 0) {
         return null;
     }
 
-    const timestamp = Date.parse(seatedAt);
+    const value = Date.parse(timestamp);
 
-    if (!Number.isFinite(timestamp)) {
-        return null;
-    }
-
-    const minutes = Math.max(0, Math.floor((now - timestamp) / 60000));
-    const hours = Math.floor(minutes / 60);
-    const remaining = minutes % 60;
-
-    return hours > 0 ? `${hours}h ${remaining}m` : `${minutes}m`;
+    return Number.isFinite(value)
+        ? Math.max(0, Math.floor((now - value) / 60000))
+        : null;
 }
-function readableKind(kind: string): string {
-    return kind
-        .replaceAll('_', ' ')
-        .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-function FloorTile({
-    table,
-    now,
-    onClick,
-}: {
-    table: FloorTable;
-    now: number;
-    onClick: () => void;
-}) {
-    const duration = seatedDuration(table.seated_at, now);
-    const billRequested = table.state === 'bill' || table.has_bill_request;
 
+function tableNumber(number: string | number): string {
+    const raw = String(number);
+
+    return /^\d$/.test(raw) ? raw.padStart(2, '0') : raw;
+}
+
+function firstError(errors: Record<string, string>, fallback: string): string {
+    return Object.values(errors)[0] ?? fallback;
+}
+
+function paidMinorOf(order: BillOrder): number {
     return (
-        <button
-            type="button"
-            onClick={onClick}
-            aria-label={`Open table ${table.number}`}
-            className={[
-                'relative flex min-h-44 flex-col rounded-2xl border p-4',
-                'text-left shadow-sm transition',
-                'hover:-translate-y-0.5 hover:shadow-md',
-                'focus-visible:outline-2 focus-visible:outline-offset-2',
-                'focus-visible:outline-slate-900',
-                STATE_STYLES[table.state],
-                billRequested ? 'ring-2 ring-orange-300' : '',
-            ].join(' ')}
-        >
-            <div className="flex w-full items-start justify-between gap-2">
-                <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide opacity-70">
-                        Table
-                    </p>
-                    <p className="mt-1 text-3xl font-bold">{table.number}</p>
-                </div>
-                <ChevronRight size={18} className="opacity-60" />
-            </div>
-            <div className="mt-3 flex items-center gap-2 text-xs font-semibold">
-                <span
-                    className={[
-                        'h-2.5 w-2.5 rounded-full',
-                        DOT_STYLES[table.state],
-                        billRequested ? 'animate-pulse' : '',
-                    ].join(' ')}
-                />
-                {STATE_LABELS[table.state]}
-            </div>
-            <div className="mt-auto space-y-1 pt-3 text-xs">
-                <div className="flex items-center gap-1.5">
-                    <Users size={13} />
-                    <span>
-                        {table.party_size || 0} / {table.seats} guests
-                    </span>
-                </div>
-                {duration && (
-                    <div className="flex items-center gap-1.5">
-                        <Clock3 size={13} />
-                        <span>{duration} seated</span>
-                    </div>
-                )}
-                {table.open_bill_minor > 0 && (
-                    <p className="pt-1 text-sm font-bold">
-                        {money(table.open_bill_minor, table.currency)}
-                    </p>
-                )}
-                {table.pending_requests > 0 && (
-                    <p className="font-semibold">
-                        {table.pending_requests} pending request
-                        {table.pending_requests === 1 ? '' : 's'}
-                    </p>
-                )}
-            </div>
-        </button>
+        order.paid_minor ??
+        order.payments
+            .filter((payment) => payment.status === 'paid')
+            .reduce((total, payment) => total + payment.amount_minor, 0)
     );
 }
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+    return (
+        <section className="flex flex-col gap-3 border-t border-[var(--border-subtle)] pt-4">
+            <h3 className="text-label font-semibold text-[var(--text-secondary)]">
+                {title}
+            </h3>
+            {children}
+        </section>
+    );
+}
+
 function EmailReceiptForm({
     tableId,
     orderId,
@@ -232,10 +205,9 @@ function EmailReceiptForm({
 }) {
     const [email, setEmail] = useState('');
     const [sending, setSending] = useState(false);
-    const [sent, setSent] = useState(false);
-    const [emailError, setEmailError] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
-    const sendReceipt = (event: React.FormEvent<HTMLFormElement>) => {
+    const send = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
         if (sending || !email.trim()) {
@@ -243,8 +215,7 @@ function EmailReceiptForm({
         }
 
         setSending(true);
-        setSent(false);
-        setEmailError(null);
+        setError(null);
 
         router.post(
             `/app/tables/${tableId}/orders/${orderId}/receipt/email`,
@@ -253,330 +224,592 @@ function EmailReceiptForm({
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
-                    setSent(true);
+                    setEmail('');
+                    showToast({
+                        type: 'success',
+                        title: 'Receipt emailed',
+                        description: 'It is on its way to the guest.',
+                    });
                 },
-                onError: (errors) => {
-                    setEmailError(
+                onError: (errors) =>
+                    setError(
                         errors.email ??
-                            Object.values(errors)[0] ??
-                            'Unable to email receipt.',
-                    );
-                },
-                onFinish: () => {
-                    setSending(false);
-                },
+                            firstError(errors, 'Unable to email receipt.'),
+                    ),
+                onFinish: () => setSending(false),
             },
         );
     };
 
     return (
-        <form onSubmit={sendReceipt} className="space-y-2">
-            <label
-                htmlFor={`receipt-email-${orderId}`}
-                className="block text-sm font-medium"
-            >
-                Email receipt
-            </label>
+        <form onSubmit={send} className="flex flex-col gap-1.5">
+            <Label htmlFor={`receipt-email-${orderId}`}>Email receipt</Label>
 
             <div className="flex flex-col gap-2 sm:flex-row">
-                <input
+                <Input
                     id={`receipt-email-${orderId}`}
                     type="email"
                     autoComplete="email"
                     required
                     maxLength={254}
                     value={email}
-                    onChange={(event) => {
-                        setEmail(event.target.value);
-                        setSent(false);
-                        setEmailError(null);
-                    }}
                     placeholder="guest@example.com"
                     disabled={sending}
-                    className="min-h-11 min-w-0 flex-1 rounded-xl border px-3 py-2 text-sm"
+                    aria-invalid={error ? true : undefined}
+                    onChange={(event) => {
+                        setEmail(event.target.value);
+                        setError(null);
+                    }}
                 />
 
-                <button
+                <Button
                     type="submit"
-                    disabled={sending || !email.trim()}
-                    className="bg-action-primary min-h-11 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    variant="outline"
+                    loading={sending}
+                    disabled={!email.trim()}
                 >
-                    {sending ? 'Sending...' : 'Email Receipt'}
-                </button>
+                    <Mail className="size-4" aria-hidden />
+                    Send
+                </Button>
             </div>
 
-            {emailError && (
-                <p role="alert" className="text-sm text-red-600">
-                    {emailError}
-                </p>
-            )}
-
-            {sent && (
-                <p role="status" className="text-sm text-green-700">
-                    Receipt email queued successfully.
+            {error && (
+                <p
+                    role="alert"
+                    className="text-caption text-[var(--berry-500)]"
+                >
+                    {error}
                 </p>
             )}
         </form>
     );
 }
-function PaymentSection({
+
+function OrderBill({
     order,
-    action,
-    amount,
-    onAmountChange,
+    tableId,
+    busy,
+    canPay,
     onPayment,
-    splitWays,
-    onSplitWaysChange,
 }: {
     order: BillOrder;
-    action: Action;
-    amount: string;
-    onAmountChange: (value: string) => void;
-    onPayment: (method: PaymentMethod) => void;
-    splitWays: number;
-    onSplitWaysChange: (value: number) => void;
+    tableId: number;
+    busy: Busy;
+    canPay: boolean;
+    onPayment: (
+        order: BillOrder,
+        method: PaymentMethod,
+        amountMinor: number,
+        splitWays: number,
+    ) => void;
 }) {
-    const paidPayments = order.payments.filter(
-        (payment) => payment.status === 'paid',
+    const [splitOpen, setSplitOpen] = useState(false);
+    const [splitWays, setSplitWays] = useState(1);
+    const [amount, setAmount] = useState(() =>
+        amountInput(order.balance_minor),
     );
-    const paidMinor =
-        order.paid_minor ??
-        paidPayments.reduce(
-            (total, payment) => total + payment.amount_minor,
-            0,
-        );
+
+    const paidMinor = paidMinorOf(order);
     const totalMinor = order.total_minor ?? paidMinor + order.balance_minor;
-    const pendingPayment = order.payments.find(
-        (payment) => payment.status === 'pending',
+    const linesMinor = order.lines.reduce(
+        (sum, line) => sum + line.line_total_minor,
+        0,
     );
-    const canPay =
-        order.status === 'served' && order.balance_minor > 0 && action === null;
+    const serviceMinor = Math.max(0, totalMinor - linesMinor);
+
+    // Keep the default amount in step with the live balance.
+    const lastBalance = useRef(order.balance_minor);
+
+    useEffect(() => {
+        if (lastBalance.current !== order.balance_minor) {
+            lastBalance.current = order.balance_minor;
+            setAmount(
+                amountInput(
+                    splitWays > 1
+                        ? Math.min(
+                              order.balance_minor,
+                              Math.ceil(totalMinor / splitWays),
+                          )
+                        : order.balance_minor,
+                ),
+            );
+        }
+    }, [order.balance_minor, splitWays, totalMinor]);
+
+    const pendingOnline = order.payments.find(
+        (payment) =>
+            payment.status === 'pending' &&
+            !['cash', 'pos'].includes(payment.method),
+    );
+
     const enteredMinor = parseAmountMinor(amount);
-    const isValidAmount =
+    const validAmount =
         enteredMinor !== null && enteredMinor <= order.balance_minor;
+    const served = order.status === 'served';
+    const paying = busy === `pay-${order.id}`;
+    const disabled =
+        !canPay ||
+        !served ||
+        !validAmount ||
+        order.balance_minor <= 0 ||
+        pendingOnline !== undefined ||
+        busy !== null;
+
+    const pay = (method: PaymentMethod) => {
+        if (enteredMinor !== null) {
+            onPayment(order, method, enteredMinor, splitWays);
+        }
+    };
 
     return (
-        <section className="space-y-4 border-t border-slate-200 pt-4">
-            <h4 className="text-sm font-bold text-slate-950">
-                Payment & split bill
-            </h4>
-            <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-xl bg-slate-50 p-3">
-                    <p className="text-xs text-slate-500">Total</p>
-                    <p className="mt-1 text-sm font-bold text-slate-900">
-                        {money(totalMinor, order.currency)}
-                    </p>
-                </div>
-                <div className="rounded-xl bg-emerald-50 p-3">
-                    <p className="text-xs text-emerald-700">Paid</p>
-                    <p className="mt-1 text-sm font-bold text-emerald-900">
-                        {money(paidMinor, order.currency)}
-                    </p>
-                </div>
-                <div className="rounded-xl bg-amber-50 p-3">
-                    <p className="text-xs text-amber-700">Remaining</p>
-                    <p className="mt-1 text-sm font-bold text-amber-900">
-                        {money(order.balance_minor, order.currency)}
-                    </p>
-                </div>
+        <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] p-4">
+            <div className="flex items-center justify-between gap-3">
+                <Numeric className="text-title-3 font-medium">
+                    #{order.id}
+                </Numeric>
+                <StatusPill status={order.status} />
             </div>
-            {paidPayments.length > 0 && (
-                <div className="space-y-2">
-                    <p className="text-xs font-semibold text-slate-600">
-                        Payments received
-                    </p>
-                    {paidPayments.map((payment) => (
-                        <div
-                            key={payment.id}
-                            className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 text-sm"
-                        >
-                            <span className="flex items-center gap-2 font-medium text-emerald-900">
-                                <Check size={15} />
-                                {payment.method.toUpperCase()}
-                            </span>
-                            <span className="font-bold text-emerald-900">
-                                {money(payment.amount_minor, order.currency)}
-                            </span>
+
+            <ul className="flex flex-col gap-2">
+                {order.lines.map((line) => (
+                    <li key={line.id} className="text-body flex gap-3">
+                        <Numeric className="text-[var(--text-tertiary)]">
+                            {line.qty}×
+                        </Numeric>
+
+                        <div className="min-w-0 flex-1">
+                            <span className="break-words">{line.name}</span>
+
+                            {line.note && (
+                                <span className="text-caption mt-1 block w-fit break-words rounded-[var(--radius-sm)] bg-[var(--saffron-50)] px-2 py-0.5 text-[var(--saffron-700)]">
+                                    {line.note}
+                                </span>
+                            )}
                         </div>
-                    ))}
-                </div>
-            )}
-            {order.status === 'served' && order.balance_minor > 0 && (
-                <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex items-center justify-between gap-2">
-                        <label
-                            htmlFor={`payment-amount-${order.id}`}
-                            className="text-sm font-semibold text-slate-900"
-                        >
-                            Payment amount
-                        </label>
-                        <button
-                            type="button"
-                            disabled={action !== null}
-                            onClick={() =>
-                                onAmountChange(amountInput(order.balance_minor))
-                            }
-                            className="text-xs font-semibold text-sky-700 hover:underline disabled:opacity-50"
-                        >
-                            Pay remaining
-                        </button>
-                    </div>
-                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-200 bg-sky-50 p-3">
-                        <label
-                            htmlFor={`split-ways-${order.id}`}
-                            className="text-sm font-semibold text-slate-900"
-                        >
-                            Split between
-                        </label>
-                        <select
-                            id={`split-ways-${order.id}`}
-                            value={splitWays}
-                            disabled={action !== null}
-                            onChange={(event) => {
-                                const ways = Number(event.target.value);
-                                onSplitWaysChange(ways);
-                                onAmountChange(
-                                    amountInput(
-                                        Math.min(
-                                            order.balance_minor,
-                                            Math.ceil(totalMinor / ways),
-                                        ),
-                                    ),
-                                );
-                            }}
-                            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-950"
-                        >
-                            {Array.from(
-                                { length: 8 },
-                                (_, index) => index + 1,
-                            ).map((ways) => (
-                                <option key={ways} value={ways}>
-                                    {ways} {ways === 1 ? 'person' : 'people'}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <input
-                            id={`payment-amount-${order.id}`}
-                            type="text"
-                            inputMode="decimal"
-                            value={amount}
-                            disabled={action !== null}
-                            onChange={(event) =>
-                                onAmountChange(event.target.value)
-                            }
-                            placeholder="0.00"
-                            className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-base font-semibold text-slate-950 focus-visible:outline-2 focus-visible:outline-sky-600 disabled:opacity-50"
-                        />
-                        <span className="text-sm font-semibold text-slate-600">
-                            {order.currency}
-                        </span>
-                    </div>
-                    {!isValidAmount && amount.trim() !== '' && (
-                        <p className="text-xs text-red-700">
-                            Enter an amount greater than zero and no more than
-                            the remaining balance.
-                        </p>
-                    )}
-                    {pendingPayment &&
-                        !['cash', 'pos'].includes(pendingPayment.method) && (
-                            <p className="text-xs text-amber-700">
-                                This order has a pending online payment. Its
-                                status must be resolved before collecting
-                                another payment.
-                            </p>
-                        )}
-                    <div className="grid grid-cols-2 gap-2">
-                        <button
-                            type="button"
-                            disabled={
-                                !canPay ||
-                                !isValidAmount ||
-                                (pendingPayment !== undefined &&
-                                    pendingPayment.method !== 'cash')
-                            }
-                            onClick={() => onPayment('cash')}
-                            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-3 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                            {action?.type === 'payment' &&
-                            action.id === order.id ? (
-                                <LoaderCircle
-                                    size={17}
-                                    className="animate-spin"
-                                />
-                            ) : (
-                                <Banknote size={17} />
-                            )}
-                            Collect Cash
-                        </button>
-                        <button
-                            type="button"
-                            disabled={
-                                !canPay ||
-                                !isValidAmount ||
-                                (pendingPayment !== undefined &&
-                                    pendingPayment.method !== 'pos')
-                            }
-                            onClick={() => onPayment('pos')}
-                            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 px-3 py-3 text-sm font-bold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                            {action?.type === 'payment' &&
-                            action.id === order.id ? (
-                                <LoaderCircle
-                                    size={17}
-                                    className="animate-spin"
-                                />
-                            ) : (
-                                <CreditCard size={17} />
-                            )}
-                            Collect POS
-                        </button>
-                    </div>
-                    <p className="text-xs text-slate-500">
-                        You can collect part of the bill now and settle the
-                        remaining balance later.
-                    </p>
-                </div>
-            )}
-            {order.status !== 'served' && (
-                <p className="text-xs text-amber-700">
-                    Payment becomes available after the order is served.
+
+                        <Numeric>
+                            {money(line.line_total_minor, order.currency)}
+                        </Numeric>
+                    </li>
+                ))}
+            </ul>
+
+            <PriceSummary
+                subtotal={money(linesMinor, order.currency)}
+                service={
+                    serviceMinor > 0
+                        ? money(serviceMinor, order.currency)
+                        : undefined
+                }
+                total={money(totalMinor, order.currency)}
+                afterTotal={[
+                    ...(paidMinor > 0
+                        ? [
+                              {
+                                  label: 'Paid',
+                                  value: money(paidMinor, order.currency),
+                                  tone: 'positive' as const,
+                              },
+                          ]
+                        : []),
+                    {
+                        label: 'Due',
+                        value: money(order.balance_minor, order.currency),
+                        tone: 'warning' as const,
+                    },
+                ]}
+            />
+
+            {!served && (
+                <p className="text-caption rounded-[var(--radius-md)] bg-[var(--warning-bg)] px-3 py-2 text-[var(--warning-fg)]">
+                    Payment opens once the order is served.
                 </p>
             )}
-        </section>
+
+            {pendingOnline && (
+                <p className="text-caption rounded-[var(--radius-md)] bg-[var(--warning-bg)] px-3 py-2 text-[var(--warning-fg)]">
+                    An online payment is still pending on this order. Resolve it
+                    before collecting at the table.
+                </p>
+            )}
+
+            {served && order.balance_minor > 0 && canPay && (
+                <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                            <Label htmlFor={`amount-${order.id}`}>
+                                Amount to collect
+                            </Label>
+
+                            <button
+                                type="button"
+                                className="text-label font-semibold text-[var(--text-link)] hover:underline"
+                                onClick={() => {
+                                    setSplitWays(1);
+                                    setAmount(amountInput(order.balance_minor));
+                                }}
+                            >
+                                Whole balance
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <Input
+                                id={`amount-${order.id}`}
+                                inputMode="decimal"
+                                value={amount}
+                                dir="ltr"
+                                className="font-mono"
+                                disabled={busy !== null}
+                                aria-invalid={
+                                    !validAmount && amount.trim() !== ''
+                                        ? true
+                                        : undefined
+                                }
+                                onChange={(event) =>
+                                    setAmount(event.target.value)
+                                }
+                            />
+                            <span className="text-label font-mono text-[var(--text-tertiary)]">
+                                {order.currency}
+                            </span>
+                        </div>
+
+                        {!validAmount && amount.trim() !== '' && (
+                            <p className="text-caption text-[var(--berry-500)]">
+                                Enter more than zero and no more than the
+                                balance due.
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <Button
+                            type="button"
+                            variant="primary"
+                            loading={paying}
+                            disabled={disabled}
+                            onClick={() => pay('pos')}
+                        >
+                            <CreditCard className="size-4" aria-hidden />
+                            Take card at table
+                        </Button>
+
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            loading={paying}
+                            disabled={disabled}
+                            onClick={() => pay('cash')}
+                        >
+                            <Banknote className="size-4" aria-hidden />
+                            Mark cash received
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            <Button
+                type="button"
+                variant="outline"
+                aria-expanded={splitOpen}
+                onClick={() => setSplitOpen((open) => !open)}
+            >
+                <Split className="size-4" aria-hidden />
+                Split · print · email
+            </Button>
+
+            {splitOpen && (
+                <div className="flex flex-col gap-4 rounded-[var(--radius-md)] bg-[var(--surface-sunken)] p-3">
+                    {served && order.balance_minor > 0 && canPay && (
+                        <div className="flex flex-col gap-1.5">
+                            <Label htmlFor={`split-${order.id}`}>
+                                Split between
+                            </Label>
+
+                            <div
+                                id={`split-${order.id}`}
+                                role="group"
+                                className="flex flex-wrap gap-2"
+                            >
+                                {[1, 2, 3, 4, 5, 6].map((ways) => (
+                                    <ChipFilter
+                                        key={ways}
+                                        type="segment"
+                                        active={splitWays === ways}
+                                        onClick={() => {
+                                            setSplitWays(ways);
+                                            setAmount(
+                                                amountInput(
+                                                    Math.min(
+                                                        order.balance_minor,
+                                                        Math.ceil(
+                                                            totalMinor / ways,
+                                                        ),
+                                                    ),
+                                                ),
+                                            );
+                                        }}
+                                    >
+                                        {ways === 1
+                                            ? 'One bill'
+                                            : `${ways} ways`}
+                                    </ChipFilter>
+                                ))}
+                            </div>
+
+                            {splitWays > 1 && (
+                                <p className="text-caption text-[var(--text-secondary)]">
+                                    Each share is{' '}
+                                    <Numeric>
+                                        {money(
+                                            Math.ceil(totalMinor / splitWays),
+                                            order.currency,
+                                        )}
+                                    </Numeric>
+                                    . Collect one share at a time above.
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    <Button asChild variant="outline">
+                        <a
+                            href={`/app/tables/${tableId}/orders/${order.id}/receipt`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <Printer className="size-4" aria-hidden />
+                            Print receipt
+                        </a>
+                    </Button>
+
+                    <EmailReceiptForm tableId={tableId} orderId={order.id} />
+                </div>
+            )}
+        </div>
     );
 }
+
+function TableCheckout({
+    detail,
+    loading,
+    busy,
+    canPay,
+    partySize,
+    onPartySizeChange,
+    onSeat,
+    onFree,
+    onAcknowledge,
+    onPayment,
+}: {
+    detail: TableDetail | null;
+    loading: boolean;
+    busy: Busy;
+    canPay: boolean;
+    partySize: string;
+    onPartySizeChange: (value: string) => void;
+    onSeat: () => void;
+    onFree: () => void;
+    onAcknowledge: (requestId: number) => void;
+    onPayment: (
+        order: BillOrder,
+        method: PaymentMethod,
+        amountMinor: number,
+        splitWays: number,
+    ) => void;
+}) {
+    if (!detail) {
+        return loading ? (
+            <div className="flex flex-col gap-3" aria-busy="true">
+                <Skeleton width="33%" height="24px" />
+                <Skeleton height="96px" />
+                <Skeleton height="44px" />
+            </div>
+        ) : null;
+    }
+
+    const unpaid = detail.orders.length > 0;
+    const freeDisabled =
+        busy !== null || unpaid || detail.table.state === 'free';
+
+    const freeButton = (
+        <Button
+            type="button"
+            variant="outline"
+            fullWidth
+            loading={busy === 'free'}
+            disabled={freeDisabled}
+            onClick={onFree}
+        >
+            Free the table
+        </Button>
+    );
+
+    return (
+        <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span className="text-body flex items-center gap-1.5 text-[var(--text-secondary)]">
+                    <Users className="size-4" aria-hidden />
+                    <Numeric>
+                        {detail.table.party_size} / {detail.table.seats}
+                    </Numeric>{' '}
+                    guests
+                </span>
+
+                <span className="text-body text-[var(--text-secondary)]">
+                    Due{' '}
+                    <Numeric className="font-semibold text-[var(--text-primary)]">
+                        {money(detail.open_bill_minor, detail.currency)}
+                    </Numeric>
+                </span>
+            </div>
+
+            {detail.table.state === 'free' && (
+                <Section title="Seat guests">
+                    <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="floor-party-size">
+                            Party size (max {detail.table.seats})
+                        </Label>
+                        <Input
+                            id="floor-party-size"
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            max={detail.table.seats}
+                            step={1}
+                            value={partySize}
+                            disabled={busy !== null}
+                            onChange={(event) =>
+                                onPartySizeChange(event.target.value)
+                            }
+                        />
+                    </div>
+
+                    <Button
+                        type="button"
+                        variant="primary"
+                        fullWidth
+                        loading={busy === 'seat'}
+                        disabled={busy !== null || detail.table.seats < 1}
+                        onClick={onSeat}
+                    >
+                        <Users className="size-4" aria-hidden />
+                        Seat guests
+                    </Button>
+                </Section>
+            )}
+
+            {detail.service_requests.length > 0 && (
+                <Section title="Waiting on you">
+                    {detail.service_requests.map((request) => (
+                        <div
+                            key={request.id}
+                            className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--clay-200)] bg-[var(--surface-brand-soft)] p-3"
+                        >
+                            <span className="text-body font-semibold text-[var(--text-brand)]">
+                                {REQUEST_LABELS[request.kind] ?? request.kind}
+                            </span>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                loading={busy === `ack-${request.id}`}
+                                disabled={busy !== null}
+                                onClick={() => onAcknowledge(request.id)}
+                            >
+                                <Check className="size-4" aria-hidden />
+                                Acknowledge
+                            </Button>
+                        </div>
+                    ))}
+                </Section>
+            )}
+
+            <Section title="Open bill">
+                {unpaid ? (
+                    detail.orders.map((order) => (
+                        <OrderBill
+                            key={order.id}
+                            order={order}
+                            tableId={detail.table.id}
+                            busy={busy}
+                            canPay={canPay}
+                            onPayment={onPayment}
+                        />
+                    ))
+                ) : (
+                    <p className="text-body text-[var(--text-tertiary)]">
+                        Nothing left to pay at this table.
+                    </p>
+                )}
+            </Section>
+
+            <div className="border-t border-[var(--border-subtle)] pt-4">
+                {unpaid ? (
+                    <Tooltip content="Settle every order before freeing the table.">
+                        {/* A disabled button swallows hover, so wrap it. */}
+                        <span tabIndex={0} className="block">
+                            {freeButton}
+                        </span>
+                    </Tooltip>
+                ) : (
+                    freeButton
+                )}
+
+                {unpaid && (
+                    <p className="text-caption mt-2 text-center text-[var(--text-tertiary)]">
+                        A table cannot be freed while a bill is unpaid.
+                    </p>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function Floor({ tables = [] }: Props) {
+    const { qresto, capabilities } = usePage().props as unknown as {
+        qresto?: { live?: { floor_interval?: number } };
+        capabilities?: string[];
+    };
+    const interval = qresto?.live?.floor_interval ?? 8000;
+    const canPay = capabilities?.includes('take_payment') ?? false;
+
+    const isMobile = useIsMobile();
+    const { isPaused } = useLiveData(interval, { only: ['tables'] });
+
+    const [filter, setFilter] = useState<StateFilter>('all');
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [detail, setDetail] = useState<TableDetail | null>(null);
     const [loading, setLoading] = useState(false);
-    const [action, setAction] = useState<Action>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [busy, setBusy] = useState<Busy>(null);
     const [now, setNow] = useState(0);
     const [partySize, setPartySize] = useState('1');
-    const [paymentAmounts, setPaymentAmounts] = useState<
-        Record<number, string>
-    >({});
-    const [splitWays, setSplitWays] = useState<Record<number, number>>({});
+
     const selectedIdRef = useRef<number | null>(null);
-    const detailRequestRef = useRef(0);
-    const selectedTable = useMemo(
-        () => tables.find((table) => table.id === selectedId),
-        [tables, selectedId],
-    );
+    const requestRef = useRef(0);
+
     const counts = useMemo(
-        () => ({
-            free: tables.filter((table) => table.state === 'free').length,
-            seated: tables.filter((table) => table.state === 'seated').length,
-            ordered: tables.filter((table) => table.state === 'ordered').length,
-            bill: tables.filter((table) => table.state === 'bill').length,
-        }),
+        () =>
+            Object.fromEntries(
+                STATES.map((state) => [
+                    state,
+                    tables.filter((table) => table.state === state).length,
+                ]),
+            ) as Record<TableState, number>,
         [tables],
     );
-    const occupied = tables.length - counts.free;
+
+    const visibleTables =
+        filter === 'all'
+            ? tables
+            : tables.filter((table) => table.state === filter);
+
+    const selectedTable = tables.find((table) => table.id === selectedId);
+
     const loadDetail = useCallback(async (id: number, showLoader = true) => {
-        const requestId = ++detailRequestRef.current;
+        const requestId = ++requestRef.current;
 
         if (showLoader) {
             setLoading(true);
@@ -584,9 +817,7 @@ export default function Floor({ tables = [] }: Props) {
 
         try {
             const response = await fetch(`/app/tables/${id}`, {
-                headers: {
-                    Accept: 'application/json',
-                },
+                headers: { Accept: 'application/json' },
                 credentials: 'same-origin',
             });
 
@@ -597,729 +828,359 @@ export default function Floor({ tables = [] }: Props) {
             const data: TableDetail = await response.json();
 
             if (
-                selectedIdRef.current !== id ||
-                detailRequestRef.current !== requestId
-            ) {
-                return;
-            }
-
-            setDetail(data);
-            setError(null);
-        } catch (cause) {
-            if (
                 selectedIdRef.current === id &&
-                detailRequestRef.current === requestId &&
-                showLoader
+                requestRef.current === requestId
             ) {
-                setError(
-                    cause instanceof Error
-                        ? cause.message
-                        : 'Unable to load table.',
-                );
+                setDetail(data);
+            }
+        } catch (cause) {
+            if (showLoader && selectedIdRef.current === id) {
+                showToast({
+                    type: 'error',
+                    title: 'Could not open the table',
+                    description:
+                        cause instanceof Error ? cause.message : undefined,
+                });
             }
         } finally {
-            if (
-                showLoader &&
-                selectedIdRef.current === id &&
-                detailRequestRef.current === requestId
-            ) {
+            if (showLoader && requestRef.current === requestId) {
                 setLoading(false);
             }
         }
     }, []);
+
     const selectTable = (id: number) => {
         selectedIdRef.current = id;
         setSelectedId(id);
-        setPartySize('1');
-        setPaymentAmounts({});
         setDetail(null);
-        setLoading(true);
-        setError(null);
+        setPartySize('1');
         void loadDetail(id);
     };
+
     const closeDetail = () => {
-        detailRequestRef.current += 1;
+        requestRef.current += 1;
         selectedIdRef.current = null;
         setSelectedId(null);
         setDetail(null);
         setLoading(false);
-        setError(null);
-        setPaymentAmounts({});
     };
-    const refreshFloor = useCallback(() => {
-        router.reload({
-            only: ['tables'],
-        });
-    }, []);
+
+    // Elapsed times on the tiles age between polls.
     useEffect(() => {
-        const updateTime = () => {
-            setNow(Date.now());
-        };
-        const initial = window.setTimeout(updateTime, 0);
-        const interval = window.setInterval(updateTime, 60000);
+        const update = () => setNow(Date.now());
+        const first = window.setTimeout(update, 0);
+        const tick = window.setInterval(update, 30_000);
 
         return () => {
-            window.clearTimeout(initial);
-            window.clearInterval(interval);
+            window.clearTimeout(first);
+            window.clearInterval(tick);
         };
     }, []);
-    useEffect(() => {
-        const interval = window.setInterval(() => {
-            refreshFloor();
-        }, 8000);
 
-        return () => {
-            window.clearInterval(interval);
-        };
-    }, [refreshFloor]);
+    // The open bill follows the floor's polling rhythm.
     useEffect(() => {
-        if (selectedId === null) {
+        if (selectedId === null || isPaused) {
             return;
         }
 
-        const interval = window.setInterval(() => {
-            void loadDetail(selectedId, false);
-        }, 8000);
+        const timer = window.setInterval(
+            () => void loadDetail(selectedId, false),
+            interval,
+        );
 
-        return () => {
-            window.clearInterval(interval);
-        };
-    }, [selectedId, loadDetail]);
-    useEffect(() => {
-        if (selectedId === null) {
-            return;
+        return () => window.clearInterval(timer);
+    }, [selectedId, isPaused, interval, loadDetail]);
+
+    const afterAction = () => {
+        router.reload({ only: ['tables'] });
+
+        if (selectedIdRef.current !== null) {
+            void loadDetail(selectedIdRef.current, false);
         }
+    };
 
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                closeDetail();
-            }
-        };
-        window.addEventListener('keydown', onKeyDown);
-
-        return () => {
-            window.removeEventListener('keydown', onKeyDown);
-        };
-    }, [selectedId]);
-    const performAction = (
+    const post = (
         url: string,
         data: Record<string, string | number>,
-        nextAction: Exclude<Action, null>,
+        next: Exclude<Busy, null>,
+        success: string,
     ) => {
-        setAction(nextAction);
-        setError(null);
+        setBusy(next);
+
         router.post(url, data, {
             preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
-                refreshFloor();
-                const currentId = selectedIdRef.current;
-
-                if (currentId !== null) {
-                    void loadDetail(currentId);
-                }
+                showToast({ type: 'success', title: success });
+                afterAction();
             },
-            onError: (errors) => {
-                setError(
-                    Object.values(errors)[0] ?? 'Unable to complete action.',
-                );
-            },
-            onFinish: () => {
-                setAction(null);
-            },
+            onError: (errors) =>
+                showToast({
+                    type: 'error',
+                    title: 'That did not go through',
+                    description: firstError(
+                        errors,
+                        'Unable to complete action.',
+                    ),
+                }),
+            onFinish: () => setBusy(null),
         });
     };
-    const acknowledge = (requestId: number) => {
-        if (action !== null) {
-            return;
-        }
 
-        setAction({
-            type: 'acknowledge',
-            id: requestId,
-        });
-        setError(null);
-        router.patch(
-            `/service-requests/${requestId}/acknowledge`,
-            {},
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    refreshFloor();
-                    const currentId = selectedIdRef.current;
-
-                    if (currentId !== null) {
-                        void loadDetail(currentId);
-                    }
-                },
-                onError: (errors) => {
-                    setError(
-                        Object.values(errors)[0] ??
-                            'Could not acknowledge request.',
-                    );
-                },
-                onFinish: () => {
-                    setAction(null);
-                },
-            },
-        );
-    };
-    const seatTable = () => {
-        if (selectedId === null || action !== null || !detail) {
-            return;
-        }
-
-        if (detail.table.state !== 'free') {
-            setError('Only free tables can be seated.');
-
+    const seat = () => {
+        if (selectedId === null || !detail || busy !== null) {
             return;
         }
 
         const count = Number(partySize);
 
         if (
-            partySize.trim() === '' ||
             !Number.isInteger(count) ||
             count < 1 ||
             count > detail.table.seats
         ) {
-            setError(`Enter a party size between 1 and ${detail.table.seats}.`);
+            showToast({
+                type: 'error',
+                title: `Enter a party size between 1 and ${detail.table.seats}`,
+            });
 
             return;
         }
 
-        performAction(
+        post(
             `/app/tables/${selectedId}/seat`,
             { party_size: count },
-            { type: 'seat', id: selectedId },
+            'seat',
+            `Table ${tableNumber(detail.table.number)} seated`,
         );
     };
-    const freeTable = () => {
-        if (selectedId === null || action !== null) {
+
+    const free = () => {
+        if (selectedId === null || !detail || busy !== null) {
             return;
         }
 
-        if (!window.confirm('Free this table and close its active session?')) {
-            return;
-        }
-
-        performAction(
+        // The server refuses while anything is unpaid; its reason is toasted.
+        post(
             `/app/tables/${selectedId}/free`,
             {},
-            { type: 'free', id: selectedId },
+            'free',
+            `Table ${tableNumber(detail.table.number)} is free`,
         );
     };
-    const settlePayment = (order: BillOrder, method: PaymentMethod) => {
-        if (selectedId === null || action !== null) {
+
+    const acknowledge = (requestId: number) => {
+        if (busy !== null) {
             return;
         }
 
-        if (order.status !== 'served') {
-            setError('The order must be served before payment.');
+        setBusy(`ack-${requestId}`);
 
-            return;
-        }
-
-        const amountText =
-            paymentAmounts[order.id] ?? amountInput(order.balance_minor);
-        const amountMinor = parseAmountMinor(amountText);
-
-        if (amountMinor === null || amountMinor > order.balance_minor) {
-            setError(
-                'Enter a valid amount not exceeding the remaining balance.',
-            );
-
-            return;
-        }
-
-        const pendingPayment = order.payments.find(
-            (payment) => payment.status === 'pending',
+        router.patch(
+            `/service-requests/${requestId}/acknowledge`,
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: afterAction,
+                onError: (errors) =>
+                    showToast({
+                        type: 'error',
+                        title: 'Could not acknowledge',
+                        description: firstError(errors, 'Please try again.'),
+                    }),
+                onFinish: () => setBusy(null),
+            },
         );
+    };
 
-        if (pendingPayment !== undefined && pendingPayment.method !== method) {
-            setError('Payment method does not match the pending payment.');
-
+    const pay = (
+        order: BillOrder,
+        method: PaymentMethod,
+        amountMinor: number,
+        splitWays: number,
+    ) => {
+        if (selectedId === null || busy !== null) {
             return;
         }
 
-        if (
-            !window.confirm(
-                `Collect ${money(amountMinor, order.currency)} via ${method.toUpperCase()} for order #${order.id}?`,
-            )
-        ) {
-            return;
-        }
-
-        performAction(
+        post(
             `/app/tables/${selectedId}/payments`,
             {
                 order_id: order.id,
                 method,
                 amount_minor: amountMinor,
-                split_ways: splitWays[order.id] ?? 1,
+                split_ways: splitWays,
             },
-            {
-                type: 'payment',
-                id: order.id,
-            },
+            `pay-${order.id}`,
+            `${money(amountMinor, order.currency)} ${
+                method === 'cash' ? 'cash received' : 'taken by card'
+            }`,
         );
-        setPaymentAmounts((current) => {
-            const updated = { ...current };
-            const ways = splitWays[order.id] ?? 1;
-
-            if (ways > 1) {
-                const totalMinor =
-                    order.total_minor ??
-                    order.balance_minor + (order.paid_minor ?? 0);
-                const shareMinor = Math.ceil(totalMinor / ways);
-                const nextBalance = Math.max(
-                    0,
-                    order.balance_minor - amountMinor,
-                );
-
-                if (nextBalance > 0) {
-                    updated[order.id] = amountInput(
-                        Math.min(shareMinor, nextBalance),
-                    );
-                } else {
-                    delete updated[order.id];
-                }
-            } else {
-                delete updated[order.id];
-            }
-
-            return updated;
-        });
     };
+
+    const checkout = (
+        <TableCheckout
+            detail={detail}
+            loading={loading}
+            busy={busy}
+            canPay={canPay}
+            partySize={partySize}
+            onPartySizeChange={setPartySize}
+            onSeat={seat}
+            onFree={free}
+            onAcknowledge={acknowledge}
+            onPayment={pay}
+        />
+    );
+
+    const selectedTitle = selectedTable
+        ? `Table ${tableNumber(selectedTable.number)}`
+        : 'Table';
 
     return (
         <>
-            <Head title="Floor Map" />
-            <main className="mx-auto w-full max-w-7xl space-y-6 px-4 pb-32 pt-6 sm:px-6 lg:px-8">
-                <header className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                        <p className="text-sm font-medium text-slate-500">
-                            Restaurant operations
-                        </p>
-                        <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">
-                            Floor Map
-                        </h1>
-                        <p className="mt-1 text-sm text-slate-500">
-                            Live table occupancy and checkout
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={refreshFloor}
-                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
+            <Head title="Floor" />
+
+            <div className="flex flex-col gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div
+                        className="flex flex-wrap gap-2"
+                        role="group"
+                        aria-label="Filter tables by state"
                     >
-                        <RefreshCw size={16} />
-                        Refresh
-                    </button>
-                </header>
-                <section
-                    aria-label="Table status legend"
-                    className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
-                >
-                    {[
-                        {
-                            label: 'Total tables',
-                            value: tables.length,
-                            dot: 'bg-slate-600',
-                        },
-                        {
-                            label: 'Free',
-                            value: counts.free,
-                            dot: DOT_STYLES.free,
-                        },
-                        {
-                            label: 'Seated',
-                            value: counts.seated,
-                            dot: DOT_STYLES.seated,
-                        },
-                        {
-                            label: 'Ordered',
-                            value: counts.ordered,
-                            dot: DOT_STYLES.ordered,
-                        },
-                        {
-                            label: 'Bill requested',
-                            value: counts.bill,
-                            dot: DOT_STYLES.bill,
-                        },
-                    ].map((stat) => (
-                        <div
-                            key={stat.label}
-                            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                        <ChipFilter
+                            type="segment"
+                            active={filter === 'all'}
+                            onClick={() => setFilter('all')}
                         >
-                            <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                            {`All (${tables.length})`}
+                        </ChipFilter>
+
+                        {STATES.map((state) => (
+                            <ChipFilter
+                                key={state}
+                                type="segment"
+                                active={filter === state}
+                                onClick={() => setFilter(state)}
+                            >
                                 <span
-                                    className={`h-2 w-2 rounded-full ${stat.dot}`}
+                                    aria-hidden="true"
+                                    className="me-1.5 size-2 rounded-full"
+                                    style={{
+                                        backgroundColor: STATE_DOT[state],
+                                    }}
                                 />
-                                {stat.label}
-                            </div>
-                            <p className="mt-2 text-2xl font-bold text-slate-950">
-                                {stat.value}
-                            </p>
-                        </div>
-                    ))}
-                </section>
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-slate-600">
-                        {occupied} occupied of {tables.length} tables
-                    </p>
-                    <p className="flex items-center gap-1.5 text-xs text-slate-500">
-                        <RefreshCw size={13} />
-                        Auto-refresh every 8 seconds
-                    </p>
-                </div>
-                {tables.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-                        <h2 className="font-semibold text-slate-900">
-                            No tables yet
-                        </h2>
-                        <p className="mt-2 text-sm text-slate-500">
-                            Tables will appear here when they are configured for
-                            this restaurant.
-                        </p>
+                                {`${tableStateLabels[state]} (${counts[state]})`}
+                            </ChipFilter>
+                        ))}
                     </div>
+
+                    <div className="flex items-center gap-3">
+                        <span className="text-caption text-[var(--text-tertiary)]">
+                            Tap a table to open its bill
+                        </span>
+                    </div>
+                </div>
+
+                {tables.length === 0 ? (
+                    <Card>
+                        <EmptyState
+                            headline="No tables yet"
+                            body="Tables appear here once they are set up for this restaurant."
+                        />
+                    </Card>
                 ) : (
                     <section
                         aria-label="Restaurant tables"
                         className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4"
                     >
-                        {tables.map((table) => (
-                            <FloorTile
-                                key={table.id}
-                                table={table}
-                                now={now}
-                                onClick={() => selectTable(table.id)}
-                            />
-                        ))}
+                        {visibleTables.map((table) => {
+                            const minutes = minutesSince(table.seated_at, now);
+                            const meta = [
+                                table.open_bill_minor > 0
+                                    ? money(
+                                          table.open_bill_minor,
+                                          table.currency,
+                                      )
+                                    : null,
+                                minutes !== null ? `${minutes} min` : null,
+                            ]
+                                .filter(Boolean)
+                                .join(' · ');
+
+                            return (
+                                <TableTile
+                                    key={table.id}
+                                    table={tableNumber(table.number)}
+                                    state={table.state}
+                                    seats={`${table.seats} seats`}
+                                    meta={
+                                        meta || table.pending_requests > 0 ? (
+                                            <span className="flex flex-col gap-0.5">
+                                                {meta && (
+                                                    <Numeric>{meta}</Numeric>
+                                                )}
+                                                {table.pending_requests > 0 && (
+                                                    <span className="font-semibold">
+                                                        {table.pending_requests}{' '}
+                                                        {table.pending_requests ===
+                                                        1
+                                                            ? 'request'
+                                                            : 'requests'}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        ) : undefined
+                                    }
+                                    pulse={
+                                        table.state === 'bill' ||
+                                        table.has_bill_request
+                                    }
+                                    selected={selectedId === table.id}
+                                    ariaLabel={`Open table ${tableNumber(table.number)}, ${tableStateLabels[table.state]}`}
+                                    onClick={() => selectTable(table.id)}
+                                />
+                            );
+                        })}
                     </section>
                 )}
-            </main>
-            {selectedId !== null && (
-                <div className="fixed inset-0 z-[60] flex items-end justify-center md:items-stretch md:justify-end">
-                    <button
-                        type="button"
-                        aria-label="Close table details"
-                        onClick={closeDetail}
-                        className="absolute inset-0 bg-slate-950/50"
-                    />
-                    <section
-                        role="dialog"
-                        aria-modal="true"
-                        aria-label={`Table ${selectedTable?.number ?? ''} details`}
-                        className="relative z-10 h-[90dvh] max-h-[90dvh] w-full touch-pan-y overflow-y-auto overscroll-contain rounded-t-3xl bg-white shadow-2xl md:max-h-none md:max-w-lg md:rounded-none"
-                    >
-                        <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-slate-200 md:hidden" />
-                        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
-                            <div>
-                                <p className="text-xs font-medium text-slate-500">
-                                    Table details
-                                </p>
-                                <h2 className="text-xl font-bold text-slate-950">
-                                    Table {selectedTable?.number}
-                                </h2>
-                            </div>
-                            <button
+
+                {/* Desktop and tablet: the checkout card sits below the grid. */}
+                {selectedId !== null && !isMobile && (
+                    <Card aria-label={`${selectedTitle} checkout`}>
+                        <div className="mb-4 flex items-center gap-3">
+                            <h2 className="font-display text-title-2 flex-1 font-semibold">
+                                <Numeric>{selectedTitle}</Numeric>
+                            </h2>
+                            <Button
                                 type="button"
-                                aria-label="Close"
+                                variant="ghost"
+                                size="sm"
                                 onClick={closeDetail}
-                                className="rounded-lg p-2 hover:bg-slate-100"
                             >
-                                <X size={20} />
-                            </button>
+                                Close
+                            </Button>
                         </div>
-                        <div className="space-y-5 p-5 pb-[calc(7rem+env(safe-area-inset-bottom))]">
-                            {loading && !detail && (
-                                <div className="flex items-center gap-2 py-8 text-sm text-slate-500">
-                                    <LoaderCircle
-                                        size={18}
-                                        className="animate-spin"
-                                    />
-                                    Loading table details...
-                                </div>
-                            )}
-                            {error && (
-                                <div
-                                    role="alert"
-                                    className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
-                                >
-                                    {error}
-                                </div>
-                            )}
-                            {detail && (
-                                <>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="rounded-xl bg-slate-50 p-3">
-                                            <p className="text-xs text-slate-500">
-                                                Guests
-                                            </p>
-                                            <p className="mt-1 font-bold">
-                                                {detail.table.party_size} /{' '}
-                                                {detail.table.seats}
-                                            </p>
-                                        </div>
-                                        <div className="rounded-xl bg-slate-50 p-3">
-                                            <p className="text-xs text-slate-500">
-                                                Open bill
-                                            </p>
-                                            <p className="mt-1 font-bold">
-                                                {money(
-                                                    detail.open_bill_minor,
-                                                    detail.currency,
-                                                )}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    {detail.table.state === 'free' && (
-                                        <section className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                                            <h3 className="font-bold text-emerald-950">
-                                                Seat guests
-                                            </h3>
-                                            <p className="text-sm text-emerald-800">
-                                                Choose a party size for this
-                                                free table.
-                                            </p>
-                                            <label
-                                                htmlFor="floor-party-size"
-                                                className="block text-sm font-semibold text-emerald-950"
-                                            >
-                                                Party size (max{' '}
-                                                {detail.table.seats})
-                                            </label>
-                                            <input
-                                                id="floor-party-size"
-                                                type="number"
-                                                inputMode="numeric"
-                                                min={1}
-                                                max={detail.table.seats}
-                                                step={1}
-                                                value={partySize}
-                                                disabled={action !== null}
-                                                onChange={(event) =>
-                                                    setPartySize(
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                className="w-full rounded-xl border border-emerald-300 bg-white px-4 py-3 text-base text-slate-950 focus-visible:outline-2 focus-visible:outline-emerald-600 disabled:opacity-50"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={seatTable}
-                                                disabled={
-                                                    action !== null ||
-                                                    loading ||
-                                                    detail.table.seats < 1
-                                                }
-                                                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
-                                            >
-                                                {action?.type === 'seat' ? (
-                                                    <LoaderCircle
-                                                        size={17}
-                                                        className="animate-spin"
-                                                    />
-                                                ) : (
-                                                    <Users size={17} />
-                                                )}
-                                                {action?.type === 'seat'
-                                                    ? 'Seating guests...'
-                                                    : 'Seat guests'}
-                                            </button>
-                                        </section>
-                                    )}
-                                    <section className="space-y-3">
-                                        <h3 className="font-bold text-slate-950">
-                                            Pending service requests
-                                        </h3>
-                                        {detail.service_requests.length ===
-                                        0 ? (
-                                            <p className="text-sm text-slate-500">
-                                                No pending requests.
-                                            </p>
-                                        ) : (
-                                            detail.service_requests.map(
-                                                (request) => (
-                                                    <div
-                                                        key={request.id}
-                                                        className="flex items-center justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50 p-3"
-                                                    >
-                                                        <span className="text-sm font-semibold text-orange-950">
-                                                            {readableKind(
-                                                                request.kind,
-                                                            )}
-                                                        </span>
-                                                        <button
-                                                            type="button"
-                                                            disabled={
-                                                                action !== null
-                                                            }
-                                                            onClick={() =>
-                                                                acknowledge(
-                                                                    request.id,
-                                                                )
-                                                            }
-                                                            className="inline-flex items-center gap-1 rounded-lg bg-white px-3 py-2 text-xs font-bold text-orange-900 disabled:opacity-50"
-                                                        >
-                                                            <Check size={14} />
-                                                            Acknowledge
-                                                        </button>
-                                                    </div>
-                                                ),
-                                            )
-                                        )}
-                                    </section>
-                                    <section className="space-y-3">
-                                        <h3 className="font-bold text-slate-950">
-                                            Unpaid orders
-                                        </h3>
-                                        {detail.orders.length === 0 && (
-                                            <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">
-                                                No unpaid orders for this table.
-                                            </p>
-                                        )}
-                                        {detail.orders.map((order) => (
-                                            <div
-                                                key={order.id}
-                                                className="overflow-hidden rounded-2xl border border-slate-200"
-                                            >
-                                                <div className="flex justify-between bg-slate-50 p-4">
-                                                    <div>
-                                                        <p className="font-bold text-slate-950">
-                                                            Order #{order.id}
-                                                        </p>
-                                                        <p className="text-xs capitalize text-slate-500">
-                                                            {order.status}
-                                                        </p>
-                                                    </div>
-                                                    <p className="font-bold text-slate-950">
-                                                        {money(
-                                                            order.balance_minor,
-                                                            order.currency,
-                                                        )}
-                                                    </p>
-                                                </div>
-                                                <div className="space-y-3 p-4">
-                                                    {order.lines.map((line) => (
-                                                        <div
-                                                            key={line.id}
-                                                            className="flex justify-between gap-3 text-sm"
-                                                        >
-                                                            <div>
-                                                                <p className="font-medium text-slate-900">
-                                                                    {line.qty} ×{' '}
-                                                                    {line.name}
-                                                                </p>
-                                                                {line.note && (
-                                                                    <p className="mt-0.5 text-xs text-slate-500">
-                                                                        Note:{' '}
-                                                                        {
-                                                                            line.note
-                                                                        }
-                                                                    </p>
-                                                                )}
-                                                            </div>
-                                                            <span className="shrink-0 font-semibold">
-                                                                {money(
-                                                                    line.line_total_minor,
-                                                                    order.currency,
-                                                                )}
-                                                            </span>
-                                                        </div>
-                                                    ))}
-                                                    <a
-                                                        href={`/app/tables/${detail.table.id}/orders/${order.id}/receipt`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="border-border-brand bg-surface-brand-soft text-text-brand hover:bg-action-ghost-hover inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-colors"
-                                                    >
-                                                        Print Receipt
-                                                    </a>
-                                                    <EmailReceiptForm
-                                                        tableId={
-                                                            detail.table.id
-                                                        }
-                                                        orderId={order.id}
-                                                    />
-                                                    <PaymentSection
-                                                        order={order}
-                                                        splitWays={
-                                                            splitWays[
-                                                                order.id
-                                                            ] ?? 1
-                                                        }
-                                                        onSplitWaysChange={(
-                                                            ways,
-                                                        ) =>
-                                                            setSplitWays(
-                                                                (current) => ({
-                                                                    ...current,
-                                                                    [order.id]:
-                                                                        ways,
-                                                                }),
-                                                            )
-                                                        }
-                                                        action={action}
-                                                        amount={
-                                                            paymentAmounts[
-                                                                order.id
-                                                            ] ??
-                                                            amountInput(
-                                                                order.balance_minor,
-                                                            )
-                                                        }
-                                                        onAmountChange={(
-                                                            value,
-                                                        ) =>
-                                                            setPaymentAmounts(
-                                                                (current) => ({
-                                                                    ...current,
-                                                                    [order.id]:
-                                                                        value,
-                                                                }),
-                                                            )
-                                                        }
-                                                        onPayment={(method) =>
-                                                            settlePayment(
-                                                                order,
-                                                                method,
-                                                            )
-                                                        }
-                                                    />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </section>
-                                </>
-                            )}
-                        </div>
-                        <div className="border-t border-slate-200 bg-white p-4">
-                            <button
-                                type="button"
-                                disabled={
-                                    action !== null ||
-                                    loading ||
-                                    !detail ||
-                                    detail.orders.length > 0 ||
-                                    detail.table.state === 'free'
-                                }
-                                onClick={freeTable}
-                                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                                {action?.type === 'free'
-                                    ? 'Freeing table...'
-                                    : 'Free table'}
-                            </button>
-                            {detail && detail.orders.length > 0 && (
-                                <p className="mt-2 text-center text-xs text-slate-500">
-                                    All unpaid orders must be settled before
-                                    freeing the table.
-                                </p>
-                            )}
-                        </div>
-                    </section>
-                </div>
+
+                        {checkout}
+                    </Card>
+                )}
+            </div>
+
+            {/* Phone: a bottom sheet so the thumb reaches the actions. */}
+            {selectedId !== null && isMobile && (
+                <ResponsiveOverlay
+                    open
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            closeDetail();
+                        }
+                    }}
+                    title={selectedTitle}
+                >
+                    {checkout}
+                </ResponsiveOverlay>
             )}
         </>
     );

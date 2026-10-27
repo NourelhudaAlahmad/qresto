@@ -33,9 +33,12 @@ describe('ResponsiveOverlay', () => {
 
         const content = getByText('Confirm').closest('[role="dialog"]');
 
-        expect(content).toHaveClass('start-1/2');
+        // Centred with inset-x-0 + mx-auto rather than start-1/2 and a
+        // physical translate, so it stays centred in RTL.
+        expect(content).toHaveClass('inset-x-0');
+        expect(content).toHaveClass('mx-auto');
         expect(content).toHaveClass('top-1/2');
-        expect(content).toHaveClass('max-[767px]:inset-x-0');
+        expect(content).not.toHaveClass('-translate-x-1/2');
         expect(content).toHaveClass('max-[767px]:bottom-0');
     });
 });

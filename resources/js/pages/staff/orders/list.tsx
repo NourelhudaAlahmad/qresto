@@ -1,5 +1,12 @@
-import { ChevronDown, Ellipsis, X } from 'lucide-react';
+import { ChevronDown, Ellipsis } from 'lucide-react';
 import { useMemo, useState } from 'react';
+
+import { Numeric } from '@/components/numeric';
+import { Button } from '@/components/qresto/button';
+import { ChipFilter } from '@/components/qresto/chip-filter';
+import { EmptyState } from '@/components/qresto/empty-state';
+import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
+import { StatusPill } from '@/components/qresto/status-pill';
 
 export type OrderStatus =
     'placed' | 'pending' | 'preparing' | 'ready' | 'served';
@@ -79,20 +86,44 @@ export function filterOrders(orders: Ticket[], filter: StatusFilter): Ticket[] {
         : orders.filter((order) => statusGroup(order.status) === filter);
 }
 
-function minutesOld(placedAt: string | null, now: number): number {
+export function minutesOld(placedAt: string | null, now: number): number {
     return placedAt
         ? Math.max(0, Math.floor((now - Date.parse(placedAt)) / 60000))
         : 0;
 }
 
-function money(minor: number, currency: string): string {
-    return new Intl.NumberFormat('en', {
-        style: 'currency',
-        currency: currency || 'TRY',
-    }).format(minor / 100);
+export function elapsedLevel(
+    minutes: number,
+    warnMinutes: number,
+    lateMinutes: number,
+): 'normal' | 'warn' | 'late' {
+    if (minutes >= lateMinutes) {
+        return 'late';
+    }
+
+    if (minutes >= warnMinutes) {
+        return 'warn';
+    }
+
+    return 'normal';
 }
 
-function actionLabel(status: OrderStatus): string | null {
+export function money(minor: number, currency: string): string {
+    try {
+        return new Intl.NumberFormat('en', {
+            style: 'currency',
+            currency: currency || 'USD',
+        }).format(minor / 100);
+    } catch {
+        return `${(minor / 100).toFixed(2)} ${currency}`;
+    }
+}
+
+export function orderCode(code: string): string {
+    return code.startsWith('#') ? code : `#${code}`;
+}
+
+export function actionLabel(status: OrderStatus): string | null {
     return {
         placed: 'Accept order',
         pending: 'Start cooking',
@@ -102,24 +133,15 @@ function actionLabel(status: OrderStatus): string | null {
     }[status];
 }
 
-function statusLabel(status: OrderStatus): string {
-    return statusGroup(status) === 'new'
-        ? 'New'
-        : status.charAt(0).toUpperCase() + status.slice(1);
+export function canVoidStatus(status: OrderStatus): boolean {
+    return ['placed', 'pending', 'preparing'].includes(status);
 }
 
-function statusClasses(status: OrderStatus): string {
-    switch (statusGroup(status)) {
-        case 'new':
-            return 'bg-saffron-50 text-saffron-700';
-        case 'preparing':
-            return 'bg-teal-50 text-teal-700';
-        case 'ready':
-            return 'bg-clay-50 text-clay-700';
-        case 'served':
-            return 'bg-success-bg text-success-fg';
-    }
-}
+const AGE_COLORS = {
+    normal: 'text-[var(--text-tertiary)]',
+    warn: 'text-[var(--saffron-700)] font-semibold',
+    late: 'text-[var(--berry-500)] font-semibold',
+} as const;
 
 function Age({
     order,
@@ -128,17 +150,15 @@ function Age({
     lateMinutes,
 }: Pick<Props, 'now' | 'warnMinutes' | 'lateMinutes'> & { order: Ticket }) {
     const age = minutesOld(order.placed_at, now);
-    const color =
-        age >= lateMinutes
-            ? 'text-berry-500'
-            : age >= warnMinutes
-              ? 'text-saffron-700'
-              : 'text-text-tertiary';
 
     return (
-        <span className={`whitespace-nowrap font-mono ${color}`}>
+        <Numeric
+            className={`whitespace-nowrap font-mono ${
+                AGE_COLORS[elapsedLevel(age, warnMinutes, lateMinutes)]
+            }`}
+        >
             {age} min
-        </span>
+        </Numeric>
     );
 }
 
@@ -153,125 +173,110 @@ function TicketOverlay({
     now,
     warnMinutes,
     lateMinutes,
-}: Omit<Props, 'orders' | 'userId'> & { order: Ticket; onClose: () => void }) {
+}: Omit<Props, 'orders' | 'userId'> & {
+    order: Ticket;
+    onClose: () => void;
+}) {
     const action = canAdvance ? actionLabel(order.status) : null;
-    const canVoid =
-        canAdvance && ['placed', 'pending', 'preparing'].includes(order.status);
+    const canVoid = canAdvance && canVoidStatus(order.status);
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
-            role="presentation"
+        <ResponsiveOverlay
+            open
+            onOpenChange={(next) => {
+                if (!next) {
+                    onClose();
+                }
+            }}
+            title={<Numeric>{orderCode(order.code)}</Numeric>}
+            description={`Table ${order.table ?? '—'} · ${order.guest_name || 'Guest'}`}
         >
-            <div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="list-ticket-title"
-                className="bg-surface-card flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-t-2xl shadow-xl sm:max-w-lg sm:rounded-2xl"
-            >
-                <div className="border-border-subtle flex items-start justify-between gap-3 border-b p-5">
-                    <div className="min-w-0">
-                        <h2
-                            id="list-ticket-title"
-                            className="text-text-primary font-mono text-lg font-semibold"
-                        >
-                            {order.code.startsWith('#')
-                                ? order.code
-                                : `#${order.code}`}
-                        </h2>
-                        <p className="text-text-secondary text-sm">
-                            Table {order.table ?? '—'} ·{' '}
-                            {order.guest_name || 'Guest'}
-                        </p>
-                    </div>
-                    <button
-                        aria-label="Close ticket"
-                        type="button"
-                        onClick={onClose}
-                        className="border-border-subtle text-text-secondary flex size-11 shrink-0 items-center justify-center rounded-full border"
-                    >
-                        <X className="size-5" />
-                    </button>
+            <div className="flex flex-col gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <StatusPill status={order.status} />
+
+                    <Age
+                        order={order}
+                        now={now}
+                        warnMinutes={warnMinutes}
+                        lateMinutes={lateMinutes}
+                    />
                 </div>
-                <div className="space-y-4 overflow-y-auto p-5">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <span
-                            className={`rounded-full px-3 py-1 text-sm font-medium ${statusClasses(order.status)}`}
-                        >
-                            {statusLabel(order.status)}
-                        </span>
-                        <Age
-                            order={order}
-                            now={now}
-                            warnMinutes={warnMinutes}
-                            lateMinutes={lateMinutes}
-                        />
-                    </div>
-                    <div className="space-y-3">
-                        {order.lines.map((line) => (
-                            <div key={line.id}>
-                                <p className="text-text-primary break-words text-sm">
-                                    {line.qty}× {line.name}
+
+                <div className="flex flex-col gap-2">
+                    {order.lines.map((line) => (
+                        <div key={line.id}>
+                            <p className="text-body break-words text-[var(--text-primary)]">
+                                <Numeric className="text-[var(--text-tertiary)]">
+                                    {line.qty}×
+                                </Numeric>{' '}
+                                {line.name}
+                            </p>
+
+                            {line.note && (
+                                <p className="text-caption ms-6 mt-1 inline-block break-words rounded-[var(--radius-sm)] bg-[var(--saffron-50)] px-2 py-0.5 text-[var(--saffron-700)]">
+                                    {line.note}
                                 </p>
-                                {line.note && (
-                                    <p className="bg-saffron-50 text-saffron-700 mt-1 rounded-md p-2 text-sm">
-                                        {line.note}
-                                    </p>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                    <div className="border-border-subtle flex flex-wrap items-center justify-between gap-3 border-t pt-3">
-                        <span
-                            className={
-                                order.paid
-                                    ? 'text-success-fg'
-                                    : 'text-saffron-700'
-                            }
-                        >
-                            {order.paid ? 'Paid' : 'Unpaid'}
-                        </span>
-                        <strong className="text-text-primary whitespace-nowrap font-mono">
-                            {money(order.total_minor, order.currency)}
-                        </strong>
-                    </div>
+                            )}
+                        </div>
+                    ))}
                 </div>
-                <div className="border-border-subtle bg-surface-card flex flex-wrap gap-2 border-t p-4">
+
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-3">
+                    <span
+                        className={`text-micro inline-flex h-6 items-center rounded-full px-2.5 font-semibold ${
+                            order.paid
+                                ? 'bg-[var(--status-paid-bg)] text-[var(--status-paid-fg)]'
+                                : 'bg-[var(--status-pending-bg)] text-[var(--status-pending-fg)]'
+                        }`}
+                    >
+                        {order.paid ? 'Paid' : 'Unpaid'}
+                    </span>
+
+                    <Numeric className="text-title-3 font-semibold">
+                        {money(order.total_minor, order.currency)}
+                    </Numeric>
+                </div>
+
+                <div className="flex flex-wrap gap-2 border-t border-[var(--border-subtle)] pt-3">
                     {action ? (
-                        <button
+                        <Button
                             type="button"
+                            variant="primary"
+                            className="min-w-0 flex-1"
                             disabled={busy !== null}
                             onClick={() => {
                                 onAdvance(order);
                                 onClose();
                             }}
-                            className="bg-clay-500 min-h-11 min-w-0 flex-1 rounded-lg px-3 py-2 text-sm font-semibold !text-white disabled:opacity-50"
                         >
                             {action}
-                        </button>
+                        </Button>
                     ) : (
-                        <span className="text-text-secondary flex min-h-11 flex-1 items-center text-sm">
+                        <span className="text-caption flex min-h-11 flex-1 items-center text-[var(--text-secondary)]">
                             {order.status === 'served' && canTakePayment
-                                ? 'Payment handled in S5'
+                                ? 'Take payment from the floor map'
                                 : 'No action available'}
                         </span>
                     )}
+
                     {canVoid && (
-                        <button
+                        <Button
                             type="button"
+                            variant="outline"
+                            className="border-[var(--berry-500)] text-[var(--berry-500)]"
                             disabled={busy !== null}
                             onClick={() => {
                                 onVoid(order);
                                 onClose();
                             }}
-                            className="border-berry-500 text-berry-500 min-h-11 rounded-lg border px-4 text-sm font-semibold disabled:opacity-50"
                         >
                             Void order
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>
-        </div>
+        </ResponsiveOverlay>
     );
 }
 
@@ -299,11 +304,16 @@ export default function OrderList(props: Props) {
             return 'age';
         }
     });
-    const [selected, setSelected] = useState<Ticket | null>(null);
+    const [selectedId, setSelectedId] = useState<number | null>(null);
     const visible = useMemo(
         () => sortOrders(filterOrders(orders, filter), sort),
         [orders, filter, sort],
     );
+    // Follow the live collection so the sheet shows the latest status.
+    const selected =
+        selectedId === null
+            ? null
+            : (orders.find((order) => order.id === selectedId) ?? null);
 
     function chooseFilter(value: StatusFilter): void {
         setFilter(value);
@@ -326,30 +336,29 @@ export default function OrderList(props: Props) {
     }
 
     return (
-        <section className="min-w-0 space-y-4" aria-label="Order list">
+        <section
+            className="flex min-w-0 flex-col gap-4"
+            aria-label="Order list"
+        >
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div
                     className="flex max-w-full flex-wrap gap-2"
                     role="group"
                     aria-label="Filter order status"
                 >
-                    {FILTERS.map((item) => {
-                        const count = filterOrders(orders, item.value).length;
-
-                        return (
-                            <button
-                                key={item.value}
-                                type="button"
-                                aria-pressed={filter === item.value}
-                                onClick={() => chooseFilter(item.value)}
-                                className={`min-h-11 rounded-full px-3 text-sm font-medium ${filter === item.value ? 'bg-ink-900 !text-white' : 'border-border-subtle bg-surface-card text-text-secondary border'}`}
-                            >
-                                {item.label} ({count})
-                            </button>
-                        );
-                    })}
+                    {FILTERS.map((item) => (
+                        <ChipFilter
+                            key={item.value}
+                            type="segment"
+                            active={filter === item.value}
+                            onClick={() => chooseFilter(item.value)}
+                        >
+                            {`${item.label} (${filterOrders(orders, item.value).length})`}
+                        </ChipFilter>
+                    ))}
                 </div>
-                <label className="text-text-secondary flex min-h-11 items-center gap-2 text-sm">
+
+                <label className="text-label flex min-h-11 items-center gap-2 text-[var(--text-secondary)]">
                     Sort by
                     <span className="relative">
                         <select
@@ -358,27 +367,27 @@ export default function OrderList(props: Props) {
                             onChange={(event) =>
                                 chooseSort(event.target.value as SortKey)
                             }
-                            className="border-border-subtle bg-surface-card text-text-primary min-h-11 appearance-none rounded-lg border py-2 pe-9 ps-3"
+                            className="text-label min-h-11 appearance-none rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-card)] py-2 pe-9 ps-3 text-[var(--text-primary)] outline-none focus-visible:border-[var(--border-focus-color)] focus-visible:shadow-[var(--ring-focus)]"
                         >
                             <option value="age">Age (oldest first)</option>
                             <option value="table">Table</option>
                             <option value="total">Total (highest first)</option>
                         </select>
-                        <ChevronDown className="text-text-tertiary pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2" />
+                        <ChevronDown className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
                     </span>
                 </label>
             </div>
 
             {visible.length === 0 ? (
-                <div className="border-border-subtle bg-surface-card text-text-tertiary rounded-xl border border-dashed p-8 text-center text-sm">
-                    Nothing here right now
+                <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--border-default)] bg-[var(--surface-card)]">
+                    <EmptyState headline="Nothing here right now" />
                 </div>
             ) : (
                 <>
-                    <div className="border-border-subtle bg-surface-card hidden min-w-0 overflow-hidden rounded-xl border min-[720px]:block">
-                        <table className="w-full table-fixed border-collapse text-sm">
-                            <thead className="bg-surface-page text-text-secondary">
-                                <tr className="border-border-subtle border-b text-start">
+                    <div className="hidden min-w-0 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-card)] min-[720px]:block">
+                        <table className="text-body w-full table-fixed border-collapse">
+                            <thead className="text-label bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+                                <tr className="border-b border-[var(--border-subtle)]">
                                     <th
                                         scope="col"
                                         className="w-[18%] p-3 text-start font-semibold"
@@ -415,38 +424,37 @@ export default function OrderList(props: Props) {
                                 {visible.map((order) => (
                                     <tr
                                         key={order.id}
-                                        className="border-border-subtle hover:bg-surface-page cursor-pointer border-b last:border-0"
-                                        onClick={() => setSelected(order)}
+                                        className="cursor-pointer border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--action-ghost-hover)]"
+                                        onClick={() => setSelectedId(order.id)}
                                     >
-                                        <td className="text-text-primary break-words p-3 font-mono">
+                                        <td className="break-words p-3 font-mono text-[var(--text-primary)]">
                                             <button
                                                 type="button"
                                                 className="min-h-11 text-start"
-                                                onClick={() =>
-                                                    setSelected(order)
-                                                }
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    setSelectedId(order.id);
+                                                }}
                                             >
-                                                {order.code.startsWith('#')
-                                                    ? order.code
-                                                    : `#${order.code}`}
+                                                {orderCode(order.code)}
                                             </button>
                                         </td>
-                                        <td className="text-text-secondary break-words p-3">
-                                            {order.table ?? '—'} ·{' '}
-                                            {order.guest_name || 'Guest'}
+                                        <td className="break-words p-3 text-[var(--text-secondary)]">
+                                            <Numeric>
+                                                {order.table ?? '—'}
+                                            </Numeric>{' '}
+                                            · {order.guest_name || 'Guest'}
                                         </td>
                                         <td className="p-3">
-                                            <span
-                                                className={`inline-block rounded-full px-2 py-1 text-xs ${statusClasses(order.status)}`}
-                                            >
-                                                {statusLabel(order.status)}
-                                            </span>
+                                            <StatusPill status={order.status} />
                                         </td>
-                                        <td className="text-text-primary whitespace-nowrap p-3 text-end font-mono">
-                                            {money(
-                                                order.total_minor,
-                                                order.currency,
-                                            )}
+                                        <td className="whitespace-nowrap p-3 text-end">
+                                            <Numeric className="font-mono text-[var(--text-primary)]">
+                                                {money(
+                                                    order.total_minor,
+                                                    order.currency,
+                                                )}
+                                            </Numeric>
                                         </td>
                                         <td className="p-3 text-end">
                                             <Age
@@ -461,44 +469,43 @@ export default function OrderList(props: Props) {
                             </tbody>
                         </table>
                     </div>
+
                     <div className="grid min-w-0 gap-3 min-[720px]:hidden">
                         {visible.map((order) => (
                             <button
                                 type="button"
                                 key={order.id}
-                                onClick={() => setSelected(order)}
-                                className="border-border-subtle bg-surface-card min-w-0 rounded-xl border p-4 text-start shadow-sm"
+                                onClick={() => setSelectedId(order.id)}
+                                className="min-w-0 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 text-start shadow-[var(--shadow-card)] transition-transform duration-[var(--duration-fast)] active:scale-[var(--press-scale)]"
                             >
                                 <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <strong className="text-text-primary font-mono">
-                                        {order.code.startsWith('#')
-                                            ? order.code
-                                            : `#${order.code}`}
-                                    </strong>
-                                    <span
-                                        className={`rounded-full px-2 py-1 text-xs ${statusClasses(order.status)}`}
-                                    >
-                                        {statusLabel(order.status)}
-                                    </span>
+                                    <Numeric className="text-title-3 font-medium text-[var(--text-primary)]">
+                                        {orderCode(order.code)}
+                                    </Numeric>
+                                    <StatusPill status={order.status} />
                                 </div>
-                                <dl className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm">
-                                    <dt className="text-text-tertiary">
+                                <dl className="text-body mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2">
+                                    <dt className="text-[var(--text-tertiary)]">
                                         Table · Guest
                                     </dt>
-                                    <dd className="text-text-primary min-w-0 break-words">
-                                        {order.table ?? '—'} ·{' '}
-                                        {order.guest_name || 'Guest'}
+                                    <dd className="min-w-0 break-words text-[var(--text-primary)]">
+                                        <Numeric>{order.table ?? '—'}</Numeric>{' '}
+                                        · {order.guest_name || 'Guest'}
                                     </dd>
-                                    <dt className="text-text-tertiary">
+                                    <dt className="text-[var(--text-tertiary)]">
                                         Total
                                     </dt>
-                                    <dd className="text-text-primary min-w-0 break-words font-mono">
-                                        {money(
-                                            order.total_minor,
-                                            order.currency,
-                                        )}
+                                    <dd className="min-w-0">
+                                        <Numeric className="font-mono text-[var(--text-primary)]">
+                                            {money(
+                                                order.total_minor,
+                                                order.currency,
+                                            )}
+                                        </Numeric>
                                     </dd>
-                                    <dt className="text-text-tertiary">Age</dt>
+                                    <dt className="text-[var(--text-tertiary)]">
+                                        Age
+                                    </dt>
                                     <dd>
                                         <Age
                                             order={order}
@@ -508,7 +515,7 @@ export default function OrderList(props: Props) {
                                         />
                                     </dd>
                                 </dl>
-                                <span className="text-clay-500 mt-3 flex min-h-11 items-center gap-1 text-sm font-medium">
+                                <span className="text-label mt-3 flex min-h-11 items-center gap-1 font-semibold text-[var(--text-brand)]">
                                     Open ticket <Ellipsis className="size-4" />
                                 </span>
                             </button>
@@ -516,14 +523,12 @@ export default function OrderList(props: Props) {
                     </div>
                 </>
             )}
+
             {selected && (
                 <TicketOverlay
                     {...props}
-                    order={
-                        orders.find((order) => order.id === selected.id) ??
-                        selected
-                    }
-                    onClose={() => setSelected(null)}
+                    order={selected}
+                    onClose={() => setSelectedId(null)}
                 />
             )}
         </section>

@@ -11,6 +11,14 @@ type PriceSummaryProps = {
     split?: string;
     splitLabel?: string;
     total: string;
+    totalLabel?: string;
+    subtotalLabel?: string;
+    /** Rows after the total, e.g. Paid and Due when settling at the table. */
+    afterTotal?: {
+        label: string;
+        value: string;
+        tone?: 'positive' | 'warning';
+    }[];
     className?: string;
 };
 
@@ -25,13 +33,16 @@ export function PriceSummary({
     split,
     splitLabel = 'Split',
     total,
+    totalLabel = 'Total',
+    subtotalLabel = 'Subtotal',
+    afterTotal = [],
     className = '',
 }: PriceSummaryProps) {
     return (
         <div className={`flex flex-col gap-2 ${className}`}>
             <div className="text-body flex items-baseline">
                 <span className="flex-1 text-[var(--text-secondary)]">
-                    Subtotal
+                    {subtotalLabel}
                 </span>
 
                 <Numeric>{subtotal}</Numeric>
@@ -81,13 +92,39 @@ export function PriceSummary({
 
             <div className="text-body flex items-baseline">
                 <span className="flex-1 font-semibold text-[var(--text-primary)]">
-                    Total
+                    {totalLabel}
                 </span>
 
                 <Numeric className="text-title-2 font-semibold">
                     {total}
                 </Numeric>
             </div>
+
+            {afterTotal.map((row) => (
+                <div key={row.label} className="text-body flex items-baseline">
+                    <span
+                        className={`flex-1 ${
+                            row.tone === 'positive'
+                                ? 'text-[var(--herb-700)]'
+                                : row.tone === 'warning'
+                                  ? 'font-semibold text-[var(--saffron-700)]'
+                                  : 'text-[var(--text-secondary)]'
+                        }`}
+                    >
+                        {row.label}
+                    </span>
+
+                    <Numeric
+                        className={
+                            row.tone === 'warning'
+                                ? 'font-semibold text-[var(--saffron-700)]'
+                                : ''
+                        }
+                    >
+                        {row.value}
+                    </Numeric>
+                </div>
+            ))}
         </div>
     );
 }

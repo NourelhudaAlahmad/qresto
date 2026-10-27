@@ -7,8 +7,8 @@ import {
 } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import OrderList, { filterOrders, sortOrders } from './list';
-import type { Ticket } from './list';
+import OrderList, { filterOrders, sortOrders } from '@/pages/staff/orders/list';
+import type { Ticket } from '@/pages/staff/orders/list';
 
 const orders: Ticket[] = [
     {
