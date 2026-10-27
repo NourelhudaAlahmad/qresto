@@ -43,6 +43,7 @@ type FloorTable = {
     pending_requests: number;
     has_bill_request: boolean;
     currency: string;
+    waiter?: { id: number; name: string } | null;
 };
 
 type BillLine = {
@@ -170,6 +171,15 @@ function tableNumber(number: string | number): string {
     const raw = String(number);
 
     return /^\d$/.test(raw) ? raw.padStart(2, '0') : raw;
+}
+
+// "Omar Faruk" → "Omar F."
+function shortName(name: string): string {
+    const parts = name.trim().split(/\s+/);
+
+    return parts.length < 2
+        ? name
+        : `${parts[0]} ${parts[parts.length - 1].charAt(0)}.`;
 }
 
 function firstError(errors: Record<string, string>, fallback: string): string {
@@ -1115,6 +1125,11 @@ export default function Floor({ tables = [] }: Props) {
                                     table={tableNumber(table.number)}
                                     state={table.state}
                                     seats={`${table.seats} seats`}
+                                    assignee={
+                                        table.waiter
+                                            ? shortName(table.waiter.name)
+                                            : undefined
+                                    }
                                     meta={
                                         meta || table.pending_requests > 0 ? (
                                             <span className="flex flex-col gap-0.5">
@@ -1138,7 +1153,11 @@ export default function Floor({ tables = [] }: Props) {
                                         table.has_bill_request
                                     }
                                     selected={selectedId === table.id}
-                                    ariaLabel={`Open table ${tableNumber(table.number)}, ${tableStateLabels[table.state]}`}
+                                    ariaLabel={`Open table ${tableNumber(table.number)}, ${tableStateLabels[table.state]}${
+                                        table.waiter
+                                            ? `, ${table.waiter.name}`
+                                            : ''
+                                    }`}
                                     onClick={() => selectTable(table.id)}
                                 />
                             );

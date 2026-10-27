@@ -9,6 +9,7 @@ use App\Enums\TableState;
 use App\Models\Order;
 use App\Models\OrderLine;
 use App\Models\Payment;
+use App\Models\Restaurant;
 use App\Models\RestaurantTable;
 use App\Models\ServiceRequest;
 use App\Models\TableSession;
@@ -449,10 +450,33 @@ final class FloorController extends Controller
             ->get()
             ->groupBy('table_id');
 
+        // Who has each table tonight (#27): the live shift's assignment.
+        $now = now();
+
+        $waiterByTable = DB::table('table_user')
+            ->join('shifts', 'shifts.id', '=', 'table_user.shift_id')
+            ->join('users', 'users.id', '=', 'table_user.user_id')
+            ->whereIn('table_user.table_id', $tableIds)
+            ->where('shifts.starts_at', '<=', $now)
+            ->where('shifts.ends_at', '>=', $now)
+            ->where('users.is_active', true)
+            ->orderByDesc('shifts.starts_at')
+            ->get(['table_user.table_id', 'users.id', 'users.name'])
+            ->unique('table_id')
+            ->keyBy('table_id');
+
+        $restaurantCurrency = (string) (Restaurant::query()
+            ->whereKey($restaurantId)
+            ->value('currency') ?? 'USD');
+
         return $tables->map(function (RestaurantTable $table) use (
             $ordersByTable,
             $requestsByTable,
+            $waiterByTable,
+            $restaurantCurrency,
         ): array {
+            $waiter = $waiterByTable->get($table->id);
+
             $orders = $ordersByTable->get(
                 $table->id,
                 collect(),
@@ -488,8 +512,12 @@ final class FloorController extends Controller
                 ),
 
                 'currency' => $orders->first()?->getAttribute('currency')
-                    ?? $table->restaurant?->getAttribute('currency')
-                    ?? 'TRY',
+                    ?? $restaurantCurrency,
+
+                'waiter' => $waiter === null ? null : [
+                    'id' => (int) $waiter->id,
+                    'name' => (string) $waiter->name,
+                ],
             ];
         })->values()->all();
     }

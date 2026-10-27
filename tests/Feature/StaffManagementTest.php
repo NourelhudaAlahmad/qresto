@@ -488,3 +488,42 @@ it('opens the overview to anyone holding the capability, not just the manager ro
 
     $this->actingAs($admin)->get('/manager/overview')->assertOk();
 });
+
+it('shows the new owner of a table on the floor without a page navigation', function () {
+    $nadia = staffMember($this->restaurant, 'waiter', 'Nadia Rahman');
+    giveTables($nadia, ['04', '12']);
+
+    $this->actingAs($this->manager)
+        ->post('/app/staff', newStaffPayload())
+        ->assertSessionHasNoErrors();
+
+    $this->actingAs($this->manager)
+        ->get('/app/floor')
+        ->assertOk()
+        ->assertInertia(function ($page) {
+            $tables = collect($page->toArray()['props']['tables'])->keyBy('number');
+
+            expect($tables['04']['waiter']['name'])->toBe('Omar Faruk')
+                ->and($tables['12']['waiter']['name'])->toBe('Omar Faruk')
+                ->and($tables['01']['waiter'])->toBeNull();
+
+            return $page;
+        });
+});
+
+it('drops a deactivated person from the floor tiles', function () {
+    $lin = staffMember($this->restaurant, 'waiter', 'Lin Wu');
+    giveTables($lin, ['07']);
+
+    $this->actingAs($this->manager)->post("/app/staff/{$lin->id}/deactivate");
+
+    $this->actingAs($this->manager)
+        ->get('/app/floor')
+        ->assertInertia(function ($page) {
+            $tables = collect($page->toArray()['props']['tables'])->keyBy('number');
+
+            expect($tables['07']['waiter'])->toBeNull();
+
+            return $page;
+        });
+});

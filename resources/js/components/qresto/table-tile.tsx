@@ -10,6 +10,8 @@ type TableTileProps = {
     seats?: ReactNode;
     /** Bill total and elapsed time, e.g. "$54.35 · 14 min". */
     meta?: ReactNode;
+    /** Who has the table tonight, e.g. "Omar F.". */
+    assignee?: ReactNode;
     /** A bill request pulses so the table is findable across the room. */
     pulse?: boolean;
     selected?: boolean;
@@ -37,6 +39,7 @@ export function TableTile({
     state,
     seats,
     meta,
+    assignee,
     pulse = false,
     selected = false,
     onClick,
@@ -58,8 +61,14 @@ export function TableTile({
                 )}
             </div>
 
-            <div className="text-micro font-semibold">
-                {tableStateLabels[state]}
+            <div className="text-micro flex w-full min-w-0 items-baseline gap-1">
+                <span className="font-semibold">{tableStateLabels[state]}</span>
+
+                {assignee !== undefined && (
+                    <span className="min-w-0 truncate opacity-80">
+                        · {assignee}
+                    </span>
+                )}
             </div>
 
             {meta !== undefined && (

@@ -5,9 +5,11 @@ namespace App\Http\Middleware;
 use App\Enums\Capability;
 use App\Enums\Role;
 use App\Models\Order;
+use App\Models\Restaurant;
 use App\Services\CapabilitySnapshot;
 use App\Services\NavigationBuilder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -196,7 +198,7 @@ class HandleInertiaRequests extends Middleware
             'roleLabel' => $roleLabel,
             'restaurantName' => $restaurant->name ?? '',
             'pageTitle' => __($pageMeta[0]),
-            'pageSubtitle' => __($pageMeta[1]),
+            'pageSubtitle' => $this->pageSubtitle($request, $restaurant, $pageMeta[1]),
 
             // Compatibility with the existing Staff Layout.
             'unreadNotifications' => $unreadNotifications,
@@ -225,5 +227,23 @@ class HandleInertiaRequests extends Middleware
             'sidebarOpen' => ! $request->hasCookie('sidebar_state')
                 || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    /**
+     * The admin dashboard names the restaurant and its area, as the design
+     * does: "Al Bustan · Downtown · owner account". The area is the last
+     * part of the address.
+     */
+    private function pageSubtitle(Request $request, ?Restaurant $restaurant, string $fallback): string
+    {
+        if ($restaurant === null || $request->route()?->getName() !== 'app.system') {
+            return __($fallback);
+        }
+
+        $area = trim((string) Str::afterLast((string) $restaurant->address, ','));
+
+        return collect([$restaurant->name, $area, __('owner account')])
+            ->filter(fn (?string $part): bool => filled($part))
+            ->implode(' · ');
     }
 }

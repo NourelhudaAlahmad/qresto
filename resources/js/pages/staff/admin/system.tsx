@@ -177,7 +177,7 @@ function MatrixCell({
                     onToggle(!cell.granted);
                 }
             }}
-            className={`mx-auto grid size-11 place-items-center rounded-[var(--radius-md)] font-mono text-[18px] outline-none transition-colors duration-[var(--duration-fast)] focus-visible:ring-[3px] focus-visible:ring-[var(--border-focus-color)] ${
+            className={`mx-auto grid h-10 w-11 place-items-center rounded-[var(--radius-md)] font-mono text-[18px] outline-none transition-colors duration-[var(--duration-fast)] focus-visible:ring-[3px] focus-visible:ring-[var(--border-focus-color)] ${
                 cell.granted
                     ? 'text-[var(--herb-500)]'
                     : 'text-[var(--ink-300)]'
@@ -413,7 +413,7 @@ export default function AdminSystem({
                                         <div
                                             key={row.capability}
                                             role="row"
-                                            className={`${MATRIX_GRID} text-body items-center border-b border-[var(--border-subtle)] py-1.5 last:border-0`}
+                                            className={`${MATRIX_GRID} text-body items-center border-b border-[var(--border-subtle)] py-[3px] last:border-0`}
                                         >
                                             <span
                                                 role="rowheader"

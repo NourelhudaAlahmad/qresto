@@ -126,3 +126,15 @@ it('a manager cannot reach the admin dashboard', function () {
 
     $this->actingAs($manager)->get('/app/system')->assertForbidden();
 });
+
+it('subtitles the dashboard with the restaurant, its area and the owner account', function () {
+    $this->restaurant->update(['name' => 'Al Bustan', 'address' => '14 Marsh Lane, Downtown']);
+
+    $admin = User::factory()->create(['restaurant_id' => $this->restaurant->id]);
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->get('/app/system')
+        ->assertInertia(fn ($page) => $page
+            ->where('staffLayout.pageSubtitle', 'Al Bustan · Downtown · owner account'));
+});

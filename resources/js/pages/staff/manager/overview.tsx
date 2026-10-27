@@ -6,6 +6,7 @@ import type { FormEvent, ReactNode } from 'react';
 import { Numeric } from '@/components/numeric';
 import { Avatar } from '@/components/qresto/avatar';
 import { Button } from '@/components/qresto/button';
+import { Checkbox } from '@/components/qresto/checkbox';
 import { ChipFilter } from '@/components/qresto/chip-filter';
 import { Drawer } from '@/components/qresto/drawer';
 import { EmptyState } from '@/components/qresto/empty-state';
@@ -14,7 +15,6 @@ import { Label } from '@/components/qresto/label';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { Stat } from '@/components/qresto/stat';
 import { StatusPill } from '@/components/qresto/status-pill';
-import { Switch } from '@/components/qresto/switch';
 import { showToast } from '@/components/qresto/toast';
 import { useLiveData } from '@/hooks/useLiveData';
 import type { OrderStatus } from '@/types';
@@ -392,17 +392,17 @@ function WaiterFields({
             </div>
 
             {!editing && (
-                <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor="staff-send-invite" className="font-normal">
-                        Send a set-password link now
-                    </Label>
-                    <Switch
+                <div className="-ms-3 flex items-center gap-1">
+                    <Checkbox
                         id="staff-send-invite"
                         checked={form.send_invite}
                         onCheckedChange={(checked) =>
-                            setForm({ ...form, send_invite: checked })
+                            setForm({ ...form, send_invite: checked === true })
                         }
                     />
+                    <Label htmlFor="staff-send-invite" className="font-normal">
+                        Send a set-password link now
+                    </Label>
                 </div>
             )}
         </form>

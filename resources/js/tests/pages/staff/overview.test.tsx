@@ -17,7 +17,7 @@ type VisitOptions = {
     only?: string[];
 };
 
-// Radix Switch measures itself; jsdom has no ResizeObserver.
+// Radix checkbox measures itself; jsdom has no ResizeObserver.
 globalThis.ResizeObserver ??= class {
     observe() {}
     unobserve() {}
@@ -147,6 +147,33 @@ describe('Manager overview staff management (#27)', () => {
                 preserveState: true,
                 only: expect.arrayContaining(['staff']),
             }),
+        );
+    });
+
+    it('offers the set-password link as a checkbox, ticked by default', () => {
+        render(<ManagerOverview {...props} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /Add waiter/ }));
+
+        const invite = screen.getByRole('checkbox', {
+            name: 'Send a set-password link now',
+        });
+
+        expect(invite).toHaveAttribute('aria-checked', 'true');
+
+        fireEvent.click(invite);
+        fireEvent.change(screen.getByLabelText('Full name'), {
+            target: { value: 'Omar Faruk' },
+        });
+        fireEvent.change(screen.getByLabelText('Work email'), {
+            target: { value: 'omar@albustan.co' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Add to shift' }));
+
+        expect(post).toHaveBeenCalledWith(
+            '/app/staff',
+            expect.objectContaining({ send_invite: false }),
+            expect.any(Object),
         );
     });
 

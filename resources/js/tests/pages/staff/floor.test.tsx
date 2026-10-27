@@ -41,7 +41,10 @@ const table = (
 const tables = [
     table(1, 'free'),
     table(2, 'seated'),
-    table(4, 'ordered', { open_bill_minor: 3100 }),
+    table(4, 'ordered', {
+        open_bill_minor: 3100,
+        waiter: { id: 9, name: 'Omar Faruk' },
+    }),
     table(7, 'bill', { open_bill_minor: 9220, has_bill_request: true }),
 ];
 
@@ -56,6 +59,17 @@ describe('Floor map on the design components', () => {
             'animate-pulse',
         );
         expect(screen.getByText('$92.20')).toBeInTheDocument();
+    });
+
+    it('shows who has each table tonight', () => {
+        render(<Floor tables={tables} />);
+
+        expect(screen.getByText('· Omar F.')).toBeInTheDocument();
+        expect(
+            screen.getByRole('button', {
+                name: 'Open table 04, Ordered, Omar Faruk',
+            }),
+        ).toBeInTheDocument();
     });
 
     it('legend chips carry live counts and filter the grid locally', () => {
