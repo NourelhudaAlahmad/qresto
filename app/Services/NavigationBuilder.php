@@ -21,7 +21,7 @@ class NavigationBuilder
      */
     public function for(User $user, array $capabilities): array
     {
-        $items = $this->itemsForRole($user);
+        $items = $this->withGrantedExtras($this->itemsForRole($user));
 
         $visibleItems = array_filter(
             $items,
@@ -154,5 +154,57 @@ class NavigationBuilder
 
             default => [],
         };
+    }
+
+    /**
+     * Screens that follow a capability rather than a role. When the matrix
+     * grants a role one of these (#28), the matching item joins that role's
+     * sidebar on its next sign-in, after the role's own items.
+     *
+     * @param  array<int, array{id: string, title: string, href: string, badge: int|null, capability: Capability|null}>  $items
+     * @return array<int, array{id: string, title: string, href: string, badge: int|null, capability: Capability|null}>
+     */
+    private function withGrantedExtras(array $items): array
+    {
+        $extras = [
+            [
+                'id' => 'manager',
+                'title' => 'Overview',
+                'href' => '/manager/overview',
+                'badge' => null,
+                'capability' => Capability::MANAGE_WAITER_ACCOUNTS,
+            ],
+            [
+                'id' => 'menu',
+                'title' => 'Menu',
+                'href' => '/app/menu',
+                'badge' => null,
+                'capability' => Capability::EDIT_MENU_PRICES,
+            ],
+            [
+                'id' => 'reports',
+                'title' => 'Reports',
+                'href' => '/app/reports',
+                'badge' => null,
+                'capability' => Capability::FINANCIAL_REPORTS,
+            ],
+            [
+                'id' => 'admin',
+                'title' => 'System',
+                'href' => '/app/system',
+                'badge' => null,
+                'capability' => Capability::MANAGE_RESTAURANT_CONFIG,
+            ],
+        ];
+
+        $hrefs = array_column($items, 'href');
+
+        foreach ($extras as $extra) {
+            if (! in_array($extra['href'], $hrefs, true)) {
+                $items[] = $extra;
+            }
+        }
+
+        return $items;
     }
 }

@@ -32,6 +32,10 @@ return [
     'payments' => [
         'driver' => env('QRESTO_PAYMENT_DRIVER', 'fake'),
 
+        // Estimated gateway fee on in-app payments, for "net of fees" on
+        // the admin dashboard. Real fees arrive with the live gateway.
+        'gateway_fee_pct' => (float) env('QRESTO_GATEWAY_FEE_PCT', 2.9),
+
         'enabled_methods' => [
             'card',
             'wallet',

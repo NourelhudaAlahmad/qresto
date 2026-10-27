@@ -9,7 +9,13 @@
 @import 'tokens/elevation.css';
 @import 'tokens/motion.css';
 @import 'tokens/semantic.css';
-@import 'tokens/base.css';
+/*
+ * Element resets go in the base layer. Imported unlayered they beat every
+ * Tailwind utility: `button { color: inherit; font: inherit }` erased the
+ * size and colour classes on all buttons, and `h2, p { margin: 0 }` erased
+ * their spacing utilities.
+ */
+@import 'tokens/base.css' layer(base);
 
 @source "../views";
 @source "../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php";
@@ -216,6 +222,44 @@
 
     --sidebar-border: var(--border-subtle);
     --sidebar-ring: var(--border-focus-color);
+}
+
+/*
+ * Type scale utilities: text-display-3, text-title-2, text-body,
+ * text-label, text-caption, text-micro…
+ *
+ * The components have always used these class names, but they were never
+ * registered, so Tailwind generated nothing and every one of them fell back
+ * to the inherited body size. `inline` makes each utility read the token
+ * from tokens/typography.css directly (font-size: var(--text-caption)),
+ * so the theme never re-declares --text-* and cannot shadow the tokens.
+ */
+@theme inline {
+    --text-display-1: var(--text-display-1);
+    --text-display-1--line-height: var(--leading-tight);
+    --text-display-1--letter-spacing: var(--tracking-display);
+    --text-display-2: var(--text-display-2);
+    --text-display-2--line-height: var(--leading-tight);
+    --text-display-2--letter-spacing: var(--tracking-display);
+    --text-display-3: var(--text-display-3);
+    --text-display-3--line-height: var(--leading-tight);
+    --text-display-3--letter-spacing: var(--tracking-display);
+    --text-title-1: var(--text-title-1);
+    --text-title-1--line-height: var(--leading-snug);
+    --text-title-2: var(--text-title-2);
+    --text-title-2--line-height: var(--leading-snug);
+    --text-title-3: var(--text-title-3);
+    --text-title-3--line-height: var(--leading-snug);
+    --text-body: var(--text-body);
+    --text-body--line-height: var(--leading-normal);
+    --text-body-lg: var(--text-body-lg);
+    --text-body-lg--line-height: var(--leading-relaxed);
+    --text-label: var(--text-label);
+    --text-label--line-height: var(--leading-normal);
+    --text-caption: var(--text-caption);
+    --text-caption--line-height: var(--leading-normal);
+    --text-micro: var(--text-micro);
+    --text-micro--line-height: var(--leading-normal);
 }
 
 @theme inline {

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\PermissionMatrixController;
 use App\Http\Controllers\Auth\ManagerShiftQrController;
 use App\Http\Controllers\Auth\ShiftQrAuthController;
 use App\Http\Controllers\Auth\StaffInvitationController;
@@ -289,13 +291,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
         )->name('app.staff.invite');
     });
 
-    Route::get('/app/system', function () {
-        return Inertia::render('staff/landing', [
-            'title' => 'System',
-        ]);
-    })
-        ->middleware('can:manage_restaurant_config')
-        ->name('app.system');
+    // Issue #28 — Super admin dashboard and the editable permission matrix.
+
+    Route::middleware('can:manage_restaurant_config')->group(function () {
+        Route::get('/app/system', [AdminDashboardController::class, 'index'])
+            ->name('app.system');
+
+        Route::get(
+            '/app/system/permissions',
+            [PermissionMatrixController::class, 'index'],
+        )->name('app.system.permissions.index');
+
+        Route::patch(
+            '/app/system/permissions',
+            [PermissionMatrixController::class, 'update'],
+        )->name('app.system.permissions.update');
+
+        Route::get(
+            '/app/system/permissions/audits',
+            [PermissionMatrixController::class, 'audits'],
+        )->name('app.system.permissions.audits');
+    });
 
     Route::get('/app/menu', function () {
         return Inertia::render('staff/landing', [
