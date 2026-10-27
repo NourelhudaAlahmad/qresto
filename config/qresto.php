@@ -56,6 +56,15 @@ return [
 
     'undo_window_seconds' => 6,
 
+    'staff' => [
+        // Length of "tonight's shift" when a manager adds someone.
+        'default_shift_hours' => 8,
+
+        // Roles a manager may create, assign and deactivate. Manager and
+        // admin accounts are deliberately absent.
+        'manageable_roles' => ['waiter', 'runner', 'cashier', 'kitchen'],
+    ],
+
     'table_session_idle_minutes' => 30,
     'table_session_cookie_minutes' => 1440,
     'table_session_cookie' => 'qresto_table_session',

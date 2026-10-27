@@ -144,7 +144,7 @@ class NavigationBuilderTest extends TestCase
                 '/app/system',
                 '/app/menu',
                 '/app/reports',
-                '/app/orders',
+                '/manager/overview',
             ],
             array_column($navigation, 'href'),
         );

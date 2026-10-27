@@ -99,6 +99,14 @@ return [
             'expire' => 30,
             'throttle' => 60,
         ],
+
+        // Set-password links sent when a manager adds someone to the shift.
+        'staff_invites' => [
+            'provider' => 'users',
+            'table' => 'staff_invitation_tokens',
+            'expire' => (int) env('QRESTO_STAFF_INVITE_EXPIRE_MINUTES', 2880),
+            'throttle' => 0,
+        ],
     ],
 
     /*

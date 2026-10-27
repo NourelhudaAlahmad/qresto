@@ -129,9 +129,9 @@ class NavigationBuilder
                 [
                     'id' => 'manager',
                     'title' => 'Orders & team',
-                    'href' => '/app/orders',
+                    'href' => '/manager/overview',
                     'badge' => null,
-                    'capability' => Capability::SEE_ALL_ORDERS,
+                    'capability' => Capability::MANAGE_WAITER_ACCOUNTS,
                 ],
             ],
 

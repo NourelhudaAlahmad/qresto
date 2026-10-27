@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -28,6 +29,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int|null $restaurant_id
  * @property string|null $locale
  * @property bool $is_active
+ * @property Carbon|null $deactivated_at
+ * @property int|null $deactivated_by
  * @property string|null $initials
  * @property string|null $job_title
  * @property Carbon|null $created_at
@@ -40,6 +43,8 @@ use Spatie\Permission\Traits\HasRoles;
     'restaurant_id',
     'locale',
     'is_active',
+    'deactivated_at',
+    'deactivated_by',
     'initials',
     'job_title',
     'failed_attempts',
@@ -66,6 +71,19 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
+     * @return HasMany<Shift, $this>
+     */
+    public function shifts(): HasMany
+    {
+        return $this->hasMany(Shift::class);
+    }
+
+    public function isDeactivated(): bool
+    {
+        return $this->deactivated_at !== null;
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -77,6 +95,7 @@ class User extends Authenticatable implements PasskeyUser
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'is_active' => 'boolean',
+            'deactivated_at' => 'datetime',
             'failed_attempts' => 'integer',
             'locked_until' => 'datetime',
             'last_login_at' => 'datetime',

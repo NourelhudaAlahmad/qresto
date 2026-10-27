@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Capability;
 use App\Enums\OrderStatus;
+use App\Http\Requests\Staff\StaffMemberRequest;
 use App\Models\Order;
 use App\Models\Restaurant;
 use App\Models\Shift;
@@ -21,10 +23,11 @@ class ManagerDashboardController extends Controller
     {
         $manager = $request->user();
 
+        // Capabilities, not role names: the matrix is editable (#7, #28).
         abort_unless(
             $manager
-                && $manager->hasRole('manager')
-                && $manager->can('see_all_orders'),
+                && $manager->can(Capability::MANAGE_WAITER_ACCOUNTS->value)
+                && $manager->can(Capability::SEE_ALL_ORDERS->value),
             403,
         );
 
@@ -285,6 +288,27 @@ class ManagerDashboardController extends Controller
             ]);
 
         /**
+         * The floor team the manager can manage: every waiter, runner,
+         * cashier and kitchen account, deactivated ones included so they
+         * can be reactivated. Active people first.
+         */
+        $team = User::query()
+            ->where('restaurant_id', $restaurantId)
+            ->role(StaffMemberRequest::manageableRoles())
+            ->with('roles:id,name')
+            ->orderByDesc('is_active')
+            ->orderBy('name')
+            ->get([
+                'id',
+                'name',
+                'email',
+                'job_title',
+                'initials',
+                'is_active',
+                'deactivated_at',
+            ]);
+
+        /**
          * Include shifts overlapping today in the restaurant timezone.
          * Eager-load their tables to avoid a query per waiter.
          */
@@ -309,13 +333,17 @@ class ManagerDashboardController extends Controller
                 ) ?? $userShifts->last();
             });
 
-        $staff = $waiters
+        $staff = $team
             ->map(function (User $waiter) use (
                 $shiftByUser,
                 $orderCounts,
                 $now,
+                $timezone,
             ): array {
-                $shift = $shiftByUser->get($waiter->id);
+                $active = $waiter->is_active && $waiter->deactivated_at === null;
+                $role = (string) ($waiter->roles->first()->name ?? 'waiter');
+
+                $shift = $active ? $shiftByUser->get($waiter->id) : null;
 
                 $onShift = $shift !== null
                     && $shift->starts_at->lte($now)
@@ -324,8 +352,12 @@ class ManagerDashboardController extends Controller
                 return [
                     'id' => $waiter->id,
                     'name' => $waiter->name,
-                    'role' => 'Waiter',
+                    'email' => $waiter->email,
+                    'role' => $role,
+                    'role_label' => ucfirst($role),
                     'job_title' => $waiter->job_title,
+                    'active' => $active,
+                    'deactivated_at' => $waiter->deactivated_at?->toIso8601String(),
                     'initials' => $waiter->initials,
                     'tables' => $shift === null
                         ? []
@@ -337,8 +369,8 @@ class ManagerDashboardController extends Controller
                     'shift' => $shift === null
                         ? null
                         : [
-                            'starts_at' => $shift->starts_at->format('H:i'),
-                            'ends_at' => $shift->ends_at->format('H:i'),
+                            'starts_at' => $shift->starts_at->copy()->timezone($timezone)->format('H:i'),
+                            'ends_at' => $shift->ends_at->copy()->timezone($timezone)->format('H:i'),
                         ],
                     'order_count' => (int) $orderCounts->get(
                         $waiter->id,
@@ -379,6 +411,8 @@ class ManagerDashboardController extends Controller
                 ->map(fn ($number): string => (string) $number)
                 ->values()
                 ->all(),
+            // Roles the add/edit drawer offers (#27).
+            'staffRoles' => StaffMemberRequest::manageableRoles(),
             'now' => $now->valueOf(),
             'currency' => $restaurant->currency ?: 'TRY',
             'warnMinutes' => $warnMinutes,
@@ -432,8 +466,7 @@ class ManagerDashboardController extends Controller
 
         abort_unless(
             $manager
-                && $manager->hasRole('manager')
-                && $manager->can('see_all_orders'),
+                && $manager->can(Capability::MANAGE_WAITER_ACCOUNTS->value),
             403,
         );
 

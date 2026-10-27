@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureStaffAccountCanAuthenticate;
 use App\Http\Middleware\EnsureTableSession;
 use App\Http\Middleware\HandleAppearance;
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->web(append: [
+            EnsureAccountIsActive::class,
             HandleAppearance::class,
             SetLocale::class,
             HandleInertiaRequests::class,

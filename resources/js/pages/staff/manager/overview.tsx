@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
-import { Pencil, Plus, TrendingDown, TrendingUp } from 'lucide-react';
-import { useState } from 'react';
+import { Ellipsis, Plus, TrendingDown, TrendingUp } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 
 import { Numeric } from '@/components/numeric';
@@ -11,6 +11,7 @@ import { Drawer } from '@/components/qresto/drawer';
 import { EmptyState } from '@/components/qresto/empty-state';
 import { Input } from '@/components/qresto/input';
 import { Label } from '@/components/qresto/label';
+import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { Stat } from '@/components/qresto/stat';
 import { StatusPill } from '@/components/qresto/status-pill';
 import { Switch } from '@/components/qresto/switch';
@@ -54,9 +55,13 @@ type Order = {
 type TeamMember = {
     id: number;
     name: string;
-    role: string | null;
+    email: string;
+    role: string;
+    role_label: string;
     job_title: string | null;
     initials: string | null;
+    active: boolean;
+    deactivated_at: string | null;
     tables: string[];
     shift: { starts_at: string; ends_at: string } | null;
     order_count: number;
@@ -69,6 +74,7 @@ type Props = {
     staff: TeamMember[];
     waiters: Waiter[];
     tables?: string[];
+    staffRoles?: string[];
     now: number;
     currency: string;
     warnMinutes: number;
@@ -78,7 +84,7 @@ type Props = {
 
 const LIVE_PROPS = ['stats', 'orders', 'staff', 'now'];
 
-const ROLE_OPTIONS = ['Waiter', 'Runner', 'Cashier', 'Kitchen'] as const;
+const DEFAULT_ROLES = ['waiter', 'runner', 'cashier', 'kitchen'];
 
 const AVATAR_TONES = ['teal', 'clay', 'ink'] as const;
 
@@ -199,42 +205,44 @@ function Panel({
 type WaiterForm = {
     name: string;
     email: string;
-    role: (typeof ROLE_OPTIONS)[number];
+    role: string;
     tables: string[];
-    sendLink: boolean;
+    send_invite: boolean;
 };
 
-const EMPTY_FORM: WaiterForm = {
-    name: '',
-    email: '',
-    role: 'Waiter',
-    tables: [],
-    sendLink: true,
-};
+type FormErrors = Partial<Record<keyof WaiterForm | 'member', string>>;
 
-const FORM_ID = 'add-waiter-form';
+const FORM_ID = 'staff-member-form';
+
+function roleLabel(role: string): string {
+    return role.charAt(0).toUpperCase() + role.slice(1);
+}
 
 function WaiterFields({
     editing,
+    roles,
     tableOptions,
+    errors,
     onSubmit,
 }: {
     editing: TeamMember | null;
+    roles: string[];
     tableOptions: string[];
+    errors: FormErrors;
     onSubmit: (form: WaiterForm) => void;
 }) {
     // Mounted fresh on every open (Radix unmounts closed content).
-    const [form, setForm] = useState<WaiterForm>(() =>
-        editing
-            ? {
-                  ...EMPTY_FORM,
-                  name: editing.name,
-                  tables: editing.tables,
-                  sendLink: false,
-              }
-            : EMPTY_FORM,
-    );
-    const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
+    const [form, setForm] = useState<WaiterForm>(() => ({
+        name: editing?.name ?? '',
+        email: editing?.email ?? '',
+        role: editing?.role ?? roles[0] ?? 'waiter',
+        tables: editing?.tables ?? [],
+        send_invite: editing === null,
+    }));
+    const [localErrors, setLocalErrors] = useState<FormErrors>({});
+
+    // Server errors win over the quick client-side checks.
+    const shown = { ...localErrors, ...errors };
 
     function toggleTable(table: string) {
         setForm((current) => ({
@@ -248,7 +256,7 @@ function WaiterFields({
     function submit(event: FormEvent) {
         event.preventDefault();
 
-        const next: { name?: string; email?: string } = {};
+        const next: FormErrors = {};
 
         if (form.name.trim() === '') {
             next.name = 'Enter the full name.';
@@ -258,10 +266,14 @@ function WaiterFields({
             next.email = 'Enter a work email, like name@albustan.co.';
         }
 
-        setErrors(next);
+        setLocalErrors(next);
 
         if (Object.keys(next).length === 0) {
-            onSubmit(form);
+            onSubmit({
+                ...form,
+                name: form.name.trim(),
+                email: form.email.trim(),
+            });
         }
     }
 
@@ -273,46 +285,45 @@ function WaiterFields({
             className="flex flex-col gap-5"
         >
             <div className="flex flex-col gap-1.5">
-                <Label htmlFor="waiter-name">Full name</Label>
+                <Label htmlFor="staff-name">Full name</Label>
                 <Input
-                    id="waiter-name"
+                    id="staff-name"
                     value={form.name}
                     placeholder="Omar Faruk"
                     autoComplete="off"
-                    aria-invalid={errors.name ? true : undefined}
+                    aria-invalid={shown.name ? true : undefined}
                     onChange={(event) =>
                         setForm({ ...form, name: event.target.value })
                     }
                 />
-                {errors.name && (
+                {shown.name && (
                     <span className="text-caption text-[var(--berry-500)]">
-                        {errors.name}
+                        {shown.name}
                     </span>
                 )}
             </div>
 
-            {!editing && (
-                <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="waiter-email">Work email</Label>
-                    <Input
-                        id="waiter-email"
-                        type="email"
-                        value={form.email}
-                        placeholder="name@albustan.co"
-                        autoComplete="off"
-                        dir="ltr"
-                        aria-invalid={errors.email ? true : undefined}
-                        onChange={(event) =>
-                            setForm({ ...form, email: event.target.value })
-                        }
-                    />
-                    {errors.email && (
-                        <span className="text-caption text-[var(--berry-500)]">
-                            {errors.email}
-                        </span>
-                    )}
-                </div>
-            )}
+            <div className="flex flex-col gap-1.5">
+                <Label htmlFor="staff-email">Work email</Label>
+                <Input
+                    id="staff-email"
+                    type="email"
+                    value={form.email}
+                    placeholder="name@albustan.co"
+                    autoComplete="off"
+                    dir="ltr"
+                    readOnly={editing !== null}
+                    aria-invalid={shown.email ? true : undefined}
+                    onChange={(event) =>
+                        setForm({ ...form, email: event.target.value })
+                    }
+                />
+                {shown.email && (
+                    <span className="text-caption text-[var(--berry-500)]">
+                        {shown.email}
+                    </span>
+                )}
+            </div>
 
             <div className="flex flex-col gap-1.5">
                 <span className="text-label font-medium text-[var(--text-primary)]">
@@ -323,17 +334,22 @@ function WaiterFields({
                     aria-label="Role"
                     className="flex flex-wrap gap-2"
                 >
-                    {ROLE_OPTIONS.map((role) => (
+                    {roles.map((role) => (
                         <ChipFilter
                             key={role}
                             type="segment"
                             active={form.role === role}
                             onClick={() => setForm({ ...form, role })}
                         >
-                            {role}
+                            {roleLabel(role)}
                         </ChipFilter>
                     ))}
                 </div>
+                {shown.role && (
+                    <span className="text-caption text-[var(--berry-500)]">
+                        {shown.role}
+                    </span>
+                )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -363,23 +379,124 @@ function WaiterFields({
                         ))}
                     </div>
                 )}
+
+                <span className="text-caption text-[var(--text-tertiary)]">
+                    A table taken from someone else moves to this person.
+                </span>
+
+                {shown.tables && (
+                    <span className="text-caption text-[var(--berry-500)]">
+                        {shown.tables}
+                    </span>
+                )}
             </div>
 
             {!editing && (
                 <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor="waiter-send-link" className="font-normal">
+                    <Label htmlFor="staff-send-invite" className="font-normal">
                         Send a set-password link now
                     </Label>
                     <Switch
-                        id="waiter-send-link"
-                        checked={form.sendLink}
+                        id="staff-send-invite"
+                        checked={form.send_invite}
                         onCheckedChange={(checked) =>
-                            setForm({ ...form, sendLink: checked })
+                            setForm({ ...form, send_invite: checked })
                         }
                     />
                 </div>
             )}
         </form>
+    );
+}
+
+function MemberMenu({
+    member,
+    onEdit,
+    onInvite,
+    onDeactivate,
+    onReactivate,
+}: {
+    member: TeamMember;
+    onEdit: () => void;
+    onInvite: () => void;
+    onDeactivate: () => void;
+    onReactivate: () => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+
+        const close = (event: MouseEvent | KeyboardEvent) => {
+            if (
+                event instanceof KeyboardEvent
+                    ? event.key === 'Escape'
+                    : !ref.current?.contains(event.target as Node)
+            ) {
+                setOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', close);
+        document.addEventListener('keydown', close);
+
+        return () => {
+            document.removeEventListener('mousedown', close);
+            document.removeEventListener('keydown', close);
+        };
+    }, [open]);
+
+    const item = (label: string, action: () => void, danger = false) => (
+        <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+                setOpen(false);
+                action();
+            }}
+            className={`text-label min-h-11 w-full rounded-[var(--radius-sm)] px-3 text-start font-semibold hover:bg-[var(--action-ghost-hover)] ${
+                danger
+                    ? 'text-[var(--berry-500)]'
+                    : 'text-[var(--text-primary)]'
+            }`}
+        >
+            {label}
+        </button>
+    );
+
+    return (
+        <div ref={ref} className="relative shrink-0">
+            <button
+                type="button"
+                aria-label={`Actions for ${member.name}`}
+                aria-haspopup="menu"
+                aria-expanded={open}
+                onClick={() => setOpen((current) => !current)}
+                className="grid size-11 place-items-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--action-ghost-hover)]"
+            >
+                <Ellipsis className="size-5" aria-hidden="true" />
+            </button>
+
+            {open && (
+                <div
+                    role="menu"
+                    className="absolute end-0 top-12 z-20 min-w-52 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-1 shadow-[var(--shadow-pop)]"
+                >
+                    {member.active ? (
+                        <>
+                            {item('Edit and reassign tables', onEdit)}
+                            {item('Send set-password link', onInvite)}
+                            {item('Deactivate', onDeactivate, true)}
+                        </>
+                    ) : (
+                        item('Reactivate', onReactivate)
+                    )}
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -389,6 +506,7 @@ export default function ManagerOverview({
     staff,
     waiters,
     tables = [],
+    staffRoles = DEFAULT_ROLES,
     now,
     currency,
     warnMinutes,
@@ -399,6 +517,11 @@ export default function ManagerOverview({
     const [reassigning, setReassigning] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [editing, setEditing] = useState<TeamMember | null>(null);
+    const [formErrors, setFormErrors] = useState<FormErrors>({});
+    const [saving, setSaving] = useState(false);
+    const [deactivating, setDeactivating] = useState<TeamMember | null>(null);
+    const [deactivateError, setDeactivateError] = useState<string | null>(null);
+    const [busyMemberId, setBusyMemberId] = useState<number | null>(null);
 
     useLiveData(pollIntervalMs, { only: LIVE_PROPS });
 
@@ -458,24 +581,108 @@ export default function ManagerOverview({
 
     function openDrawer(member: TeamMember | null) {
         setEditing(member);
+        setFormErrors({});
         setDrawerOpen(true);
     }
 
-    // There is no staff endpoint yet (#27). Replace this with router.post
-    // when StaffController lands; the drawer must never navigate away.
-    function saveWaiter(form: WaiterForm) {
-        setDrawerOpen(false);
+    // Every staff action redirects back; reload only what changed so the
+    // team list updates in place and the drawer never navigates away.
+    const staffVisit = {
+        preserveScroll: true,
+        preserveState: true,
+        only: [...LIVE_PROPS, 'waiters', 'flash'],
+    };
 
-        showToast(
-            editing
-                ? { type: 'success', title: 'Waiter updated' }
-                : {
-                      type: 'success',
-                      title: `${form.name} added to tonight`,
-                      description: form.sendLink
-                          ? 'Set-password link sent'
-                          : undefined,
-                  },
+    function saveMember(form: WaiterForm) {
+        if (saving) {
+            return;
+        }
+
+        const payload = {
+            name: form.name,
+            role: form.role,
+            tables: form.tables,
+        };
+
+        const options = {
+            ...staffVisit,
+            onStart: () => setSaving(true),
+            onFinish: () => setSaving(false),
+            onError: (errors: Record<string, string>) =>
+                setFormErrors(errors as FormErrors),
+            onSuccess: () => {
+                setDrawerOpen(false);
+                setFormErrors({});
+                showToast(
+                    editing
+                        ? { type: 'success', title: `${form.name} updated` }
+                        : {
+                              type: 'success',
+                              title: `${form.name} added to tonight`,
+                              description: form.send_invite
+                                  ? 'Set-password link sent'
+                                  : undefined,
+                          },
+                );
+            },
+        };
+
+        if (editing) {
+            router.patch(`/app/staff/${editing.id}`, payload, options);
+        } else {
+            router.post(
+                '/app/staff',
+                {
+                    ...payload,
+                    email: form.email,
+                    send_invite: form.send_invite,
+                },
+                options,
+            );
+        }
+    }
+
+    function memberAction(
+        member: TeamMember,
+        action: 'deactivate' | 'reactivate' | 'invite',
+        success: string,
+        onError?: (message: string) => void,
+    ) {
+        if (busyMemberId !== null) {
+            return;
+        }
+
+        router.post(
+            `/app/staff/${member.id}/${action}`,
+            {},
+            {
+                ...staffVisit,
+                onStart: () => setBusyMemberId(member.id),
+                onFinish: () => setBusyMemberId(null),
+                onSuccess: () => {
+                    if (action === 'deactivate') {
+                        setDeactivating(null);
+                    }
+
+                    showToast({ type: 'success', title: success });
+                },
+                onError: (errors) => {
+                    const message =
+                        errors.member ??
+                        Object.values(errors)[0] ??
+                        'Please try again.';
+
+                    if (onError) {
+                        onError(message);
+                    } else {
+                        showToast({
+                            type: 'error',
+                            title: 'That did not go through',
+                            description: message,
+                        });
+                    }
+                },
+            },
         );
     }
 
@@ -675,63 +882,94 @@ export default function ManagerOverview({
                 >
                     {staff.map((member, index) => {
                         const meta = [
-                            member.job_title || member.role || 'Staff',
+                            member.role_label,
                             member.tables.length
                                 ? `${member.tables.length === 1 ? 'table' : 'tables'} ${member.tables.join(', ')}`
                                 : 'no tables',
                             plural(member.order_count, 'order', 'orders'),
                         ].join(' · ');
 
+                        const chip = !member.active
+                            ? {
+                                  label: 'Deactivated',
+                                  className:
+                                      'bg-[var(--danger-bg)] text-[var(--danger-fg)]',
+                              }
+                            : member.on_shift
+                              ? {
+                                    label: 'On shift',
+                                    className:
+                                        'bg-[var(--success-bg)] text-[var(--success-fg)]',
+                                }
+                              : {
+                                    label: member.shift
+                                        ? `Off at ${member.shift.ends_at}`
+                                        : 'Off shift',
+                                    className:
+                                        'bg-[var(--ink-100)] text-[var(--text-tertiary)]',
+                                };
+
                         return (
                             <div
                                 key={member.id}
-                                className="flex items-center gap-3 border-b border-[var(--border-subtle)] px-5 py-3"
+                                aria-busy={busyMemberId === member.id}
+                                className={`flex items-center gap-3 border-b border-[var(--border-subtle)] px-5 py-3 ${
+                                    member.active ? '' : 'opacity-60'
+                                }`}
                             >
                                 <Avatar
                                     initials={initialsOf(member)}
                                     tone={
-                                        AVATAR_TONES[
-                                            index % AVATAR_TONES.length
-                                        ]
+                                        member.active
+                                            ? AVATAR_TONES[
+                                                  index % AVATAR_TONES.length
+                                              ]
+                                            : 'ink'
                                     }
                                 />
 
-                                <div className="min-w-0 flex-1">
-                                    <div className="text-body font-medium">
+                                <button
+                                    type="button"
+                                    disabled={!member.active}
+                                    onClick={() => openDrawer(member)}
+                                    className="min-w-0 flex-1 text-start disabled:cursor-default"
+                                >
+                                    <span className="text-body block font-medium">
                                         {member.name}
-                                    </div>
-                                    <div className="text-micro truncate font-mono text-[var(--text-tertiary)]">
+                                    </span>
+                                    <span className="text-micro block truncate font-mono text-[var(--text-tertiary)]">
                                         {meta}
-                                    </div>
-                                </div>
+                                    </span>
+                                </button>
 
                                 <span
-                                    className={`text-micro inline-flex h-6 items-center whitespace-nowrap rounded-[var(--radius-pill)] px-2.5 font-semibold ${
-                                        member.on_shift
-                                            ? 'bg-[var(--success-bg)] text-[var(--success-fg)]'
-                                            : 'bg-[var(--ink-100)] text-[var(--text-tertiary)]'
-                                    }`}
+                                    className={`text-micro inline-flex h-6 items-center whitespace-nowrap rounded-[var(--radius-pill)] px-2.5 font-semibold ${chip.className}`}
                                 >
-                                    {member.on_shift
-                                        ? 'On shift'
-                                        : member.shift
-                                          ? `Off at ${member.shift.ends_at}`
-                                          : 'Off shift'}
+                                    {chip.label}
                                 </span>
 
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    aria-label={`Edit ${member.name}`}
-                                    onClick={() => openDrawer(member)}
-                                >
-                                    <Pencil
-                                        size={16}
-                                        className="text-[var(--text-tertiary)]"
-                                        aria-hidden
-                                    />
-                                </Button>
+                                <MemberMenu
+                                    member={member}
+                                    onEdit={() => openDrawer(member)}
+                                    onInvite={() =>
+                                        memberAction(
+                                            member,
+                                            'invite',
+                                            `Set-password link sent to ${member.name}`,
+                                        )
+                                    }
+                                    onDeactivate={() => {
+                                        setDeactivateError(null);
+                                        setDeactivating(member);
+                                    }}
+                                    onReactivate={() =>
+                                        memberAction(
+                                            member,
+                                            'reactivate',
+                                            `${member.name} can sign in again`,
+                                        )
+                                    }
+                                />
                             </div>
                         );
                     })}
@@ -749,7 +987,11 @@ export default function ManagerOverview({
 
             <Drawer
                 open={drawerOpen}
-                onOpenChange={setDrawerOpen}
+                onOpenChange={(open) => {
+                    if (!saving) {
+                        setDrawerOpen(open);
+                    }
+                }}
                 title={editing ? `Edit ${editing.name}` : 'Add a waiter'}
                 footer={
                     <>
@@ -757,6 +999,7 @@ export default function ManagerOverview({
                             type="button"
                             variant="outline"
                             className="flex-1"
+                            disabled={saving}
                             onClick={() => setDrawerOpen(false)}
                         >
                             Cancel
@@ -766,6 +1009,7 @@ export default function ManagerOverview({
                             form={FORM_ID}
                             variant="primary"
                             className="flex-1"
+                            loading={saving}
                         >
                             {editing ? 'Save changes' : 'Add to shift'}
                         </Button>
@@ -774,10 +1018,64 @@ export default function ManagerOverview({
             >
                 <WaiterFields
                     editing={editing}
+                    roles={staffRoles}
                     tableOptions={tables}
-                    onSubmit={saveWaiter}
+                    errors={formErrors}
+                    onSubmit={saveMember}
                 />
             </Drawer>
+
+            {deactivating && (
+                <ResponsiveOverlay
+                    open
+                    onOpenChange={(open) => {
+                        if (!open && busyMemberId === null) {
+                            setDeactivating(null);
+                        }
+                    }}
+                    title={`Deactivate ${deactivating.name}?`}
+                    description="Their order history stays, and their tables go back to the pool. They can no longer sign in until you reactivate them."
+                >
+                    <div className="flex flex-col gap-3">
+                        {deactivateError && (
+                            <p
+                                role="alert"
+                                className="text-body rounded-[var(--radius-md)] bg-[var(--danger-bg)] px-3 py-2 text-[var(--danger-fg)]"
+                            >
+                                {deactivateError}
+                            </p>
+                        )}
+
+                        <div className="flex gap-3">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="flex-1"
+                                disabled={busyMemberId !== null}
+                                onClick={() => setDeactivating(null)}
+                            >
+                                Keep active
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                className="flex-1"
+                                loading={busyMemberId === deactivating.id}
+                                onClick={() =>
+                                    memberAction(
+                                        deactivating,
+                                        'deactivate',
+                                        `${deactivating.name} deactivated`,
+                                        setDeactivateError,
+                                    )
+                                }
+                            >
+                                Deactivate
+                            </Button>
+                        </div>
+                    </div>
+                </ResponsiveOverlay>
+            )}
         </div>
     );
 }

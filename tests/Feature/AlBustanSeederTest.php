@@ -5,10 +5,12 @@ use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\Restaurant;
 use App\Models\RestaurantTable;
+use App\Models\Shift;
 use App\Models\User;
 use Database\Seeders\AlBustanSeeder;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -94,4 +96,39 @@ it('is idempotent when seeded twice', function () {
         ->toBe($counts['staff'])
         ->and(Order::count())
         ->toBe($counts['orders']);
+});
+
+it('seeds tonight\'s floor team exactly as the design lists it', function () {
+    $this->seed([
+        RolesSeeder::class,
+        AlBustanSeeder::class,
+    ]);
+
+    $tablesOf = fn (string $name): array => DB::table('table_user')
+        ->join('users', 'users.id', '=', 'table_user.user_id')
+        ->join('tables', 'tables.id', '=', 'table_user.table_id')
+        ->where('users.name', $name)
+        ->orderBy('tables.number')
+        ->pluck('tables.number')
+        ->map(fn ($number): string => (string) $number)
+        ->all();
+
+    $onShift = fn (string $name): bool => Shift::query()
+        ->whereHas('user', fn ($query) => $query->where('name', $name))
+        ->where('starts_at', '<=', now())
+        ->where('ends_at', '>=', now())
+        ->exists();
+
+    expect($tablesOf('Nadia Rahman'))->toBe(['04', '12'])
+        ->and($tablesOf('Omar Faruk'))->toBe(['02'])
+        ->and($tablesOf('Lin Wu'))->toBe(['07', '09'])
+        ->and($onShift('Nadia Rahman'))->toBeTrue()
+        ->and($onShift('Omar Faruk'))->toBeTrue()
+        ->and($onShift('Lin Wu'))->toBeFalse()
+        ->and($onShift('Sara Malik'))->toBeTrue();
+
+    // Each seeded order sits on a table its waiter is assigned to.
+    foreach (Order::query()->with(['table', 'assignedUser'])->whereNotNull('table_id')->get() as $order) {
+        expect($tablesOf($order->assignedUser->name))->toContain($order->table->number);
+    }
 });

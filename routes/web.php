@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\ManagerShiftQrController;
 use App\Http\Controllers\Auth\ShiftQrAuthController;
+use App\Http\Controllers\Auth\StaffInvitationController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CartLineController;
 use App\Http\Controllers\CheckoutController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\OrderStatusController;
 use App\Http\Controllers\QrController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ServiceRequestController;
+use App\Http\Controllers\StaffController;
 use App\Http\Controllers\WaiterOrderController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -53,6 +55,20 @@ Route::post(
     'verified',
     'throttle:10,1',
 ])->name('auth.shift-qr.issue');
+
+// Staff invitation — the set-password link a new staff member receives (#27).
+
+Route::middleware(['guest:web', 'throttle:10,1'])->group(function () {
+    Route::get(
+        '/staff/invitation/{token}',
+        [StaffInvitationController::class, 'show'],
+    )->name('staff.invitation.show');
+
+    Route::post(
+        '/staff/invitation',
+        [StaffInvitationController::class, 'store'],
+    )->name('staff.invitation.store');
+});
 
 // Manager-only Shift QR page
 
@@ -245,8 +261,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
         '/app/orders/{order}/assign',
         [ManagerDashboardController::class, 'assign'],
     )
-        ->middleware('can:see_all_orders')
+        ->middleware('can:manage_waiter_accounts')
         ->name('app.orders.assign');
+
+    // Issue #27 — Staff management from the manager overview drawer.
+
+    Route::middleware('can:manage_waiter_accounts')->group(function () {
+        Route::post('/app/staff', [StaffController::class, 'store'])
+            ->name('app.staff.store');
+
+        Route::patch('/app/staff/{member}', [StaffController::class, 'update'])
+            ->name('app.staff.update');
+
+        Route::post(
+            '/app/staff/{member}/deactivate',
+            [StaffController::class, 'deactivate'],
+        )->name('app.staff.deactivate');
+
+        Route::post(
+            '/app/staff/{member}/reactivate',
+            [StaffController::class, 'reactivate'],
+        )->name('app.staff.reactivate');
+
+        Route::post(
+            '/app/staff/{member}/invite',
+            [StaffController::class, 'invite'],
+        )->name('app.staff.invite');
+    });
 
     Route::get('/app/system', function () {
         return Inertia::render('staff/landing', [
