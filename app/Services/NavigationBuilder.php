@@ -77,7 +77,7 @@ class NavigationBuilder
                 [
                     'id' => 'manager',
                     'title' => 'Overview',
-                    'href' => '/app/overview',
+                    'href' => '/manager/overview',
                     'badge' => null,
                     'capability' => Capability::SEE_ALL_ORDERS,
                 ],

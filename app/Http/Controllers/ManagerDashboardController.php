@@ -77,78 +77,64 @@ class ManagerDashboardController extends Controller
             : 0;
 
         /**
-         * Kitchen median is calculated in SQL.
-         *
-         * Find the first PREPARING and READY event for each order,
-         * calculate the duration in seconds, rank the durations, and
-         * average the middle row(s) to obtain the true median.
+         * Kitchen median is based on the first PREPARING and READY events
+         * for each order on this service day.
          */
-        $eventTimes = DB::table('order_events as oe')
-            ->join(
-                'orders as event_orders',
-                'event_orders.id',
-                '=',
-                'oe.order_id',
-            )
-            ->where('event_orders.restaurant_id', $restaurantId)
-            ->where('event_orders.service_date', $serviceDate)
-            ->where(
-                'event_orders.status',
-                '!=',
-                OrderStatus::CANCELLED->value,
-            )
-            ->select('oe.order_id')
+        $eventTimes = DB::table('order_events')
+            ->select('order_id')
             ->selectRaw(
-                'MIN(CASE WHEN oe.to_status = ? THEN oe.occurred_at END) AS preparing_at',
+                'MIN(CASE WHEN to_status = ? THEN occurred_at END) AS preparing_at',
                 [OrderStatus::PREPARING->value],
             )
             ->selectRaw(
-                'MIN(CASE WHEN oe.to_status = ? THEN oe.occurred_at END) AS ready_at',
+                'MIN(CASE WHEN to_status = ? THEN occurred_at END) AS ready_at',
                 [OrderStatus::READY->value],
             )
-            ->groupBy('oe.order_id');
+            ->groupBy('order_id');
 
-        $durationRows = DB::table('orders as o')
-            ->joinSub(
-                $eventTimes,
-                'event_times',
-                function ($join): void {
-                    $join->on(
-                        'event_times.order_id',
-                        '=',
-                        'o.id',
-                    );
-                },
-            )
+        $prepRows = DB::table('orders as o')
+            ->joinSub($eventTimes, 'event_times', function ($join): void {
+                $join->on('event_times.order_id', '=', 'o.id');
+            })
             ->where('o.restaurant_id', $restaurantId)
             ->where('o.service_date', $serviceDate)
             ->where('o.status', '!=', OrderStatus::CANCELLED->value)
             ->whereNotNull('event_times.preparing_at')
             ->whereNotNull('event_times.ready_at')
-            ->selectRaw(
-                'CAST(MAX(0, ROUND((julianday(event_times.ready_at) - julianday(event_times.preparing_at)) * 86400)) AS INTEGER) AS duration_seconds',
-            );
+            ->get([
+                'event_times.preparing_at',
+                'event_times.ready_at',
+            ]);
 
-        $rankedDurations = DB::query()
-            ->fromSub($durationRows, 'durations')
-            ->selectRaw(
-                'duration_seconds, ROW_NUMBER() OVER (ORDER BY duration_seconds) AS row_num, COUNT(*) OVER () AS total_rows',
-            );
-
-        $medianSeconds = DB::query()
-            ->fromSub($rankedDurations, 'ranked_durations')
-            ->whereRaw(
-                'row_num IN (CAST((total_rows + 1) / 2 AS INTEGER), CAST((total_rows + 2) / 2 AS INTEGER))',
+        $durationsSeconds = $prepRows
+            ->map(
+                fn (object $row): int => max(
+                    0,
+                    (int) Carbon::parse($row->preparing_at)
+                        ->diffInSeconds(Carbon::parse($row->ready_at)),
+                ),
             )
-            ->avg('duration_seconds');
+            ->sort()
+            ->values()
+            ->all();
 
-        $medianPrepMinutes = $medianSeconds !== null
-            ? round((float) $medianSeconds / 60, 1)
-            : null;
+        $durationCount = count($durationsSeconds);
 
-        /**
-         * Count active orders that have exceeded the late threshold.
-         */
+        if ($durationCount === 0) {
+            $medianPrepMinutes = null;
+        } else {
+            $middle = intdiv($durationCount, 2);
+
+            $medianSeconds = $durationCount % 2 === 1
+                ? $durationsSeconds[$middle]
+                : (
+                    $durationsSeconds[$middle - 1]
+                    + $durationsSeconds[$middle]
+                ) / 2;
+
+            $medianPrepMinutes = round($medianSeconds / 60, 1);
+        }
+
         $lateOrdersCount = Order::query()
             ->where('restaurant_id', $restaurantId)
             ->where('service_date', $serviceDate)
@@ -384,6 +370,15 @@ class ManagerDashboardController extends Controller
                 'id' => $waiter->id,
                 'name' => $waiter->name,
             ])->values()->all(),
+            // Table numbers offered in the "Add a waiter" drawer.
+            'tables' => DB::table('tables')
+                ->where('restaurant_id', $restaurantId)
+                ->orderBy('sort_order')
+                ->orderBy('number')
+                ->pluck('number')
+                ->map(fn ($number): string => (string) $number)
+                ->values()
+                ->all(),
             'now' => $now->valueOf(),
             'currency' => $restaurant->currency ?: 'TRY',
             'warnMinutes' => $warnMinutes,
@@ -485,15 +480,7 @@ class ManagerDashboardController extends Controller
                 return;
             }
 
-            $waiterId = (int) $waiter->id;
-
-            if ($waiterId < 1) {
-                throw ValidationException::withMessages([
-                    'waiter' => 'The selected waiter is invalid.',
-                ]);
-            }
-
-            $locked->assigned_user_id = $waiterId;
+            $locked->assigned_user_id = max(1, (int) $waiter->id);
             $locked->save();
 
             $locked->events()->create([

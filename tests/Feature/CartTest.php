@@ -394,6 +394,7 @@ it('prevents another table session from updating or removing a cart line', funct
 
     $otherTable = RestaurantTable::factory()->create([
         'restaurant_id' => $context['restaurant']->id,
+        'number' => '13',
     ]);
 
     $otherSession = TableSession::factory()->create([
@@ -457,6 +458,7 @@ it('prevents another table session from restoring a removed cart line', function
 
     $otherTable = RestaurantTable::factory()->create([
         'restaurant_id' => $context['restaurant']->id,
+        'number' => '13',
     ]);
 
     $otherSession = TableSession::factory()->create([

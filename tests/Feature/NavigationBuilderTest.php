@@ -110,7 +110,7 @@ class NavigationBuilderTest extends TestCase
 
         $this->assertSame(
             [
-                '/app/overview',
+                '/manager/overview',
                 '/app/orders',
                 '/app/floor',
                 '/app/reports',
@@ -192,7 +192,7 @@ class NavigationBuilderTest extends TestCase
 
         $this->assertSame(
             [
-                '/app/overview',
+                '/manager/overview',
                 '/app/orders',
                 '/app/reports',
             ],

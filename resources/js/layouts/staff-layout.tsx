@@ -136,10 +136,256 @@ function NavLink({
     );
 }
 
-export default function StaffLayout({ children }: { children: ReactNode }) {
+/* ------------------------------------------------------------------ *
+ * "Console" variant — the manager shell from the design spec
+ * (docs/design/03-staff-panels.dc.html). Opt in per page with
+ * `Page.layout = { variant: 'console' }`; every other staff page keeps
+ * the default shell above.
+ * ------------------------------------------------------------------ */
+
+const CONSOLE_DOT_COLORS: Record<string, string> = {
+    manager: 'bg-clay-400',
+    admin: 'bg-clay-400',
+    kds: 'bg-clay-400',
+    waiter: 'bg-saffron-300',
+    menu: 'bg-saffron-300',
+    floor: 'bg-teal-300',
+    reports: 'bg-herb-300',
+};
+
+function serviceDateLabel(now?: number): string {
+    const date = now ? new Date(now) : new Date();
+
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'short',
+    }).formatToParts(date);
+
+    const pick = (type: string): string =>
+        parts.find((part) => part.type === type)?.value ?? '';
+
+    return `${pick('weekday')} ${pick('day')} ${pick('month')}`;
+}
+
+function ConsoleNavLink({
+    item,
+    active,
+    badgeCount,
+}: {
+    item: StaffNavItem;
+    active: boolean;
+    badgeCount?: number | null;
+}) {
+    const showBadge = badgeCount != null && badgeCount > 0;
+
+    return (
+        <Link
+            href={item.href}
+            aria-current={active ? 'page' : undefined}
+            className={`flex min-h-11 w-full items-center gap-3 rounded-[var(--radius-md)] px-3 text-[length:var(--text-body)] transition-colors ${
+                active
+                    ? 'bg-ink-800 !text-ink-25 font-semibold'
+                    : '!text-ink-300 hover:bg-ink-800/60 hover:!text-ink-25'
+            }`}
+        >
+            <span
+                aria-hidden="true"
+                className={`size-2 shrink-0 rounded-full ${
+                    CONSOLE_DOT_COLORS[item.id] ?? 'bg-ink-500'
+                } ${active ? 'opacity-100' : 'opacity-55'}`}
+            />
+
+            <span className="flex-1 truncate text-start">{item.title}</span>
+
+            {showBadge && (
+                <span className="bg-clay-500 inline-flex h-5 min-w-5 items-center justify-center rounded-[var(--radius-pill)] px-1.5 font-mono text-[10px] text-white">
+                    {formatCount(badgeCount)}
+                </span>
+            )}
+        </Link>
+    );
+}
+
+function ConsoleSidebar({
+    nav,
+    isActive,
+    badgeFor,
+    roleLabel,
+    restaurantName,
+    userName,
+}: {
+    nav: StaffNavItem[];
+    isActive: (href: string) => boolean;
+    badgeFor: (item: StaffNavItem) => number | null;
+    roleLabel: string;
+    restaurantName: string;
+    userName: string;
+}) {
+    return (
+        <aside className="bg-ink-900 fixed inset-y-0 start-0 hidden w-[var(--sidebar-w)] flex-col px-3 pb-4 pt-5 min-[900px]:flex">
+            <div className="flex items-center gap-2 px-3 pb-5">
+                <span className="font-display text-ink-25 inline-flex items-baseline text-[19px] font-bold tracking-[-0.04em]">
+                    <span className="text-clay-300">Q</span>
+                    <span>Resto</span>
+                </span>
+
+                <span className="text-ink-500 border-ink-700 rounded-[var(--radius-pill)] border px-[7px] py-0.5 text-[length:var(--text-micro)]">
+                    {roleLabel}
+                </span>
+            </div>
+
+            <nav
+                aria-label="Staff navigation"
+                className="flex flex-1 flex-col gap-0.5 overflow-y-auto"
+            >
+                {nav.map((item) => (
+                    <ConsoleNavLink
+                        key={item.id}
+                        item={item}
+                        active={isActive(item.href)}
+                        badgeCount={badgeFor(item)}
+                    />
+                ))}
+            </nav>
+
+            <div className="border-ink-800 flex items-center gap-2 border-t p-3">
+                <span className="font-display text-ink-25 grid size-8 shrink-0 place-items-center rounded-full bg-teal-700 text-[length:var(--text-caption)] font-semibold">
+                    {initials(userName)}
+                </span>
+
+                <span className="min-w-0 flex-1">
+                    <span className="text-ink-200 block truncate text-[length:var(--text-caption)]">
+                        {userName}
+                    </span>
+
+                    <span className="text-ink-500 block truncate text-[length:var(--text-micro)]">
+                        {restaurantName}
+                    </span>
+                </span>
+
+                <Link
+                    href="/logout"
+                    method="post"
+                    as="button"
+                    aria-label="Log out"
+                    title="Log out"
+                    className="text-ink-500 hover:text-ink-25 shrink-0 rounded-lg p-1.5 transition-colors"
+                >
+                    <LogOut className="size-4" aria-hidden="true" />
+                </Link>
+            </div>
+        </aside>
+    );
+}
+
+function ConsoleHeader({
+    title,
+    subtitle,
+    unreadNotifications,
+    userName,
+    userEmail,
+    menuOpen,
+    onToggleMenu,
+}: {
+    title: string;
+    subtitle: string;
+    unreadNotifications: number;
+    userName: string;
+    userEmail: string;
+    menuOpen: boolean;
+    onToggleMenu: () => void;
+}) {
+    return (
+        <header className="border-border-subtle sticky top-0 z-20 flex min-h-[var(--topbar-h)] items-center gap-4 border-b bg-[var(--alpha-paper-88)] px-4 backdrop-blur-[12px] min-[900px]:px-6">
+            <div className="min-w-0">
+                <h1 className="font-display truncate text-[length:var(--text-title-1)] font-semibold tracking-[var(--tracking-title)]">
+                    {title}
+                </h1>
+
+                <p className="text-text-tertiary truncate text-[length:var(--text-caption)]">
+                    {subtitle}
+                </p>
+            </div>
+
+            <span className="flex-1" />
+
+            <span className="bg-success-bg text-success-fg inline-flex h-[30px] items-center gap-1.5 rounded-[var(--radius-pill)] px-3 text-[length:var(--text-caption)] font-semibold">
+                <span className="bg-herb-500 size-1.5 animate-[qr-pulse_1.6s_ease-in-out_infinite] rounded-full motion-reduce:animate-none" />
+                Live
+            </span>
+
+            <div
+                role="status"
+                aria-label={`Unread notifications: ${unreadNotifications}`}
+                className="border-border-default bg-surface-card relative grid size-11 place-items-center rounded-full border"
+            >
+                <Bell className="text-ink-800 size-[19px]" aria-hidden="true" />
+
+                {unreadNotifications > 0 && (
+                    <span className="bg-clay-500 absolute -end-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-[var(--radius-pill)] px-1 font-mono text-[10px] text-white">
+                        {formatCount(unreadNotifications)}
+                    </span>
+                )}
+            </div>
+
+            <div className="relative">
+                <button
+                    type="button"
+                    aria-label="User menu"
+                    aria-expanded={menuOpen}
+                    aria-controls="staff-user-menu"
+                    onClick={onToggleMenu}
+                    className="bg-clay-100 text-clay-700 font-display grid size-9 place-items-center rounded-full text-[length:var(--text-caption)] font-semibold"
+                >
+                    {initials(userName)}
+                </button>
+
+                {menuOpen && (
+                    <div
+                        id="staff-user-menu"
+                        className="border-border-subtle bg-surface-card absolute end-0 top-12 z-50 w-56 rounded-xl border p-2 shadow-xl"
+                    >
+                        <div className="border-border-subtle border-b px-3 py-2">
+                            <p className="truncate text-sm font-semibold">
+                                {userName}
+                            </p>
+
+                            <p className="text-text-secondary truncate text-xs">
+                                {userEmail}
+                            </p>
+                        </div>
+
+                        <Link
+                            href="/logout"
+                            method="post"
+                            as="button"
+                            className="text-text-link hover:bg-surface-page mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm"
+                        >
+                            <LogOut className="size-4" aria-hidden="true" />
+                            Log out
+                        </Link>
+                    </div>
+                )}
+            </div>
+        </header>
+    );
+}
+
+export default function StaffLayout({
+    children,
+    variant = 'default',
+    now,
+}: {
+    children: ReactNode;
+    variant?: 'default' | 'console';
+    now?: number;
+}) {
     const { url, props } = usePage();
 
     const data = props as typeof props & StaffShellData;
+
+    const isConsole = variant === 'console';
 
     const nav = data.nav ?? [];
     const user = data.auth?.user;
@@ -195,176 +441,206 @@ export default function StaffLayout({ children }: { children: ReactNode }) {
     return (
         <div className="bg-surface-page font-ui text-text-primary min-h-[100dvh]">
             {/* Desktop sidebar */}
-            <aside className="bg-ink-800 text-text-inverse fixed inset-y-0 start-0 hidden w-[248px] flex-col min-[900px]:flex">
-                <div className="border-b border-white/10 px-5 py-6">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex items-center gap-2 text-xl font-bold tracking-tight">
-                            <UtensilsCrossed
-                                className="text-clay-500 size-5"
-                                aria-hidden="true"
-                            />
+            {isConsole ? (
+                <ConsoleSidebar
+                    nav={nav}
+                    isActive={active}
+                    badgeFor={badgeFor}
+                    roleLabel={shell?.roleLabel ?? 'Staff'}
+                    restaurantName={shell?.restaurantName ?? ''}
+                    userName={user?.name ?? 'Staff'}
+                />
+            ) : (
+                <aside className="bg-ink-800 text-text-inverse fixed inset-y-0 start-0 hidden w-[248px] flex-col min-[900px]:flex">
+                    <div className="border-b border-white/10 px-5 py-6">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-2 text-xl font-bold tracking-tight">
+                                <UtensilsCrossed
+                                    className="text-clay-500 size-5"
+                                    aria-hidden="true"
+                                />
 
-                            <span>
-                                <span className="text-clay-500">Q</span>
-                                Resto
+                                <span>
+                                    <span className="text-clay-500">Q</span>
+                                    Resto
+                                </span>
+                            </div>
+
+                            <span className="text-text-inverse/70 rounded-full border border-white/15 px-2 py-0.5 text-[10px]">
+                                {shell?.roleLabel ?? 'Staff'}
                             </span>
                         </div>
-
-                        <span className="text-text-inverse/70 rounded-full border border-white/15 px-2 py-0.5 text-[10px]">
-                            {shell?.roleLabel ?? 'Staff'}
-                        </span>
-                    </div>
-                </div>
-
-                <nav
-                    aria-label="Staff navigation"
-                    className="flex-1 space-y-1 overflow-y-auto p-3"
-                >
-                    {nav.map((item) => (
-                        <NavLink
-                            key={item.id}
-                            item={item}
-                            active={active(item.href)}
-                            badgeCount={badgeFor(item)}
-                        />
-                    ))}
-                </nav>
-
-                {/* Desktop user footer */}
-                <div className="flex items-center gap-3 border-t border-white/10 p-4">
-                    <span className="text-text-inverse flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-700 text-xs font-semibold">
-                        {initials(user?.name ?? 'Staff')}
-                    </span>
-
-                    <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold !text-white">
-                            {user?.name ?? 'Staff'}
-                        </p>
-
-                        <p className="text-text-inverse/70 truncate text-xs">
-                            {shell?.restaurantName ?? ''}
-                        </p>
                     </div>
 
-                    <Link
-                        href="/logout"
-                        method="post"
-                        as="button"
-                        aria-label="Log out"
-                        title="Log out"
-                        className="text-text-inverse/70 shrink-0 rounded-lg p-2 transition-colors hover:bg-white/10 hover:text-white"
+                    <nav
+                        aria-label="Staff navigation"
+                        className="flex-1 space-y-1 overflow-y-auto p-3"
                     >
-                        <LogOut className="size-4" aria-hidden="true" />
-                    </Link>
-                </div>
-            </aside>
+                        {nav.map((item) => (
+                            <NavLink
+                                key={item.id}
+                                item={item}
+                                active={active(item.href)}
+                                badgeCount={badgeFor(item)}
+                            />
+                        ))}
+                    </nav>
+
+                    {/* Desktop user footer */}
+                    <div className="flex items-center gap-3 border-t border-white/10 p-4">
+                        <span className="text-text-inverse flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-700 text-xs font-semibold">
+                            {initials(user?.name ?? 'Staff')}
+                        </span>
+
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold !text-white">
+                                {user?.name ?? 'Staff'}
+                            </p>
+
+                            <p className="text-text-inverse/70 truncate text-xs">
+                                {shell?.restaurantName ?? ''}
+                            </p>
+                        </div>
+
+                        <Link
+                            href="/logout"
+                            method="post"
+                            as="button"
+                            aria-label="Log out"
+                            title="Log out"
+                            className="text-text-inverse/70 shrink-0 rounded-lg p-2 transition-colors hover:bg-white/10 hover:text-white"
+                        >
+                            <LogOut className="size-4" aria-hidden="true" />
+                        </Link>
+                    </div>
+                </aside>
+            )}
 
             {/* Main application area */}
             <div className="flex min-h-[100dvh] flex-col min-[900px]:ps-[248px]">
                 {/* Topbar */}
-                <header className="border-border-subtle bg-surface-card relative z-30 flex h-16 items-center justify-between gap-3 border-b px-4 min-[900px]:px-6">
-                    <div className="min-w-0 flex-1">
-                        <h1 className="truncate text-lg font-semibold">
-                            {shell?.pageTitle ?? 'Staff'}
-                        </h1>
+                {isConsole ? (
+                    <ConsoleHeader
+                        title={shell?.pageTitle ?? 'Staff'}
+                        subtitle={`${serviceDateLabel(now)} · service in progress`}
+                        unreadNotifications={unreadNotifications}
+                        userName={user?.name ?? 'Staff'}
+                        userEmail={user?.email ?? ''}
+                        menuOpen={userMenuOpen}
+                        onToggleMenu={() => {
+                            setUserMenuOpen((open) => !open);
+                            setMoreOpen(false);
+                        }}
+                    />
+                ) : (
+                    <header className="border-border-subtle bg-surface-card relative z-30 flex h-16 items-center justify-between gap-3 border-b px-4 min-[900px]:px-6">
+                        <div className="min-w-0 flex-1">
+                            <h1 className="truncate text-lg font-semibold">
+                                {shell?.pageTitle ?? 'Staff'}
+                            </h1>
 
-                        <p className="text-text-secondary truncate text-xs">
-                            {shell?.pageSubtitle ?? ''}
-                        </p>
-                    </div>
-
-                    <div className="flex shrink-0 items-center gap-3">
-                        {/* Live indicator */}
-                        <span className="text-success-fg hidden items-center gap-2 text-xs font-medium sm:flex">
-                            <span className="relative flex size-2">
-                                <span className="absolute inline-flex size-full animate-ping rounded-full bg-teal-500 opacity-40" />
-                                <span className="relative inline-flex size-2 rounded-full bg-teal-700" />
-                            </span>
-                            Live
-                        </span>
-
-                        {/* Real open orders */}
-                        {openOrders !== null && (
-                            <span
-                                aria-label={`Open orders: ${openOrders}`}
-                                className="bg-clay-100 text-clay-700 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium"
-                            >
-                                <span className="hidden sm:inline">
-                                    Open orders
-                                </span>
-
-                                <span className="sm:hidden">Orders</span>
-
-                                <strong>{formatCount(openOrders)}</strong>
-                            </span>
-                        )}
-
-                        {/* Real unread notifications */}
-                        <div
-                            className="relative"
-                            role="status"
-                            aria-label={`Unread notifications: ${unreadNotifications}`}
-                        >
-                            <Bell className="size-5" aria-hidden="true" />
-
-                            {unreadNotifications > 0 && (
-                                <span className="bg-clay-100 text-clay-900 absolute -end-2 -top-2 rounded-full px-1 text-[10px] font-semibold">
-                                    {formatCount(unreadNotifications)}
-                                </span>
-                            )}
+                            <p className="text-text-secondary truncate text-xs">
+                                {shell?.pageSubtitle ?? ''}
+                            </p>
                         </div>
 
-                        {/* User avatar and menu */}
-                        <div className="relative">
-                            <button
-                                type="button"
-                                aria-label="User menu"
-                                aria-expanded={userMenuOpen}
-                                aria-controls="staff-user-menu"
-                                onClick={() => {
-                                    setUserMenuOpen((open) => !open);
-                                    setMoreOpen(false);
-                                }}
-                                className="bg-clay-100 text-clay-700 hover:bg-clay-100 flex size-9 items-center justify-center rounded-full text-xs font-semibold transition-colors"
-                            >
-                                {initials(user?.name ?? 'Staff')}
-                            </button>
+                        <div className="flex shrink-0 items-center gap-3">
+                            {/* Live indicator */}
+                            <span className="text-success-fg hidden items-center gap-2 text-xs font-medium sm:flex">
+                                <span className="relative flex size-2">
+                                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-teal-500 opacity-40" />
+                                    <span className="relative inline-flex size-2 rounded-full bg-teal-700" />
+                                </span>
+                                Live
+                            </span>
 
-                            {userMenuOpen && (
-                                <div
-                                    id="staff-user-menu"
-                                    className="border-border-subtle bg-surface-card absolute end-0 top-12 z-50 w-56 rounded-xl border p-2 shadow-xl"
+                            {/* Real open orders */}
+                            {openOrders !== null && (
+                                <span
+                                    aria-label={`Open orders: ${openOrders}`}
+                                    className="bg-clay-100 text-clay-700 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium"
                                 >
-                                    <div className="border-border-subtle border-b px-3 py-2">
-                                        <p className="truncate text-sm font-semibold">
-                                            {user?.name ?? 'Staff'}
-                                        </p>
+                                    <span className="hidden sm:inline">
+                                        Open orders
+                                    </span>
 
-                                        <p className="text-text-secondary truncate text-xs">
-                                            {user?.email ?? ''}
-                                        </p>
-                                    </div>
+                                    <span className="sm:hidden">Orders</span>
 
-                                    <Link
-                                        href="/logout"
-                                        method="post"
-                                        as="button"
-                                        className="text-text-link hover:bg-surface-page mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm"
-                                    >
-                                        <LogOut
-                                            className="size-4"
-                                            aria-hidden="true"
-                                        />
-                                        Log out
-                                    </Link>
-                                </div>
+                                    <strong>{formatCount(openOrders)}</strong>
+                                </span>
                             )}
+
+                            {/* Real unread notifications */}
+                            <div
+                                className="relative"
+                                role="status"
+                                aria-label={`Unread notifications: ${unreadNotifications}`}
+                            >
+                                <Bell className="size-5" aria-hidden="true" />
+
+                                {unreadNotifications > 0 && (
+                                    <span className="bg-clay-100 text-clay-900 absolute -end-2 -top-2 rounded-full px-1 text-[10px] font-semibold">
+                                        {formatCount(unreadNotifications)}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* User avatar and menu */}
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    aria-label="User menu"
+                                    aria-expanded={userMenuOpen}
+                                    aria-controls="staff-user-menu"
+                                    onClick={() => {
+                                        setUserMenuOpen((open) => !open);
+                                        setMoreOpen(false);
+                                    }}
+                                    className="bg-clay-100 text-clay-700 hover:bg-clay-100 flex size-9 items-center justify-center rounded-full text-xs font-semibold transition-colors"
+                                >
+                                    {initials(user?.name ?? 'Staff')}
+                                </button>
+
+                                {userMenuOpen && (
+                                    <div
+                                        id="staff-user-menu"
+                                        className="border-border-subtle bg-surface-card absolute end-0 top-12 z-50 w-56 rounded-xl border p-2 shadow-xl"
+                                    >
+                                        <div className="border-border-subtle border-b px-3 py-2">
+                                            <p className="truncate text-sm font-semibold">
+                                                {user?.name ?? 'Staff'}
+                                            </p>
+
+                                            <p className="text-text-secondary truncate text-xs">
+                                                {user?.email ?? ''}
+                                            </p>
+                                        </div>
+
+                                        <Link
+                                            href="/logout"
+                                            method="post"
+                                            as="button"
+                                            className="text-text-link hover:bg-surface-page mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm"
+                                        >
+                                            <LogOut
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
+                                            Log out
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                </header>
+                    </header>
+                )}
 
                 {/* Staff page content */}
-                <main className="mx-auto w-full max-w-[1280px] flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] min-[900px]:p-6">
+                <main
+                    className={`mx-auto w-full max-w-[1280px] flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] min-[900px]:p-6 ${
+                        isConsole ? 'min-[900px]:pb-10' : ''
+                    }`}
+                >
                     {children}
                 </main>
             </div>
