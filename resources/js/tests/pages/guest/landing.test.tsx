@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import Landing from '@/pages/guest/landing';
+import Landing, { areaOf } from '@/pages/guest/landing';
 import type { LandingPageProps } from '@/types/landing';
 
 const post = vi.fn();
@@ -197,6 +197,36 @@ describe('Guest landing page', () => {
             'text-[var(--clay-600)]',
         );
         expect(screen.getByText('Until 22:00')).toBeInTheDocument();
+    });
+
+    it('takes the area after the last comma, English or Arabic', () => {
+        expect(areaOf('14 Marsh Lane, Downtown')).toBe('Downtown');
+        expect(areaOf('14 شارع مارش، وسط المدينة')).toBe('وسط المدينة');
+        expect(areaOf('Downtown')).toBeNull();
+        expect(areaOf(null)).toBeNull();
+    });
+
+    it('colours only the first word of a two-word name', () => {
+        const { rerender } = render(<Landing {...landingProps} />);
+
+        expect(
+            screen
+                .getByRole('banner')
+                .querySelector('.text-\\[var\\(--clay-500\\)\\]')?.textContent,
+        ).toBe('Al');
+
+        rerender(
+            <Landing
+                {...landingProps}
+                restaurant={{ ...landingProps.restaurant, name: 'البستان' }}
+            />,
+        );
+
+        expect(
+            screen
+                .getByRole('banner')
+                .querySelector('.text-\\[var\\(--clay-500\\)\\]'),
+        ).toBeNull();
     });
 
     it('renders the closed status when the restaurant is closed', () => {

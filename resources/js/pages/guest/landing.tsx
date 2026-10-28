@@ -71,23 +71,42 @@ export function groupHours(
     });
 }
 
-/** "14 Marsh Lane, Downtown" → "Downtown" */
-function areaOf(address: string | null): string | null {
-    const area = address?.split(',').pop()?.trim();
+/**
+ * "14 Marsh Lane, Downtown" → "Downtown", and the same for Arabic
+ * addresses, which use the Arabic comma: "14 شارع مارش، وسط المدينة".
+ */
+export function areaOf(address: string | null): string | null {
+    const parts = address?.split(/[,،]/) ?? [];
+
+    if (parts.length < 2) {
+        return null;
+    }
+
+    const area = parts[parts.length - 1].trim();
 
     return area ? area : null;
 }
 
-/** The design's wordmark: the first word in clay. "Al Bustan" → "Al" + " Bustan" */
+/**
+ * The design's wordmark: the first word in clay, the rest in ink.
+ * "Al Bustan" → "Al" + " Bustan". A one-word name ("البستان") stays ink,
+ * so the mark keeps the design's mostly-dark weight.
+ */
 function Wordmark({ name, size }: { name: string; size: string }) {
     const [first, ...rest] = name.trim().split(/\s+/);
 
     return (
         <span
-            className={`font-display inline-flex items-baseline font-bold tracking-[-0.04em] ${size}`}
+            className={`font-display inline-flex items-baseline font-bold tracking-[-0.04em] text-[var(--text-primary)] ${size}`}
         >
-            <span className="text-[var(--clay-500)]">{first}</span>
-            {rest.length > 0 && <span>&nbsp;{rest.join(' ')}</span>}
+            {rest.length > 0 ? (
+                <>
+                    <span className="text-[var(--clay-500)]">{first}</span>
+                    <span>&nbsp;{rest.join(' ')}</span>
+                </>
+            ) : (
+                first
+            )}
         </span>
     );
 }
