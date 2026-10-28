@@ -67,6 +67,7 @@ const menuProps = {
         name: 'Al Bustan',
         currency: 'USD',
         phone: '+966 11 123 4567',
+        closes_today_at: '22:30',
     },
 
     table: {
@@ -152,6 +153,25 @@ describe('Guest menu page', () => {
     beforeEach(() => {
         visit.mockClear();
         window.localStorage.clear();
+    });
+
+    it('shows the real kitchen closing time, and nothing when closed today', () => {
+        const { unmount } = render(<Menu {...menuProps} />);
+
+        expect(screen.getByText(/Kitchen closes/).textContent).toBe(
+            'Kitchen closes 22:30',
+        );
+
+        unmount();
+
+        render(
+            <Menu
+                {...menuProps}
+                restaurant={{ ...menuProps.restaurant, closes_today_at: null }}
+            />,
+        );
+
+        expect(screen.queryByText(/Kitchen closes/)).not.toBeInTheDocument();
     });
 
     it('opens a menu item', () => {

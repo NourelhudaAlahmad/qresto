@@ -18,8 +18,10 @@ import { createPortal } from 'react-dom';
 import { Avatar } from '@/components/qresto/avatar';
 import { Badge } from '@/components/qresto/badge';
 import { LiveIndicator } from '@/components/qresto/LiveIndicator';
+import type { LiveStatus } from '@/components/qresto/LiveIndicator';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { TabBar } from '@/components/qresto/tab-bar';
+import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { useLiveData } from '@/hooks/useLiveData';
 
 type StaffNavItem = {
@@ -210,12 +212,14 @@ function Sidebar({
 }
 
 function Topbar({
+    liveStatus,
     title,
     subtitle,
     unreadNotifications,
     userName,
     userEmail,
 }: {
+    liveStatus: LiveStatus;
     title: string;
     subtitle: string;
     unreadNotifications: number;
@@ -239,7 +243,7 @@ function Topbar({
             </div>
 
             <span className="hidden sm:inline-flex">
-                <LiveIndicator isPaused={false} />
+                <LiveIndicator status={liveStatus} />
             </span>
 
             <div
@@ -339,6 +343,8 @@ export default function StaffLayout({
     const unreadNotifications =
         data.staffUnreadNotifications ?? shell?.unreadNotifications ?? 0;
 
+    const liveStatus = useConnectionStatus();
+
     // The two shell counters refresh on their own slow cadence.
     useLiveData(COUNTER_INTERVAL_MS, { only: COUNTER_PROPS });
 
@@ -415,6 +421,7 @@ export default function StaffLayout({
 
             <div className="flex min-h-[100dvh] flex-col min-[900px]:ps-[var(--sidebar-w)]">
                 <Topbar
+                    liveStatus={liveStatus}
                     title={shell?.pageTitle ?? 'Staff'}
                     subtitle={subtitle}
                     unreadNotifications={unreadNotifications}

@@ -7,6 +7,7 @@ import { ChipFilter } from '@/components/qresto/chip-filter';
 import { EmptyState } from '@/components/qresto/empty-state';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { StatusPill } from '@/components/qresto/status-pill';
+import { formatMinutes } from '@/lib/elapsed';
 
 export type OrderStatus =
     'placed' | 'pending' | 'preparing' | 'ready' | 'served';
@@ -157,7 +158,7 @@ function Age({
                 AGE_COLORS[elapsedLevel(age, warnMinutes, lateMinutes)]
             }`}
         >
-            {age} min
+            {formatMinutes(age)}
         </Numeric>
     );
 }

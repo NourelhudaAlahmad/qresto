@@ -58,6 +58,8 @@ type MenuPageProps = {
         name: string;
         currency: string;
         phone: string | null;
+        /** Today's closing time, "22:30"; null when closed today. */
+        closes_today_at?: string | null;
     };
 
     table: {
@@ -209,9 +211,14 @@ export default function Menu({
                                     {restaurant.name}
                                 </h1>
 
-                                <p className="mt-1 font-mono text-xs tracking-[0.02em] text-[var(--text-tertiary)]">
-                                    Kitchen closes 22:30
-                                </p>
+                                {restaurant.closes_today_at && (
+                                    <p className="mt-1 font-mono text-xs tracking-[0.02em] text-[var(--text-tertiary)]">
+                                        Kitchen closes{' '}
+                                        <span dir="ltr">
+                                            {restaurant.closes_today_at}
+                                        </span>
+                                    </p>
+                                )}
                             </div>
 
                             <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--clay-50)] px-3 py-2 text-xs font-semibold text-[var(--clay-700)]">

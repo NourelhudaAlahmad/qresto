@@ -87,6 +87,22 @@ class Restaurant extends Model
             ?? $this->{$field};
     }
 
+    /**
+     * Today's closing time in the restaurant's own timezone, "22:30", or
+     * null when it is closed today. The guest menu shows it as
+     * "Kitchen closes 22:30".
+     */
+    public function closesTodayAt(?CarbonInterface $now = null): ?string
+    {
+        $local = ($now ?? now())->copy()->timezone($this->timezone ?: config('app.timezone'));
+
+        $closesAt = $this->hours()
+            ->where('day_of_week', $local->dayOfWeek)
+            ->value('closes_at');
+
+        return $closesAt === null ? null : substr((string) $closesAt, 0, 5);
+    }
+
     public function isOpenAt(CarbonInterface $dateTime): bool
     {
         $localDateTime = $dateTime->copy()->setTimezone($this->timezone);

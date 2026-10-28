@@ -107,6 +107,8 @@ class MenuController extends Controller
                 'id' => $session->restaurant->id,
                 'name' => $session->restaurant->name,
                 'currency' => $session->restaurant->currency,
+                // Replaces the hard-coded "Kitchen closes 22:30".
+                'closes_today_at' => $session->restaurant->closesTodayAt(),
                 'phone' => $session->restaurant->phone,
             ],
 

@@ -23,6 +23,10 @@ createInertiaApp({
             case name === 'auth/staff-login':
                 return null;
 
+            // Error pages stand alone: no shell, no navigation to break.
+            case name.startsWith('errors/'):
+                return null;
+
             // Every guest page wraps itself in <GuestLayout>; adding it here
             // as well drew the phone frame twice, one inside the other.
             case name.startsWith('guest/'):

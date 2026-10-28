@@ -174,12 +174,20 @@ describe('Super admin dashboard (#28)', () => {
         expect(patch).not.toHaveBeenCalled();
     });
 
-    it("shows the design's four columns: Waiter, Kitchen, Manager, Admin", () => {
+    it("shows all six roles, the design's four in their order", () => {
         render(<AdminSystem {...props} />);
 
         expect(
             screen.getAllByRole('columnheader').map((th) => th.textContent),
-        ).toEqual(['Capability', 'Waiter', 'Kitchen', 'Manager', 'Admin']);
+        ).toEqual([
+            'Capability',
+            'Waiter',
+            'Runner',
+            'Cashier',
+            'Kitchen',
+            'Manager',
+            'Admin',
+        ]);
     });
 
     it('restates the next-sign-in rule and lists recent changes', () => {

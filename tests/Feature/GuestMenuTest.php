@@ -5,9 +5,11 @@ use App\Models\CartLine;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\Restaurant;
+use App\Models\RestaurantHour;
 use App\Models\RestaurantTable;
 use App\Models\TableSession;
 use App\Support\Money;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -362,4 +364,25 @@ it('keeps a fixed query budget as the cart grows', function (): void {
 
     expect($largeCartQueryCount)
         ->toBe($smallCartQueryCount);
+});
+
+it('sends the real closing time for today instead of a fixed 22:30', function (): void {
+    $restaurant = Restaurant::factory()->create(['timezone' => 'UTC']);
+
+    Carbon::setTestNow('2026-10-28 15:00:00'); // a Wednesday
+
+    RestaurantHour::query()->create([
+        'restaurant_id' => $restaurant->id,
+        'day_of_week' => 3,
+        'opens_at' => '17:00:00',
+        'closes_at' => '23:15:00',
+    ]);
+
+    expect($restaurant->closesTodayAt())->toBe('23:15');
+
+    Carbon::setTestNow('2026-10-29 15:00:00'); // no hours on Thursday
+
+    expect($restaurant->closesTodayAt())->toBeNull();
+
+    Carbon::setTestNow();
 });

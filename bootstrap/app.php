@@ -7,12 +7,14 @@ use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetCurrentRestaurant;
 use App\Http\Middleware\SetLocale;
+use App\Support\ErrorPage;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -59,6 +61,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'card_expiry',
             'card_cvc',
         ]);
+
+        // Designed 403/404/429/500/503 pages (App\Support\ErrorPage).
+        $exceptions->respond(
+            fn (Response $response, Throwable $exception, Request $request) => ErrorPage::render($response, $exception, $request),
+        );
 
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*')

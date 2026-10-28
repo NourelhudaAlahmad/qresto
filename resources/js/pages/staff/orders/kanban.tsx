@@ -14,6 +14,7 @@ import { useElapsed } from '@/hooks/useElapsed';
 import { useLiveAlertMute } from '@/hooks/useLiveAlertMute';
 import { useLiveData } from '@/hooks/useLiveData';
 import { useNewItemAlert } from '@/hooks/useNewItemAlert';
+import { formatMinutes } from '@/lib/elapsed';
 
 import OrderList, {
     actionLabel,
@@ -169,7 +170,7 @@ function KanbanTicket({
     return (
         <OrderTicket
             code={orderCode(order.code)}
-            elapsed={`${minutes} min`}
+            elapsed={formatMinutes(minutes)}
             elapsedLevel={level}
             accentColor={COLUMN_COLOR[column]}
             table={`Table ${order.table ?? '—'}`}
@@ -395,7 +396,7 @@ export default function Kanban({
                 <div className="flex flex-wrap items-center gap-3">
                     <p className="text-caption max-w-full break-words font-mono text-[var(--text-tertiary)]">
                         {tickets.length} open · {kitchenCount} waiting on the
-                        kitchen · oldest {oldest} min
+                        kitchen · oldest {formatMinutes(oldest)}
                     </p>
 
                     <Button

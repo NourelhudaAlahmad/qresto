@@ -17,6 +17,7 @@ import { Stat } from '@/components/qresto/stat';
 import { StatusPill } from '@/components/qresto/status-pill';
 import { showToast } from '@/components/qresto/toast';
 import { useLiveData } from '@/hooks/useLiveData';
+import { formatMinutes } from '@/lib/elapsed';
 import type { OrderStatus } from '@/types';
 
 type Stats = {
@@ -116,11 +117,7 @@ function money(minor: number | null, currency: string, digits = 2): string {
     }
 }
 
-function ageLabel(minutes: number | null): string {
-    const age = Math.max(0, minutes ?? 0);
-
-    return age < 60 ? `${age} min` : `${Math.floor(age / 60)}h ${age % 60}m`;
-}
+const ageLabel = formatMinutes;
 
 function plural(count: number, one: string, many: string): string {
     return `${count} ${count === 1 ? one : many}`;

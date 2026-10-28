@@ -71,8 +71,17 @@ type Props = {
 
 const RELOAD = ['matrix', 'audits'];
 
-// The design's MATRIX shows these four columns, in this order.
-const DESIGN_ROLES = ['waiter', 'kitchen', 'manager', 'admin'];
+// The design's MATRIX draws waiter, kitchen, manager and admin; runner and
+// cashier join them so all six roles ("Six roles.") can be configured.
+// Least to most privileged, the design's four keeping their order.
+const MATRIX_ROLES = [
+    'waiter',
+    'runner',
+    'cashier',
+    'kitchen',
+    'manager',
+    'admin',
+];
 
 const HEALTH_DOT: Record<Health['status'], string> = {
     ok: 'var(--herb-500)',
@@ -84,7 +93,7 @@ const HEALTH_DOT: Record<Health['status'], string> = {
 
 // Shared with the matrix header so the columns line up (design: 62px).
 const MATRIX_GRID =
-    'grid grid-cols-[minmax(176px,1.4fr)_repeat(4,62px)] gap-2 px-5';
+    'grid grid-cols-[minmax(176px,1.4fr)_repeat(6,62px)] gap-2 px-5';
 
 function money(minor: number, currency: string): string {
     try {
@@ -217,7 +226,7 @@ export default function AdminSystem({
         setOverrides({});
     }
 
-    const roles = DESIGN_ROLES.map((key) =>
+    const roles = MATRIX_ROLES.map((key) =>
         matrix.roles.find((role) => role.key === key),
     ).filter((role): role is Matrix['roles'][number] => role !== undefined);
 
@@ -387,7 +396,7 @@ export default function AdminSystem({
                                 tabIndex={0}
                                 className="overflow-x-auto"
                             >
-                                <div role="table" className="min-w-[480px]">
+                                <div role="table" className="min-w-[620px]">
                                     <div
                                         role="row"
                                         className={`${MATRIX_GRID} text-label border-b border-[var(--border-subtle)] bg-[var(--surface-sunken)] py-2 font-semibold text-[var(--text-secondary)]`}
