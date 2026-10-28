@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 
@@ -527,20 +527,12 @@ export default function AdminSystem({
                                 ))}
                             </dl>
 
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    showToast({
-                                        type: 'info',
-                                        title: 'Restaurant settings are next',
-                                        description:
-                                            'Editing details and reprinting QR codes arrive with A2.',
-                                    })
-                                }
-                                className="text-body mt-4 h-11 w-full rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--surface-card)] font-semibold transition-colors duration-[var(--duration-fast)] hover:bg-[var(--ink-50)]"
+                            <Link
+                                href="/app/settings/restaurant"
+                                className="text-body mt-4 flex h-11 w-full items-center justify-center rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--surface-card)] font-semibold transition-colors duration-[var(--duration-fast)] hover:bg-[var(--ink-50)]"
                             >
                                 Edit details · reprint QR codes
-                            </button>
+                            </Link>
                         </Panel>
 
                         <Panel>

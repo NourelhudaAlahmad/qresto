@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class RestaurantTable extends Model
 {
@@ -28,7 +29,36 @@ class RestaurantTable extends Model
         'seated_at',
         'qr_token',
         'sort_order',
+        'retired_at',
     ];
+
+    public const ACTIVE_SCOPE = 'active';
+
+    /**
+     * Retired tables (#29) vanish from the floor, the QR sheet, the table
+     * picker and the staff drawer. Their orders keep pointing at them.
+     * Settings that must see them use withoutGlobalScope(ACTIVE_SCOPE).
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope(
+            self::ACTIVE_SCOPE,
+            fn ($query) => $query->whereNull($query->qualifyColumn('retired_at')),
+        );
+    }
+
+    /**
+     * A fresh, unguessable token for the QR sticker.
+     */
+    public static function newQrToken(): string
+    {
+        return Str::random(40);
+    }
+
+    public function isRetired(): bool
+    {
+        return $this->retired_at !== null;
+    }
 
     protected function casts(): array
     {
@@ -37,6 +67,7 @@ class RestaurantTable extends Model
             'party_size' => 'integer',
             'seated_at' => 'datetime',
             'sort_order' => 'integer',
+            'retired_at' => 'datetime',
         ];
     }
 

@@ -15,8 +15,11 @@ class TableSessionService
 
     public function startFromQrToken(string $qrToken): TableSession
     {
+        // Without the tenant scope (the guest has no restaurant yet), but a
+        // retired table's sticker must not open a session.
         $table = RestaurantTable::withoutGlobalScopes()
             ->where('qr_token', $qrToken)
+            ->whereNull('retired_at')
             ->firstOrFail();
 
         $restaurant = $table->restaurant;

@@ -14,6 +14,19 @@ const patch = vi.fn();
 
 vi.mock('@inertiajs/react', () => ({
     Head: () => null,
+    Link: ({
+        href,
+        children,
+        className,
+    }: {
+        href: string;
+        children: React.ReactNode;
+        className?: string;
+    }) => (
+        <a href={href} className={className}>
+            {children}
+        </a>
+    ),
     router: { patch: (...args: unknown[]) => patch(...args) },
 }));
 
@@ -172,6 +185,16 @@ describe('Super admin dashboard (#28)', () => {
         fireEvent.click(admin);
 
         expect(patch).not.toHaveBeenCalled();
+    });
+
+    it('links the restaurant card to the settings screen', () => {
+        render(<AdminSystem {...props} />);
+
+        expect(
+            screen.getByRole('link', {
+                name: 'Edit details · reprint QR codes',
+            }),
+        ).toHaveAttribute('href', '/app/settings/restaurant');
     });
 
     it("shows all six roles, the design's four in their order", () => {

@@ -48,7 +48,8 @@ abstract class StaffMemberRequest extends FormRequest
                 'string',
                 'distinct',
                 Rule::exists('tables', 'number')
-                    ->where('restaurant_id', $actor->restaurant_id),
+                    ->where('restaurant_id', $actor->restaurant_id)
+                    ->whereNull('retired_at'),
             ],
         ];
     }

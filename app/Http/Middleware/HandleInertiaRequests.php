@@ -139,6 +139,10 @@ class HandleInertiaRequests extends Middleware
                 'Your assigned orders and tables',
             ],
 
+            'app.settings.restaurant' => [
+                'Restaurant',
+                'Details, opening hours, tables and QR codes',
+            ],
             'app.system',
             'admin.system' => [
                 'System',

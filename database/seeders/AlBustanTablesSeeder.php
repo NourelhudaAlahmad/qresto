@@ -4,8 +4,8 @@ namespace Database\Seeders;
 
 use App\Enums\TableState;
 use App\Models\Restaurant;
+use App\Models\RestaurantTable;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class AlBustanTablesSeeder extends Seeder
 {
@@ -113,8 +113,16 @@ class AlBustanTablesSeeder extends Seeder
         ];
 
         foreach ($tables as $table) {
-            $restaurant->tables()->updateOrCreate(
+            $existing = RestaurantTable::withoutGlobalScopes()
+                ->where('restaurant_id', $restaurant->id)
+                ->where('number', $table['number'])
+                ->first();
+
+            // #44: re-seeding must not rotate the token. A printed sticker
+            // keeps working; only "reissue" (#29) changes it.
+            $restaurant->tables()->withoutGlobalScopes()->updateOrCreate(
                 [
+                    'restaurant_id' => $restaurant->id,
                     'number' => $table['number'],
                 ],
                 [
@@ -123,7 +131,8 @@ class AlBustanTablesSeeder extends Seeder
                     'party_size' => $table['party_size'],
                     'seated_at' => $table['seated_at'],
                     'sort_order' => $table['sort_order'],
-                    'qr_token' => Str::random(32),
+                    'qr_token' => $existing->qr_token ?? RestaurantTable::newQrToken(),
+                    'retired_at' => null,
                 ],
             );
         }

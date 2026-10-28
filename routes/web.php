@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\PermissionMatrixController;
+use App\Http\Controllers\Admin\RestaurantSettingsController;
+use App\Http\Controllers\Admin\TableController;
 use App\Http\Controllers\Auth\ManagerShiftQrController;
 use App\Http\Controllers\Auth\ShiftQrAuthController;
 use App\Http\Controllers\Auth\StaffInvitationController;
@@ -280,6 +282,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
             '/app/system/permissions',
             [PermissionMatrixController::class, 'update'],
         )->name('app.system.permissions.update');
+
+        // Issue #29 — Restaurant settings, hours, tables and QR stickers.
+        Route::get('/app/settings/restaurant', [RestaurantSettingsController::class, 'edit'])
+            ->name('app.settings.restaurant');
+        Route::put('/app/settings/restaurant', [RestaurantSettingsController::class, 'update'])
+            ->name('app.settings.restaurant.update');
+        Route::put('/app/settings/hours', [RestaurantSettingsController::class, 'updateHours'])
+            ->name('app.settings.hours.update');
+
+        Route::get('/app/settings/tables/qr-sheet', [TableController::class, 'qrSheet'])
+            ->name('app.settings.tables.qr-sheet');
+        Route::post('/app/settings/tables', [TableController::class, 'store'])
+            ->name('app.settings.tables.store');
+        Route::patch('/app/settings/tables/{table}', [TableController::class, 'update'])
+            ->name('app.settings.tables.update');
+        Route::post('/app/settings/tables/{table}/retire', [TableController::class, 'retire'])
+            ->name('app.settings.tables.retire');
+        Route::post('/app/settings/tables/{table}/reissue', [TableController::class, 'reissue'])
+            ->name('app.settings.tables.reissue');
 
         Route::get(
             '/app/system/permissions/audits',

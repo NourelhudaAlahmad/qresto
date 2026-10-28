@@ -60,6 +60,14 @@ return [
 
     'undo_window_seconds' => 6,
 
+    // Restaurant settings (#29): what an admin may pick.
+    'locales' => [
+        'en' => 'English',
+        'ar' => 'العربية',
+    ],
+
+    'currencies' => ['USD', 'EUR', 'GBP', 'TRY', 'SAR', 'AED', 'QAR', 'KWD', 'JOD', 'EGP', 'LBP'],
+
     'staff' => [
         // Length of "tonight's shift" when a manager adds someone.
         'default_shift_hours' => 8,
