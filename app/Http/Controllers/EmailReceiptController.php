@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\ReceiptMail;
 use App\Models\Order;
 use App\Models\RestaurantTable;
+use App\Services\Floor\TableAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -18,13 +19,7 @@ final class EmailReceiptController extends Controller
     ): RedirectResponse {
         $user = $request->user();
 
-        abort_unless(
-            $user !== null
-                && $user->restaurant_id !== null
-                && (int) $user->restaurant_id === (int) $table->restaurant_id
-                && $user->can('take_payment'),
-            403,
-        );
+        app(TableAccess::class)->authorize($user, $table);
 
         abort_unless(
             (int) $order->restaurant_id === (int) $table->restaurant_id

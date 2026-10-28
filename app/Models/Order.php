@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Concerns\BelongsToRestaurant;
 use App\Enums\OrderStatus;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,6 +16,8 @@ use RuntimeException;
 
 class Order extends Model
 {
+    use BelongsToRestaurant;
+
     /** @use HasFactory<OrderFactory> */
     use HasFactory;
 

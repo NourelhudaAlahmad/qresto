@@ -1,9 +1,12 @@
 <?php
 
+use App\Models\Restaurant;
 use App\Models\User;
+use Database\Seeders\RolesSeeder;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Features;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 test('login screen can be rendered', function () {
     $response = $this->get(route('login'));
@@ -85,8 +88,9 @@ test('staff members are redirected to an available landing screen after login', 
         'admin',
     ];
 
+    $this->seed(RolesSeeder::class);
+
     foreach ($roles as $role) {
-        Role::findOrCreate($role, 'web');
 
         $user = User::factory()->create([
             'is_active' => true,
@@ -101,11 +105,12 @@ test('staff members are redirected to an available landing screen after login', 
 
         $this->assertAuthenticatedAs($user);
 
+        // Each role's real working screen, never a placeholder.
         $destinations = [
-            'waiter' => 'waiter.orders',
-            'kitchen' => 'kitchen.pass',
+            'waiter' => 'app.my-orders',
+            'kitchen' => 'app.orders',
             'manager' => 'manager.overview',
-            'admin' => 'admin.system',
+            'admin' => 'app.system',
         ];
 
         $response->assertRedirect(
@@ -114,6 +119,36 @@ test('staff members are redirected to an available landing screen after login', 
 
         $this->post(route('logout'));
     }
+});
+
+test('the old role landings redirect to the real screens', function () {
+    $this->seed(RolesSeeder::class);
+
+    $admin = User::factory()->create(['restaurant_id' => Restaurant::factory()->create()->id]);
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin);
+
+    $this->get('/waiter/orders')->assertRedirect('/app/my-orders');
+    $this->get('/kitchen/pass')->assertRedirect('/app/orders');
+    $this->get('/admin/system')->assertRedirect('/app/system');
+    $this->get('/app/overview')->assertRedirect('/manager/overview');
+});
+
+test('a role whose screen was revoked falls back instead of landing on a 403', function () {
+    $this->seed(RolesSeeder::class);
+
+    Role::findByName('manager', 'web')
+        ->revokePermissionTo('manage_waiter_accounts');
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    $manager = User::factory()->create(['is_active' => true]);
+    $manager->assignRole('manager');
+
+    $this->post(route('login.store'), [
+        'email' => $manager->email,
+        'password' => 'password',
+    ])->assertRedirect(route('app.orders', absolute: false));
 });
 
 test('remember me creates a persistent login token', function () {

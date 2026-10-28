@@ -1352,3 +1352,38 @@ it('adds order more lines to the same unpaid order for the table session', funct
 
         ->toBe(6470);
 });
+
+it('never writes card data into the session when checkout fails validation', function (): void {
+    $context = createCheckoutTestContext();
+
+    createCheckoutTestLine(context: $context, qty: 1, unitPrice: 5570);
+
+    // A declined card, and a good card with the CVC missing, both come back
+    // as validation errors.
+    $attempts = [
+        ['4000000000000002', '123'],
+        ['4242424242424242', ''],
+    ];
+
+    foreach ($attempts as $attempt => [$number, $cvc]) {
+        $this->from(route('checkout'))
+            ->withCookie('qresto_table_session', $context['session']->token)
+            ->post(route('checkout.store'), [
+                'method' => 'card',
+                'tip_pct' => 0,
+                'split_ways' => 1,
+                'idempotency_key' => "no-card-in-session-{$attempt}",
+                'card_number' => $number,
+                'card_expiry' => '12/30',
+                'card_cvc' => $cvc,
+            ])
+            ->assertSessionHasErrors();
+
+        $old = session()->getOldInput();
+
+        expect($old)->not->toHaveKey('card_number')
+            ->and($old)->not->toHaveKey('card_cvc')
+            ->and($old)->not->toHaveKey('card_expiry')
+            ->and(json_encode(session()->all()))->not->toContain($number);
+    }
+});

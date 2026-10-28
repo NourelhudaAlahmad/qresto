@@ -36,6 +36,8 @@ function receiptFixtures(): array
             'party_size' => 2,
         ]);
 
+    assignTonight($user, $table);
+
     $order = Order::factory()->create([
         'restaurant_id' => $restaurant->id,
         'table_id' => $table->id,
@@ -134,7 +136,7 @@ it('does not count pending payments as received', function (): void {
         ->assertViewHas('balanceMinor', 3431);
 });
 
-it('forbids access to a receipt from another restaurant', function (): void {
+it('hides a receipt from another restaurant', function (): void {
     [,, $table, $order] = receiptFixtures();
 
     $otherRestaurant = Restaurant::factory()->create();
@@ -146,7 +148,7 @@ it('forbids access to a receipt from another restaurant', function (): void {
 
     $this->actingAs($otherUser)
         ->get("/app/tables/{$table->id}/orders/{$order->id}/receipt")
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 it('returns not found when the order belongs to a different table', function (): void {
@@ -155,6 +157,8 @@ it('returns not found when the order belongs to a different table', function ():
     $otherTable = RestaurantTable::factory()
         ->forRestaurant($restaurant)
         ->create();
+
+    assignTonight($user, $otherTable);
 
     $this->actingAs($user)
         ->get("/app/tables/{$otherTable->id}/orders/{$order->id}/receipt")

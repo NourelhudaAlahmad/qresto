@@ -6,6 +6,7 @@ use App\Models\RestaurantTable;
 use App\Models\ServiceRequest;
 use App\Models\TableSession;
 use App\Models\User;
+use Database\Seeders\RolesSeeder;
 
 function createServiceRequestContext20(): array
 {
@@ -110,10 +111,14 @@ it('rejects a rapid second identical open request', function (): void {
 it('acknowledges a request with the staff actor and removes it from the open list', function (): void {
     $context = createServiceRequestContext20();
 
+    $this->seed(RolesSeeder::class);
+
     $staff = User::factory()->create([
         'restaurant_id' => $context['restaurant']->id,
         'is_active' => true,
     ]);
+
+    $staff->assignRole('waiter');
 
     $serviceRequest = ServiceRequest::factory()
         ->forSession($context['session'])

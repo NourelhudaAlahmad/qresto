@@ -45,6 +45,8 @@ function floorTableWithUser(): array
             'seated_at' => now(),
         ]);
 
+    assignTonight($user, $table);
+
     return [$user, $table];
 }
 
@@ -134,7 +136,7 @@ it('Floor closes the open table session when freeing', function (): void {
         ->and($table->fresh()->state)->toBe(TableState::FREE);
 });
 
-it('Floor denies freeing a table from another restaurant', function (): void {
+it('Floor hides a table from another restaurant when freeing it', function (): void {
     [$user] = floorTableWithUser();
 
     $otherRestaurant = Restaurant::factory()->create();
@@ -147,7 +149,7 @@ it('Floor denies freeing a table from another restaurant', function (): void {
 
     $this->actingAs($user)
         ->post("/app/tables/{$otherTable->id}/free")
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect($otherTable->fresh()->state)
         ->toBe(TableState::SEATED);
@@ -455,7 +457,7 @@ it('Floor refuses seating an occupied table', function (): void {
         ->and($table->fresh()->party_size)->toBe(2);
 });
 
-it('Floor denies seating a table from another restaurant', function (): void {
+it('Floor hides a table from another restaurant when seating it', function (): void {
     [$user] = floorTableWithUser();
 
     $otherRestaurant = Restaurant::factory()->create();
@@ -472,7 +474,7 @@ it('Floor denies seating a table from another restaurant', function (): void {
         ->post(route('app.tables.seat', $otherTable), [
             'party_size' => 2,
         ])
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect($otherTable->fresh()->state)->toBe(TableState::FREE)
         ->and($otherTable->fresh()->party_size)->toBe(0);

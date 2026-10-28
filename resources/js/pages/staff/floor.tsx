@@ -785,6 +785,7 @@ export default function Floor({ tables = [] }: Props) {
     };
     const interval = qresto?.live?.floor_interval ?? 8000;
     const canPay = capabilities?.includes('take_payment') ?? false;
+    const seesWholeFloor = capabilities?.includes('see_all_orders') ?? false;
 
     const isMobile = useIsMobile();
     const { isPaused } = useLiveData(interval, { only: ['tables'] });
@@ -1095,9 +1096,18 @@ export default function Floor({ tables = [] }: Props) {
 
                 {tables.length === 0 ? (
                     <Card>
+                        {/* A waiter sees only tonight's own tables. */}
                         <EmptyState
-                            headline="No tables yet"
-                            body="Tables appear here once they are set up for this restaurant."
+                            headline={
+                                seesWholeFloor
+                                    ? 'No tables yet'
+                                    : 'No tables assigned to you tonight'
+                            }
+                            body={
+                                seesWholeFloor
+                                    ? 'Tables appear here once they are set up for this restaurant.'
+                                    : 'Your manager assigns tables when they add you to the shift.'
+                            }
                         />
                     </Card>
                 ) : (

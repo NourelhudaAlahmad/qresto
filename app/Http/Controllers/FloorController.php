@@ -14,6 +14,7 @@ use App\Models\RestaurantTable;
 use App\Models\ServiceRequest;
 use App\Models\TableSession;
 use App\Models\User;
+use App\Services\Floor\TableAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,9 +35,18 @@ final class FloorController extends Controller
             403,
         );
 
+        $access = app(TableAccess::class);
+
+        // A waiter's "My tables" is their live-shift assignment; managers
+        // and admins see the whole floor.
+        $onlyTableIds = $access->seesWholeFloor($user)
+            ? null
+            : $access->assignedTableIds($user);
+
         return Inertia::render('staff/floor', [
             'tables' => fn (): array => $this->floorTables(
                 (int) $user->restaurant_id,
+                $onlyTableIds,
             ),
         ]);
     }
@@ -421,10 +431,18 @@ final class FloorController extends Controller
     /**
      * @return array<int, array<string, mixed>>
      */
-    private function floorTables(int $restaurantId): array
+    /**
+     * @param  list<int>|null  $onlyTableIds  null for the whole floor
+     * @return array<int, array<string, mixed>>
+     */
+    private function floorTables(int $restaurantId, ?array $onlyTableIds = null): array
     {
         $tables = RestaurantTable::query()
             ->where('restaurant_id', $restaurantId)
+            ->when(
+                $onlyTableIds !== null,
+                fn ($query) => $query->whereIn('id', $onlyTableIds ?? []),
+            )
             ->orderBy('sort_order')
             ->orderBy('number')
             ->get();
@@ -541,13 +559,6 @@ final class FloorController extends Controller
         Request $request,
         RestaurantTable $table,
     ): void {
-        $user = $request->user();
-
-        abort_unless(
-            $user !== null
-                && (int) $table->restaurant_id
-                === (int) $user->restaurant_id,
-            403,
-        );
+        app(TableAccess::class)->authorize($request->user(), $table);
     }
 }

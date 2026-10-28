@@ -51,11 +51,11 @@ test('open orders count only active orders from the current restaurant', functio
         ->create();
 
     $this->actingAs($manager)
-        ->get('/app/overview')
+        ->get('/manager/overview')
         ->assertOk()
         ->assertInertia(
             fn (Assert $page) => $page
-                ->component('staff/landing')
+                ->component('staff/manager/overview')
                 ->where('staffOpenOrders', 2)
         );
 });
@@ -130,11 +130,11 @@ test('unread notifications count belongs to the current user only', function () 
     ]);
 
     $this->actingAs($manager)
-        ->get('/app/overview')
+        ->get('/manager/overview')
         ->assertOk()
         ->assertInertia(
             fn (Assert $page) => $page
-                ->component('staff/landing')
+                ->component('staff/manager/overview')
                 ->where('staffUnreadNotifications', 2)
         );
 });
@@ -155,7 +155,7 @@ test('open orders can refresh independently through an Inertia partial reload', 
 
     // Initial page: one active order.
     $response = $this->actingAs($manager)
-        ->get('/app/overview');
+        ->get('/manager/overview');
 
     $response->assertOk();
 
@@ -167,7 +167,7 @@ test('open orders can refresh independently through an Inertia partial reload', 
 
     $response->assertInertia(
         fn (Assert $page) => $page
-            ->component('staff/landing')
+            ->component('staff/manager/overview')
             ->where('staffOpenOrders', 1)
             ->reloadOnly(
                 'staffOpenOrders',
@@ -189,7 +189,7 @@ test('notifications can refresh independently through an Inertia partial reload'
 
     // Initial page: zero unread notifications.
     $response = $this->actingAs($manager)
-        ->get('/app/overview');
+        ->get('/manager/overview');
 
     $response->assertOk();
 
@@ -205,7 +205,7 @@ test('notifications can refresh independently through an Inertia partial reload'
 
     $response->assertInertia(
         fn (Assert $page) => $page
-            ->component('staff/landing')
+            ->component('staff/manager/overview')
             ->where('staffUnreadNotifications', 0)
             ->reloadOnly(
                 'staffUnreadNotifications',

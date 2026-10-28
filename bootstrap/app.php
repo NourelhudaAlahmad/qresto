@@ -5,12 +5,14 @@ use App\Http\Middleware\EnsureStaffAccountCanAuthenticate;
 use App\Http\Middleware\EnsureTableSession;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SetCurrentRestaurant;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -30,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->web(append: [
+            SetCurrentRestaurant::class,
             EnsureAccountIsActive::class,
             HandleAppearance::class,
             SetLocale::class,
@@ -37,8 +40,26 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
             EnsureStaffAccountCanAuthenticate::class,
         ]);
+
+        // Scope route model binding to the signed-in person's restaurant.
+        $middleware->prependToPriorityList(
+            before: SubstituteBindings::class,
+            prepend: SetCurrentRestaurant::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Card data must never reach the session store (sessions live in the
+        // database). Laravel flashes every input on a validation error
+        // except these; the card form keeps its own values client-side.
+        $exceptions->dontFlash([
+            'current_password',
+            'password',
+            'password_confirmation',
+            'card_number',
+            'card_expiry',
+            'card_cvc',
+        ]);
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*')
                 || $request->expectsJson(),

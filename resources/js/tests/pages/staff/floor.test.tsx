@@ -61,6 +61,14 @@ describe('Floor map on the design components', () => {
         expect(screen.getByText('$92.20')).toBeInTheDocument();
     });
 
+    it('tells a waiter with no tables tonight what to expect', () => {
+        render(<Floor tables={[]} />);
+
+        expect(
+            screen.getByText('No tables assigned to you tonight'),
+        ).toBeInTheDocument();
+    });
+
     it('shows who has each table tonight', () => {
         render(<Floor tables={tables} />);
 

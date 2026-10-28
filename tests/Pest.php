@@ -1,6 +1,10 @@
 <?php
 
+use App\Models\RestaurantTable;
+use App\Models\Shift;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /*
@@ -47,4 +51,28 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Give a staff member these tables on a live shift tonight, the way the
+ * manager's drawer does (#27). A waiter may only act on their own tables.
+ */
+function assignTonight(User $user, RestaurantTable ...$tables): Shift
+{
+    $shift = Shift::query()->create([
+        'restaurant_id' => $user->restaurant_id,
+        'user_id' => $user->id,
+        'starts_at' => now()->subHour(),
+        'ends_at' => now()->addHours(6),
+    ]);
+
+    foreach ($tables as $table) {
+        DB::table('table_user')->insert([
+            'shift_id' => $shift->id,
+            'user_id' => $user->id,
+            'table_id' => $table->id,
+        ]);
+    }
+
+    return $shift;
 }

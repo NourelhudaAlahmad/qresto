@@ -80,6 +80,7 @@ Route::get(
 )->middleware([
     'auth:web',
     'verified',
+    'can:manage_waiter_accounts',
 ])->name('manager.shift-qr.index');
 
 // Authenticated dashboard and staff actions
@@ -93,57 +94,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get(
         'manager/overview',
         [ManagerDashboardController::class, 'index'],
-    )->name('manager.overview');
+    )
+        ->middleware('can:manage_waiter_accounts')
+        ->name('manager.overview');
 
-    // Temporary role landing routes for Issue #21.
-    // Full staff panels will be implemented in their own issues.
-
-    $staffLandings = [
-        'waiter' => [
-            'uri' => 'waiter/orders',
-            'name' => 'waiter.orders',
-            'title' => 'My Orders',
-        ],
-        'kitchen' => [
-            'uri' => 'kitchen/pass',
-            'name' => 'kitchen.pass',
-            'title' => 'Kitchen Pass',
-        ],
-        'admin' => [
-            'uri' => 'admin/system',
-            'name' => 'admin.system',
-            'title' => 'Admin System',
-        ],
-    ];
-
-    foreach ($staffLandings as $role => $landing) {
-        Route::get($landing['uri'], function () use ($role, $landing) {
-            abort_unless(
-                request()->user()?->hasRole($role),
-                403,
-            );
-
-            return Inertia::render('staff/landing', [
-                'title' => $landing['title'],
-            ]);
-        })->name($landing['name']);
-    }
+    // The first-cut role landings (#21) now point at the real screens, so
+    // old bookmarks keep working and nobody lands on a placeholder.
+    Route::redirect('waiter/orders', '/app/my-orders')->name('waiter.orders');
+    // The kitchen pass display is #33; until then the order feed.
+    Route::redirect('kitchen/pass', '/app/orders')->name('kitchen.pass');
+    Route::redirect('admin/system', '/app/system')->name('admin.system');
 
     Route::patch(
         '/service-requests/{serviceRequest}/acknowledge',
         [ServiceRequestController::class, 'acknowledge'],
-    )->name('service-requests.acknowledge');
+    )
+        ->middleware('can:see_own_tables')
+        ->name('service-requests.acknowledge');
 });
 
 // Staff application routes — Issues #22, #23, #24 and #25
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/app/overview', function () {
-        return Inertia::render('staff/landing', [
-            'title' => 'Overview',
-        ]);
-    })
-        ->middleware('can:see_all_orders')
+    // The overview lives at /manager/overview (#26).
+    Route::redirect('/app/overview', '/manager/overview')
         ->name('app.overview');
 
     // Manager: view all restaurant orders.
@@ -359,12 +333,15 @@ Route::middleware('table.session')->group(function () {
         ->name('cart.note.update');
 
     Route::post('/cart/lines', [CartLineController::class, 'store'])
+        ->middleware('throttle:guest-cart')
         ->name('cart.lines.store');
 
     Route::patch('/cart/lines/{line}', [CartLineController::class, 'update'])
+        ->middleware('throttle:guest-cart')
         ->name('cart.lines.update');
 
     Route::delete('/cart/lines/{line}', [CartLineController::class, 'destroy'])
+        ->middleware('throttle:guest-cart')
         ->name('cart.lines.destroy');
 
     Route::post(
@@ -376,15 +353,19 @@ Route::middleware('table.session')->group(function () {
         ->name('checkout');
 
     Route::post('/checkout', [CheckoutController::class, 'store'])
+        ->middleware('throttle:guest-checkout')
         ->name('checkout.store');
 
     Route::post('/checkout/confirm', [CheckoutController::class, 'confirm'])
+        ->middleware('throttle:guest-checkout')
         ->name('checkout.confirm');
 
     Route::post(
         '/checkout/promo',
         [CheckoutController::class, 'applyPromo'],
-    )->name('checkout.promo.store');
+    )
+        ->middleware('throttle:guest-promo')
+        ->name('checkout.promo.store');
 
     Route::delete(
         '/checkout/promo',
@@ -394,7 +375,9 @@ Route::middleware('table.session')->group(function () {
     Route::post(
         '/service-requests',
         [ServiceRequestController::class, 'store'],
-    )->name('guest.service-requests.store');
+    )
+        ->middleware('throttle:guest-service-requests')
+        ->name('guest.service-requests.store');
 
     Route::get(
         '/orders/{order}/status',

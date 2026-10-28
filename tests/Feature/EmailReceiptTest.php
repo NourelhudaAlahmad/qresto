@@ -37,6 +37,8 @@ function emailReceiptFixtures(): array
             'party_size' => 2,
         ]);
 
+    assignTonight($user, $table);
+
     $order = Order::factory()->create([
         'restaurant_id' => $restaurant->id,
         'table_id' => $table->id,
@@ -126,7 +128,7 @@ it('forbids a user without payment permission', function (): void {
     Mail::assertNothingOutgoing();
 });
 
-it('forbids sending receipts from another restaurant', function (): void {
+it('hides receipts from another restaurant when emailing', function (): void {
     Mail::fake();
 
     [, , , , $url] = emailReceiptFixtures();
@@ -142,7 +144,7 @@ it('forbids sending receipts from another restaurant', function (): void {
         ->post($url, [
             'email' => 'guest@example.com',
         ])
-        ->assertForbidden();
+        ->assertNotFound();
 
     Mail::assertNothingOutgoing();
 });
@@ -155,6 +157,8 @@ it('rejects an order belonging to a different table', function (): void {
     $otherTable = RestaurantTable::factory()
         ->forRestaurant($restaurant)
         ->create();
+
+    assignTonight($user, $otherTable);
 
     $url = "/app/tables/{$otherTable->id}/orders/{$order->id}/receipt/email";
 

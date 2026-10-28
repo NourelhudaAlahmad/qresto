@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Restaurant;
+use App\Models\ServiceRequest;
 use App\Models\User;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -10,25 +12,47 @@ beforeEach(function () {
     $this->seed(RolesSeeder::class);
 });
 
-test('manager can access staff overview', function () {
-    $manager = User::factory()->create();
+test('manager can access the staff overview', function () {
+    $manager = User::factory()->create([
+        'restaurant_id' => Restaurant::factory()->create()->id,
+    ]);
     $manager->assignRole('manager');
 
     $this->actingAs($manager)
-        ->get('/app/overview')
+        ->get('/manager/overview')
         ->assertOk()
-        ->assertInertia(
-            fn ($page) => $page
-                ->component('staff/landing')
-                ->where('title', 'Overview')
-        );
+        ->assertInertia(fn ($page) => $page->component('staff/manager/overview'));
+
+    // The old address forwards to it.
+    $this->actingAs($manager)
+        ->get('/app/overview')
+        ->assertRedirect('/manager/overview');
 });
 
-test('staff without permission cannot access overview', function () {
-    $waiter = User::factory()->create();
-    $waiter->assignRole('waiter');
+test('staff without the capability cannot open the overview', function () {
+    foreach (['waiter', 'kitchen'] as $role) {
+        $user = User::factory()->create([
+            'restaurant_id' => Restaurant::factory()->create()->id,
+        ]);
+        $user->assignRole($role);
 
-    $this->actingAs($waiter)
-        ->get('/app/overview')
+        $this->actingAs($user)
+            ->get('/manager/overview')
+            ->assertForbidden();
+    }
+});
+
+test('the kitchen cannot acknowledge guest requests', function () {
+    $request = ServiceRequest::factory()->pending()->create();
+
+    $kitchen = User::factory()->create([
+        'restaurant_id' => $request->table->restaurant_id,
+    ]);
+    $kitchen->assignRole('kitchen');
+
+    $this->actingAs($kitchen)
+        ->patch("/service-requests/{$request->id}/acknowledge")
         ->assertForbidden();
+
+    expect($request->fresh()->status->value ?? $request->fresh()->status)->toBe('pending');
 });
