@@ -1,11 +1,13 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { Numeric } from '@/components/numeric';
 import { Stat } from '@/components/qresto/stat';
 import { showToast } from '@/components/qresto/toast';
 import { Tooltip } from '@/components/qresto/tooltip';
+import { useLiveData } from '@/hooks/useLiveData';
+import { formatMinutes } from '@/lib/elapsed';
 
 type Cell = { granted: boolean; locked: boolean; reason: string | null };
 
@@ -48,10 +50,13 @@ type Summary = {
 };
 
 type Health = {
-    key: string;
-    label: string;
-    status: 'ok' | 'warning' | 'down' | 'test' | 'unknown';
-    detail: string;
+    id: number;
+    kind: 'gateway' | 'kds' | 'printer';
+    name: string;
+    /** Derived on the server from the heartbeat age (#30). */
+    health: 'operational' | 'degraded' | 'failing' | 'unknown';
+    detail: string | null;
+    last_heartbeat_at: string | null;
 };
 
 type Props = {
@@ -83,13 +88,44 @@ const MATRIX_ROLES = [
     'admin',
 ];
 
-const HEALTH_DOT: Record<Health['status'], string> = {
-    ok: 'var(--herb-500)',
-    test: 'var(--herb-500)',
-    warning: 'var(--saffron-500)',
-    down: 'var(--berry-500)',
+const HEALTH_DOT: Record<Health['health'], string> = {
+    operational: 'var(--herb-500)',
+    degraded: 'var(--saffron-500)',
+    failing: 'var(--berry-500)',
     unknown: 'var(--ink-300)',
 };
+
+const HEALTH_TEXT: Record<Health['health'], string> = {
+    operational: 'text-[var(--text-primary)]',
+    degraded: 'text-[var(--saffron-700)]',
+    failing: 'text-[var(--berry-500)] font-semibold',
+    unknown: 'text-[var(--text-tertiary)]',
+};
+
+/** "just now", "4 min ago", "2h 10m ago", or "never". */
+export function lastSeen(iso: string | null, now: number): string {
+    if (iso === null) {
+        return 'never';
+    }
+
+    const minutes = Math.max(0, Math.floor((now - Date.parse(iso)) / 60_000));
+
+    return minutes < 1 ? 'just now' : `${formatMinutes(minutes)} ago`;
+}
+
+/** What the row says, before "last seen". */
+function statusText(item: Health): string {
+    switch (item.health) {
+        case 'operational':
+            return 'operational';
+        case 'unknown':
+            return item.last_heartbeat_at === null
+                ? 'no heartbeat yet'
+                : 'stopped reporting';
+        default:
+            return item.detail ?? item.health;
+    }
+}
 
 // Shared with the matrix header so the columns line up (design: 62px).
 const MATRIX_GRID =
@@ -220,6 +256,16 @@ export default function AdminSystem({
     const [overrides, setOverrides] = useState<Record<string, boolean>>({});
     const [pending, setPending] = useState<string | null>(null);
     const [syncedMatrix, setSyncedMatrix] = useState(matrix);
+    const [now, setNow] = useState(() => Date.now());
+
+    // The health card is live (#30); "last seen" ages between polls.
+    useLiveData(30_000, { only: ['health'] });
+
+    useEffect(() => {
+        const tick = window.setInterval(() => setNow(Date.now()), 30_000);
+
+        return () => window.clearInterval(tick);
+    }, []);
 
     if (syncedMatrix !== matrix) {
         setSyncedMatrix(matrix);
@@ -540,28 +586,62 @@ export default function AdminSystem({
                                 System health
                             </PanelTitle>
 
-                            <ul className="text-body flex flex-col gap-2">
+                            <ul className="text-body flex flex-col">
                                 {health.map((item) => (
                                     <li
-                                        key={item.key}
-                                        className="flex items-center gap-2"
+                                        key={item.id}
+                                        data-health={item.health}
+                                        className={`flex items-center gap-2 border-b border-[var(--border-subtle)] py-2 last:border-0 ${
+                                            item.health === 'failing'
+                                                ? '-mx-2 rounded-[var(--radius-sm)] bg-[var(--danger-bg)] px-2'
+                                                : item.health === 'degraded'
+                                                  ? '-mx-2 rounded-[var(--radius-sm)] bg-[var(--warning-bg)] px-2'
+                                                  : ''
+                                        }`}
                                     >
                                         <span
                                             aria-hidden="true"
                                             className="size-2 shrink-0 rounded-full"
                                             style={{
                                                 backgroundColor:
-                                                    HEALTH_DOT[item.status],
+                                                    HEALTH_DOT[item.health],
                                             }}
                                         />
-                                        <span className="flex-1 text-[var(--text-secondary)]">
-                                            {item.label}
+                                        <span className="min-w-0 flex-1 truncate text-[var(--text-secondary)]">
+                                            {item.name}
                                         </span>
-                                        <span className="text-caption font-mono">
-                                            {item.detail}
-                                        </span>
+                                        <Tooltip
+                                            content={
+                                                item.detail ??
+                                                'No detail reported'
+                                            }
+                                        >
+                                            <span
+                                                tabIndex={0}
+                                                className="flex flex-col items-end text-end"
+                                            >
+                                                <span
+                                                    className={`text-caption font-mono ${HEALTH_TEXT[item.health]}`}
+                                                >
+                                                    {statusText(item)}
+                                                </span>
+                                                <span className="text-micro text-[var(--text-tertiary)]">
+                                                    last seen{' '}
+                                                    {lastSeen(
+                                                        item.last_heartbeat_at,
+                                                        now,
+                                                    )}
+                                                </span>
+                                            </span>
+                                        </Tooltip>
                                     </li>
                                 ))}
+
+                                {health.length === 0 && (
+                                    <li className="text-body text-[var(--text-tertiary)]">
+                                        Nothing connected yet.
+                                    </li>
+                                )}
                             </ul>
                         </Panel>
                     </div>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Integration;
 use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\Payment;
@@ -117,7 +118,25 @@ it('renders the dashboard for the admin with restaurant details and health', fun
             ->component('staff/admin/system')
             ->has('summary.revenue.mtd_minor')
             ->where('restaurant.name', $this->restaurant->name)
-            ->has('health', 3));
+            ->has('health', 0));
+});
+
+it('lists the restaurant\'s integrations as health rows, unknown until they report', function () {
+    Integration::query()->create([
+        'restaurant_id' => $this->restaurant->id,
+        'kind' => 'printer',
+        'name' => 'Receipt printer, pass',
+    ]);
+
+    $admin = User::factory()->create(['restaurant_id' => $this->restaurant->id]);
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->get('/app/system')
+        ->assertInertia(fn ($page) => $page
+            ->has('health', 1)
+            ->where('health.0.health', 'unknown')
+            ->where('health.0.last_heartbeat_at', null));
 });
 
 it('a manager cannot reach the admin dashboard', function () {

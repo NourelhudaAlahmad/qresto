@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Integration;
 use App\Models\Restaurant;
 use App\Models\User;
 use App\Services\Admin\AdminDashboardSummary;
@@ -52,29 +53,31 @@ class AdminDashboardController extends Controller
                 )),
                 'tables_count' => $restaurant->tables()->count(),
             ],
-            // Real heartbeats arrive with #30. Until then the gateway reports
-            // its configured driver; devices report that none has checked in.
-            'health' => [
-                [
-                    'key' => 'gateway',
-                    'label' => 'Payment gateway',
-                    'status' => filled(config('qresto.payments.driver')) ? 'ok' : 'down',
-                    'detail' => filled(config('qresto.payments.driver')) ? 'operational' : 'not configured',
-                ],
-                [
-                    'key' => 'kds',
-                    'label' => 'Kitchen display',
-                    'status' => 'unknown',
-                    'detail' => 'no heartbeat yet',
-                ],
-                [
-                    'key' => 'printer',
-                    'label' => 'Receipt printer, pass',
-                    'status' => 'unknown',
-                    'detail' => 'no heartbeat yet',
-                ],
-            ],
+            // Live system health (#30), derived from heartbeat age.
+            'health' => fn (): array => $this->health($restaurant),
             'currencyCode' => $restaurant->currency,
         ]);
+    }
+
+    /**
+     * @return list<array{id: int, kind: string, name: string, health: string, detail: string|null, last_heartbeat_at: string|null}>
+     */
+    private function health(Restaurant $restaurant): array
+    {
+        $order = array_flip(Integration::KINDS);
+
+        return array_values(Integration::query()
+            ->where('restaurant_id', $restaurant->id)
+            ->get()
+            ->sortBy(fn (Integration $integration): string => ($order[$integration->kind] ?? 9).$integration->name)
+            ->map(fn (Integration $integration): array => [
+                'id' => (int) $integration->id,
+                'kind' => $integration->kind,
+                'name' => $integration->name,
+                'health' => $integration->health(),
+                'detail' => $integration->detail,
+                'last_heartbeat_at' => $integration->last_heartbeat_at?->toIso8601String(),
+            ])
+            ->all());
     }
 }

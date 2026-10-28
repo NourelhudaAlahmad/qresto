@@ -60,6 +60,17 @@ return [
 
     'undo_window_seconds' => 6,
 
+    // System health (#30). A heartbeat older than this reads "unknown".
+    // KDS screens post every 30s and printers every minute; the gateway is
+    // probed every five minutes by qresto:probe-gateway.
+    'integrations' => [
+        'stale_after_seconds' => [
+            'kds' => 120,
+            'printer' => 300,
+            'gateway' => 900,
+        ],
+    ],
+
     // Restaurant settings (#29): what an admin may pick.
     'locales' => [
         'en' => 'English',

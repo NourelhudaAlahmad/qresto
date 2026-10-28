@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import AdminSystem from '@/pages/staff/admin/system';
+import AdminSystem, { lastSeen } from '@/pages/staff/admin/system';
 
 type VisitOptions = {
     onError?: (errors: Record<string, string>) => void;
@@ -14,6 +14,7 @@ const patch = vi.fn();
 
 vi.mock('@inertiajs/react', () => ({
     Head: () => null,
+    usePoll: () => ({ start: vi.fn(), stop: vi.fn(), polling: true }),
     Link: ({
         href,
         children,
@@ -102,10 +103,28 @@ const props = {
     },
     health: [
         {
-            key: 'gateway',
-            label: 'Payment gateway',
-            status: 'test' as const,
-            detail: 'test driver',
+            id: 1,
+            kind: 'gateway' as const,
+            name: 'Payment gateway',
+            health: 'operational' as const,
+            detail: 'operational · test driver',
+            last_heartbeat_at: new Date(Date.now() - 20_000).toISOString(),
+        },
+        {
+            id: 2,
+            kind: 'kds' as const,
+            name: 'Kitchen display',
+            health: 'unknown' as const,
+            detail: null,
+            last_heartbeat_at: new Date(Date.now() - 9 * 60_000).toISOString(),
+        },
+        {
+            id: 3,
+            kind: 'printer' as const,
+            name: 'Receipt printer, pass',
+            health: 'failing' as const,
+            detail: 'out of paper',
+            last_heartbeat_at: null,
         },
     ],
     currencyCode: 'USD',
@@ -113,6 +132,17 @@ const props = {
 
 beforeEach(() => patch.mockReset());
 afterEach(cleanup);
+
+describe('lastSeen', () => {
+    it('reads like a person would say it', () => {
+        const now = Date.parse('2026-10-28T20:00:00Z');
+
+        expect(lastSeen(null, now)).toBe('never');
+        expect(lastSeen('2026-10-28T19:59:40Z', now)).toBe('just now');
+        expect(lastSeen('2026-10-28T19:56:00Z', now)).toBe('4 min ago');
+        expect(lastSeen('2026-10-28T17:50:00Z', now)).toBe('2h 10m ago');
+    });
+});
 
 describe('Super admin dashboard (#28)', () => {
     it('leads with month-to-date revenue on an inverse card', () => {
@@ -195,6 +225,22 @@ describe('Super admin dashboard (#28)', () => {
                 name: 'Edit details · reprint QR codes',
             }),
         ).toHaveAttribute('href', '/app/settings/restaurant');
+    });
+
+    it('derives each health row and says when it was last seen', () => {
+        render(<AdminSystem {...props} />);
+
+        const rows = document.querySelectorAll('[data-health]');
+
+        expect([...rows].map((row) => row.getAttribute('data-health'))).toEqual(
+            ['operational', 'unknown', 'failing'],
+        );
+        expect(rows[0].textContent).toContain('last seen just now');
+        expect(rows[1].textContent).toContain('stopped reporting');
+        expect(rows[1].textContent).toContain('last seen 9 min ago');
+        expect(rows[2].textContent).toContain('out of paper');
+        expect(rows[2].textContent).toContain('last seen never');
+        expect(rows[2]).toHaveClass('bg-[var(--danger-bg)]');
     });
 
     it("shows all six roles, the design's four in their order", () => {

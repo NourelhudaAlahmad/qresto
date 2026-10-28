@@ -5,6 +5,7 @@ namespace App\Payments\Gateways;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Payments\Contracts\PaymentGateway;
+use App\Payments\Contracts\ProbesHealth;
 use App\Payments\ValueObjects\Failure;
 use App\Payments\ValueObjects\Intent;
 use App\Payments\ValueObjects\Result;
@@ -12,7 +13,7 @@ use App\Support\Money;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
-final class FakeGateway implements PaymentGateway
+final class FakeGateway implements PaymentGateway, ProbesHealth
 {
     public const SUCCESS_CARD = '4242424242424242';
 
@@ -404,5 +405,15 @@ final class FakeGateway implements PaymentGateway
         }
 
         usleep($this->latencyMs * 1000);
+    }
+
+    /**
+     * The test driver is always reachable.
+     *
+     * @return array{status: 'ok'|'warning'|'failing', detail: string}
+     */
+    public function probe(): array
+    {
+        return ['status' => 'ok', 'detail' => 'operational · test driver'];
     }
 }

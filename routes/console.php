@@ -11,3 +11,12 @@ Artisan::command('inspire', function () {
 Schedule::command('qresto:close-idle-table-sessions')
     ->everyFiveMinutes()
     ->withoutOverlapping();
+
+// System health (#30).
+Schedule::command('qresto:probe-gateway')
+    ->everyFiveMinutes()
+    ->withoutOverlapping();
+
+Schedule::command('qresto:check-integrations')
+    ->everyMinute()
+    ->withoutOverlapping();
