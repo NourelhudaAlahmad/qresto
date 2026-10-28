@@ -9,10 +9,12 @@ return [
 
     'scan' => 'Scan the code on your table',
     'book' => 'Book a table',
-    'reassurance' => 'No app. No account. Just scan and start your order.',
+    'reassurance' => 'Already seated? Scanning opens the menu for your table.',
 
     'kitchen_eyebrow' => "Tonight's kitchen",
     'kitchen_title' => "What's worth ordering",
+    'until' => 'Until :time',
+    'every_day' => 'Every day',
     'chef_pick' => "Chef's pick",
     'no_featured_items' => "Tonight's featured dishes are being prepared.",
 

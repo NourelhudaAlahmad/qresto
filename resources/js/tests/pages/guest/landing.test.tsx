@@ -9,12 +9,13 @@ const post = vi.fn();
 const landingProps: LandingPageProps = {
     restaurant: {
         id: 1,
-        name: 'Levantine',
+        name: 'Al Bustan',
         tagline: 'Charcoal, citrus, and a long table.',
+        intro: 'Al Bustan cooks over live fire, seven nights a week.',
         cuisine: 'Levantine',
         description:
             'A modern Levantine restaurant serving charcoal-grilled dishes.',
-        address: 'Al Bustan Street',
+        address: '14 Marsh Lane, Downtown',
         phone: '+1 (212) 555 0148',
         lat: 40.7128,
         lng: -74.006,
@@ -26,19 +27,53 @@ const landingProps: LandingPageProps = {
         {
             day: 'Sunday',
             day_of_week: 0,
-            opens_at: '12:00',
-            closes_at: '22:00',
+            opens_at: '12:00:00',
+            closes_at: '22:00:00',
             is_today: true,
         },
         {
             day: 'Monday',
             day_of_week: 1,
-            opens_at: '17:00',
-            closes_at: '23:00',
+            opens_at: '17:00:00',
+            closes_at: '23:00:00',
+            is_today: false,
+        },
+        {
+            day: 'Tuesday',
+            day_of_week: 2,
+            opens_at: '17:00:00',
+            closes_at: '23:00:00',
+            is_today: false,
+        },
+        {
+            day: 'Wednesday',
+            day_of_week: 3,
+            opens_at: '17:00:00',
+            closes_at: '23:00:00',
+            is_today: false,
+        },
+        {
+            day: 'Thursday',
+            day_of_week: 4,
+            opens_at: '17:00:00',
+            closes_at: '23:00:00',
+            is_today: false,
+        },
+        {
+            day: 'Friday',
+            day_of_week: 5,
+            opens_at: '12:00:00',
+            closes_at: '00:00:00',
+            is_today: false,
+        },
+        {
+            day: 'Saturday',
+            day_of_week: 6,
+            opens_at: '12:00:00',
+            closes_at: '00:00:00',
             is_today: false,
         },
     ],
-
     featured_items: [
         {
             id: 1,
@@ -65,7 +100,9 @@ const landingProps: LandingPageProps = {
         hero_fallback: 'Charcoal, citrus, and a long table.',
         scan: 'Scan the code on your table',
         book: 'Book a table',
-        reassurance: 'No app. No account. Just scan and start your order.',
+        reassurance: 'Already seated? Scanning opens the menu for your table.',
+        until: 'Until :time',
+        every_day: 'Every day',
         kitchen_eyebrow: "Tonight's kitchen",
         kitchen_title: "What's worth ordering",
         chef_pick: "Chef's pick",
@@ -78,6 +115,11 @@ const landingProps: LandingPageProps = {
         days: {
             Sunday: 'Sunday',
             Monday: 'Monday',
+            Tuesday: 'Tuesday',
+            Wednesday: 'Wednesday',
+            Thursday: 'Thursday',
+            Friday: 'Friday',
+            Saturday: 'Saturday',
         },
     },
 };
@@ -113,28 +155,48 @@ describe('Guest landing page', () => {
         };
     });
 
-    it('renders the restaurant, status, featured items, and primary actions', () => {
+    it('names the restaurant, not the platform, in the header and footer', () => {
         render(<Landing {...landingProps} />);
 
-        expect(screen.getAllByText('Levantine')).toHaveLength(2);
+        const header = screen.getByRole('banner');
 
+        expect(header.textContent).toContain('Al');
+        expect(header.textContent).toContain('Bustan');
+        expect(header.textContent).not.toContain('QResto');
+        expect(screen.getByRole('contentinfo').textContent).toContain(
+            'Powered by QResto',
+        );
+    });
+
+    it('renders the hero, status, featured items and primary actions', () => {
+        render(<Landing {...landingProps} />);
+
+        expect(screen.getByText('Levantine · Downtown')).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', {
+                level: 1,
+                name: 'Charcoal, citrus, and a long table.',
+            }),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                'Al Bustan cooks over live fire, seven nights a week.',
+            ),
+        ).toBeInTheDocument();
         expect(screen.getByText('Open now')).toBeInTheDocument();
-
         expect(
             screen.getByRole('button', {
                 name: /scan the code on your table/i,
             }),
         ).toBeInTheDocument();
-
         expect(
-            screen.getByRole('button', {
-                name: /book a table/i,
-            }),
+            screen.getByRole('button', { name: /book a table/i }),
         ).toBeInTheDocument();
-
         expect(screen.getByText('Lamb kofta')).toBeInTheDocument();
-        expect(screen.getByText('Charred aubergine')).toBeInTheDocument();
-        expect(screen.getByText("Chef's pick")).toBeInTheDocument();
+        expect(screen.getByText("Chef's pick")).toHaveClass(
+            'text-[var(--clay-600)]',
+        );
+        expect(screen.getByText('Until 22:00')).toBeInTheDocument();
     });
 
     it('renders the closed status when the restaurant is closed', () => {
@@ -144,36 +206,46 @@ describe('Guest landing page', () => {
         expect(screen.queryByText('Open now')).not.toBeInTheDocument();
     });
 
+    it('groups the opening hours like the design, on a 24-hour clock', () => {
+        render(<Landing {...landingProps} />);
+
+        const rows = screen
+            .getAllByRole('term')
+            .map((term) => [
+                term.textContent,
+                term.nextElementSibling?.textContent,
+            ]);
+
+        expect(rows).toEqual([
+            ['Monday – Thursday', '17:00 – 23:00'],
+            ['Friday – Saturday', '12:00 – 00:00'],
+            ['Sunday', '12:00 – 22:00'],
+        ]);
+    });
+
     it('keeps prices, opening times, and phone numbers left-to-right', () => {
         render(<Landing {...landingProps} />);
 
         expect(screen.getByText('$18.00')).toHaveAttribute('dir', 'ltr');
-
-        expect(screen.getByText(/12:00 PM.*10:00 PM/)).toHaveAttribute(
-            'dir',
-            'ltr',
-        );
-
+        expect(screen.getByText('12:00 – 22:00')).toHaveAttribute('dir', 'ltr');
         expect(screen.getByText('+1 (212) 555 0148')).toHaveAttribute(
             'dir',
             'ltr',
         );
     });
 
-    it('marks today and renders the room prose at 17px', () => {
+    it('marks today and renders the room prose at body-lg', () => {
         render(<Landing {...landingProps} />);
 
-        const sunday = screen.getByText('Sunday');
-        const todayRow = sunday.parentElement;
-
-        expect(todayRow).toHaveClass('font-semibold');
-        expect(todayRow).toHaveClass('font-mono');
-
-        const roomProse = screen.getAllByText(
-            'A modern Levantine restaurant serving charcoal-grilled dishes.',
-        )[1];
-
-        expect(roomProse).toHaveClass('text-[17px]');
+        expect(screen.getByText('Sunday').parentElement).toHaveAttribute(
+            'aria-current',
+            'date',
+        );
+        expect(
+            screen.getByText(
+                'A modern Levantine restaurant serving charcoal-grilled dishes.',
+            ),
+        ).toHaveClass('text-body-lg');
     });
 
     it('switches from English to Arabic while preserving page state', () => {

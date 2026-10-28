@@ -72,6 +72,22 @@ sed -n '/^const SPEC/,/^};/p' docs/design/03-staff-panels.dc.html
 ## Editing
 
 Do not hand-edit the artboards or the token CSS. Update the design in Claude
-Design and re-export. The artboards are untouched from their export — the
+Design and re-export.
+
+One exception, re-apply it after any re-export: the export names the files
+`01 Foundations.dc.html` (with spaces) and links them that way, but they live
+here as `01-foundations.dc.html`. The header links between the three pages
+were rewritten to the hyphenated names so the tabs work:
+
+```bash
+sed -i 's#href="01 Foundations.dc.html"#href="01-foundations.dc.html"#g; s#href="02 Customer Flow.dc.html"#href="02-customer-flow.dc.html"#g; s#href="03 Staff Panels.dc.html"#href="03-staff-panels.dc.html"#g' docs/design/0*.dc.html
+```
+
+### Viewing tips
+
+- Each phone frame scrolls on its own: hover over the phone and use the wheel
+  or trackpad. The scrollbar is hidden on purpose, as on a real phone.
+- If a page shows raw `{{ }}` bindings, the browser blocked the runtime on
+  `file://`. Serve the folder instead: `php -S localhost:8080 -t docs/design`. The artboards are untouched from their export — the
 standalone fix lives entirely in `support.js`, so re-exporting the HTML does not
 undo it.

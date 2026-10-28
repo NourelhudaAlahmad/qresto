@@ -2,6 +2,8 @@ export type Restaurant = {
     id: number;
     name: string;
     tagline: string | null;
+    /** Short line under the hero title. */
+    intro?: string | null;
     cuisine: string | null;
     description: string | null;
     address: string | null;
@@ -38,6 +40,8 @@ export type LandingTranslations = {
     reassurance: string;
     kitchen_eyebrow: string;
     kitchen_title: string;
+    until: string;
+    every_day: string;
     chef_pick: string;
     no_featured_items: string;
     room: string;

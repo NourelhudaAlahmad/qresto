@@ -1,25 +1,103 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import type { Html5Qrcode } from 'html5-qrcode';
-import { QrCode, X } from 'lucide-react';
+import { MapPin, Phone, QrCode, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { ArrowIcon } from '@/components/qresto/arrow-icon';
+import { Numeric } from '@/components/numeric';
 import { Button } from '@/components/qresto/button';
-import { Card } from '@/components/qresto/card';
-import { Divider } from '@/components/qresto/divider';
 import { PhoneIcon } from '@/components/qresto/phone-icon';
 import GuestLayout from '@/layouts/guest-layout';
-import type { LandingPageProps, LandingSharedProps } from '@/types/landing';
+import type {
+    LandingPageProps,
+    LandingSharedProps,
+    OpeningHour,
+} from '@/types/landing';
 
-function formatTime(time: string): string {
-    const [hourText, minuteText] = time.split(':');
-    const hour = Number(hourText);
-
-    const suffix = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-
-    return `${displayHour}:${minuteText} ${suffix}`;
+/** "17:00:00" → "17:00": the design shows opening hours on a 24-hour clock. */
+function clock(time: string): string {
+    return time.slice(0, 5);
 }
+
+type HoursGroup = {
+    label: string;
+    time: string | null;
+    isToday: boolean;
+};
+
+/**
+ * Consecutive days with the same hours collapse into one row, Monday first,
+ * as the design draws them: "Monday – Thursday · 17:00 – 23:00".
+ */
+export function groupHours(
+    hours: OpeningHour[],
+    dayName: (day: string) => string,
+    everyDay: string,
+): HoursGroup[] {
+    const week = [1, 2, 3, 4, 5, 6, 0]
+        .map((dow) => hours.find((hour) => hour.day_of_week === dow))
+        .filter((hour): hour is OpeningHour => hour !== undefined);
+
+    const timeOf = (hour: OpeningHour): string | null =>
+        hour.opens_at && hour.closes_at
+            ? `${clock(hour.opens_at)} – ${clock(hour.closes_at)}`
+            : null;
+
+    const runs: OpeningHour[][] = [];
+
+    for (const hour of week) {
+        const run = runs[runs.length - 1];
+
+        if (run && timeOf(run[run.length - 1]) === timeOf(hour)) {
+            run.push(hour);
+        } else {
+            runs.push([hour]);
+        }
+    }
+
+    return runs.map((run) => {
+        const first = dayName(run[0].day);
+        const last = dayName(run[run.length - 1].day);
+
+        return {
+            label:
+                run.length === 7
+                    ? everyDay
+                    : run.length === 1
+                      ? first
+                      : `${first} – ${last}`,
+            time: timeOf(run[0]),
+            isToday: run.some((hour) => hour.is_today),
+        };
+    });
+}
+
+/** "14 Marsh Lane, Downtown" → "Downtown" */
+function areaOf(address: string | null): string | null {
+    const area = address?.split(',').pop()?.trim();
+
+    return area ? area : null;
+}
+
+/** The design's wordmark: the first word in clay. "Al Bustan" → "Al" + " Bustan" */
+function Wordmark({ name, size }: { name: string; size: string }) {
+    const [first, ...rest] = name.trim().split(/\s+/);
+
+    return (
+        <span
+            className={`font-display inline-flex items-baseline font-bold tracking-[-0.04em] ${size}`}
+        >
+            <span className="text-[var(--clay-500)]">{first}</span>
+            {rest.length > 0 && <span>&nbsp;{rest.join(' ')}</span>}
+        </span>
+    );
+}
+
+// Placeholder art until menu photos are uploaded (#31).
+const ITEM_ART = [
+    'bg-[linear-gradient(150deg,var(--clay-300),var(--clay-800))]',
+    'bg-[linear-gradient(150deg,var(--saffron-300),var(--clay-800))]',
+    'bg-[linear-gradient(150deg,var(--herb-300),var(--herb-900))]',
+];
 
 function extractQrToken(value: string): string | null {
     const scannedValue = value.trim();
@@ -211,6 +289,14 @@ export default function Landing({
         );
     };
 
+    const hourGroups = groupHours(
+        hours,
+        (day) => translations.days[day] ?? day,
+        translations.every_day,
+    );
+
+    const todaysClose = hours.find((hour) => hour.is_today)?.closes_at ?? null;
+
     const switchLanguageLabel = translations.switch_language.replace(
         ':language',
         nextLanguageLabel,
@@ -342,212 +428,219 @@ export default function Landing({
                 </div>
             )}
 
-            <header className="border-border-subtle bg-surface-page/88 sticky top-0 z-30 h-14 border-b px-3 backdrop-blur-xl">
-                <div className="mx-auto flex h-full max-w-[390px] items-center justify-between gap-3">
-                    <div className="font-ui min-w-0 truncate text-base font-semibold tracking-tight">
-                        QResto
-                    </div>
+            {/* Glass header: wordmark, open/closed badge, language toggle. */}
+            <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-[var(--border-subtle)] bg-[var(--alpha-paper-88)] px-[var(--gutter-mobile)] backdrop-blur-[12px]">
+                <Wordmark name={restaurant.name} size="text-[19px]" />
 
-                    <div className="flex shrink-0 items-center gap-2">
-                        <span
-                            className={[
-                                'rounded-pill px-2.5 py-1 text-xs font-medium',
-                                open_now
-                                    ? 'bg-[var(--success-bg)] text-[var(--success-fg)]'
-                                    : 'bg-surface-muted text-text-secondary',
-                            ].join(' ')}
-                        >
-                            {open_now
-                                ? translations.open_now
-                                : translations.closed}
-                        </span>
+                <span className="flex-1" />
 
-                        <button
-                            type="button"
-                            onClick={switchLocale}
-                            className="rounded-pill border-border-default hover:bg-action-ghost-hover focus-visible:ring-border-focus-color/30 min-h-11 border px-3 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2"
-                            aria-label={switchLanguageLabel}
-                        >
-                            {nextLanguageLabel}
-                        </button>
-                    </div>
-                </div>
+                <span
+                    className={`text-micro inline-flex h-6 items-center gap-[5px] rounded-[var(--radius-pill)] px-2.5 font-semibold ${
+                        open_now
+                            ? 'bg-[var(--success-bg)] text-[var(--success-fg)]'
+                            : 'bg-[var(--ink-100)] text-[var(--text-tertiary)]'
+                    }`}
+                >
+                    <span
+                        aria-hidden="true"
+                        className={`size-1.5 rounded-full ${
+                            open_now
+                                ? 'bg-[var(--herb-500)]'
+                                : 'bg-[var(--ink-400)]'
+                        }`}
+                    />
+                    {open_now ? translations.open_now : translations.closed}
+                </span>
+
+                {/* A 44px target around the design's small "ع" pill. */}
+                <button
+                    type="button"
+                    onClick={switchLocale}
+                    aria-label={switchLanguageLabel}
+                    className="-me-2 grid size-11 place-items-center rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--border-focus-color)]"
+                >
+                    <span className="text-caption rounded-[var(--radius-pill)] border border-[var(--border-default)] px-2 py-[3px] font-mono text-[var(--text-tertiary)]">
+                        {nextLocale === 'ar' ? 'ع' : 'EN'}
+                    </span>
+                </button>
             </header>
 
             <main>
-                <section className="px-3 pt-3">
-                    <div className="relative h-[420px] overflow-hidden rounded-[24px] bg-gradient-to-br from-stone-900 via-stone-700 to-amber-900">
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.16),transparent_28%),radial-gradient(circle_at_80%_70%,rgba(255,180,90,0.18),transparent_32%)]" />
+                {/* Full-bleed hero, 420 tall, bottom scrim, display-2 statement. */}
+                <section className="relative flex h-[420px] items-end overflow-hidden bg-[linear-gradient(150deg,var(--clay-400),var(--clay-900))]">
+                    <div
+                        aria-hidden="true"
+                        className="absolute inset-0 bg-[var(--scrim-bottom)]"
+                    />
 
-                        <div className="absolute inset-x-0 bottom-0 bg-[var(--scrim-bottom)] p-6 pt-32 text-white">
-                            {restaurant.cuisine && (
-                                <p className="font-ui mb-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">
-                                    {restaurant.cuisine}
-                                </p>
-                            )}
-
-                            <h1 className="font-display max-w-[17ch] text-[44px] font-semibold leading-[1.05] tracking-[-0.03em]">
-                                {restaurant.tagline ||
-                                    translations.hero_fallback}
-                            </h1>
-
-                            {restaurant.description && (
-                                <p className="mt-4 max-w-[34ch] text-[15px] leading-[1.45] text-white/80">
-                                    {restaurant.description}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                </section>
-
-                <section className="px-3 py-5">
-                    <div className="space-y-3">
-                        <Button
-                            type="button"
-                            size="lg"
-                            variant="primary"
-                            fullWidth
-                            onClick={() => setScannerOpen(true)}
-                            className="text-text-on-brand justify-between"
-                        >
-                            <span>{translations.scan}</span>
-
-                            <QrCode aria-hidden="true" className="size-5" />
-                        </Button>
-
-                        <Button
-                            type="button"
-                            size="lg"
-                            variant="outline"
-                            fullWidth
-                            onClick={() => setBookingOpen(true)}
-                            className="justify-between"
-                        >
-                            <span>{translations.book}</span>
-
-                            <ArrowIcon />
-                        </Button>
-                    </div>
-
-                    <p className="text-text-secondary mt-3 text-center text-xs leading-5">
-                        {translations.reassurance}
-                    </p>
-                </section>
-
-                <section className="pb-8 pt-2">
-                    <div className="px-3">
-                        <div className="mb-4">
-                            <p className="font-ui text-text-secondary text-[11px] font-semibold uppercase tracking-[0.12em]">
-                                {translations.kitchen_eyebrow}
+                    <div className="relative px-[var(--gutter-mobile)] pb-8 pt-6 text-[var(--ink-0)]">
+                        {(restaurant.cuisine || areaOf(restaurant.address)) && (
+                            <p className="text-micro uppercase tracking-[var(--tracking-eyebrow)] opacity-85">
+                                {[
+                                    restaurant.cuisine,
+                                    areaOf(restaurant.address),
+                                ]
+                                    .filter(Boolean)
+                                    .join(' · ')}
                             </p>
+                        )}
 
-                            <h2 className="font-display mt-1 text-[34px] font-semibold leading-tight tracking-[-0.03em]">
-                                {translations.kitchen_title}
-                            </h2>
-                        </div>
-                    </div>
+                        <h1 className="font-display text-display-2 mb-2.5 mt-2 font-semibold">
+                            {restaurant.tagline || translations.hero_fallback}
+                        </h1>
 
-                    <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                        {featured_items.map((item) => (
-                            <Card
-                                key={item.id}
-                                className="w-[230px] shrink-0 snap-start overflow-hidden p-0 sm:p-0"
-                            >
-                                <div className="h-[128px] bg-gradient-to-br from-stone-800 via-stone-600 to-amber-700">
-                                    <div className="flex h-full items-end p-4">
-                                        {item.chef_flag && (
-                                            <span className="rounded-pill bg-surface-card/90 font-ui text-text-primary px-2.5 py-1 text-[11px] font-semibold shadow-sm backdrop-blur-sm">
-                                                {translations.chef_pick}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="p-4">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <h3 className="font-display text-[20px] font-semibold leading-snug tracking-[-0.015em]">
-                                            {item.name}
-                                        </h3>
-
-                                        <span
-                                            dir="ltr"
-                                            className="shrink-0 font-mono text-sm font-semibold tabular-nums"
-                                        >
-                                            {item.price}
-                                        </span>
-                                    </div>
-                                </div>
-                            </Card>
-                        ))}
-
-                        {featured_items.length === 0 && (
-                            <Card className="text-text-secondary border-dashed text-sm">
-                                {translations.no_featured_items}
-                            </Card>
+                        {restaurant.intro && (
+                            <p className="text-body-lg max-w-[30ch] text-[var(--alpha-paper-88)]">
+                                {restaurant.intro}
+                            </p>
                         )}
                     </div>
                 </section>
 
-                <section className="px-3 py-8">
-                    <Divider />
+                {/* Two stacked 54px actions: scan (primary), book (outline). */}
+                <section className="flex flex-col gap-3 px-[var(--gutter-mobile)] py-5">
+                    <Button
+                        type="button"
+                        variant="primary"
+                        fullWidth
+                        onClick={() => setScannerOpen(true)}
+                        className="text-body-lg h-[54px] shadow-[var(--shadow-rest)]"
+                    >
+                        <QrCode aria-hidden="true" className="size-5" />
+                        {translations.scan}
+                    </Button>
 
-                    <div className="pt-8">
-                        <p className="font-ui text-text-secondary text-[11px] font-semibold uppercase tracking-[0.12em]">
-                            {translations.room}
-                        </p>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        fullWidth
+                        onClick={() => setBookingOpen(true)}
+                        className="text-body-lg h-[54px]"
+                    >
+                        {translations.book}
+                    </Button>
 
-                        <p className="text-text-secondary mt-3 text-[17px] leading-[1.65]">
-                            {restaurant.description ||
-                                translations.room_fallback}
-                        </p>
+                    <p className="text-caption text-center text-[var(--text-tertiary)]">
+                        {translations.reassurance}
+                    </p>
+                </section>
 
-                        <div className="mt-7">
-                            {hours.map((hour) => (
-                                <div key={hour.day_of_week}>
-                                    <div
-                                        className={[
-                                            'flex items-center justify-between py-3 font-mono text-sm tabular-nums',
-                                            hour.is_today
-                                                ? 'text-text-primary font-semibold'
-                                                : 'text-text-secondary',
-                                        ].join(' ')}
-                                    >
-                                        <span className="font-sans text-sm">
-                                            {translations.days[hour.day] ??
-                                                hour.day}
-                                        </span>
+                {/* Tonight's kitchen: horizontal scroller of 230px cards. */}
+                <section className="pb-8 pt-6">
+                    <div className="flex items-baseline gap-3 px-[var(--gutter-mobile)] pb-3">
+                        <h2 className="font-display text-title-1 flex-1 font-semibold tracking-[var(--tracking-title)]">
+                            {translations.kitchen_eyebrow}
+                        </h2>
 
-                                        <span dir="ltr">
-                                            {hour.opens_at && hour.closes_at
-                                                ? `${formatTime(hour.opens_at)} – ${formatTime(hour.closes_at)}`
-                                                : translations.closed}
-                                        </span>
-                                    </div>
+                        {todaysClose && (
+                            <span className="text-caption font-mono text-[var(--text-tertiary)]">
+                                {translations.until.replace(
+                                    ':time',
+                                    clock(todaysClose),
+                                )}
+                            </span>
+                        )}
+                    </div>
 
-                                    <Divider />
+                    <div className="flex snap-x gap-3 overflow-x-auto px-[var(--gutter-mobile)] pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        {featured_items.map((item, index) => (
+                            <article
+                                key={item.id}
+                                className="w-[230px] shrink-0 snap-start overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-rest)]"
+                            >
+                                <div
+                                    aria-hidden="true"
+                                    className={`h-32 ${ITEM_ART[index % ITEM_ART.length]}`}
+                                />
+
+                                <div className="p-3">
+                                    {item.chef_flag && (
+                                        <p className="text-micro font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--clay-600)]">
+                                            {translations.chef_pick}
+                                        </p>
+                                    )}
+
+                                    <h3 className="font-display text-title-3 mt-0.5 font-semibold">
+                                        {item.name}
+                                    </h3>
+
+                                    <Numeric className="text-body mt-1 block font-mono">
+                                        {item.price}
+                                    </Numeric>
                                 </div>
-                            ))}
-                        </div>
+                            </article>
+                        ))}
+
+                        {featured_items.length === 0 && (
+                            <p className="text-body w-full rounded-[var(--radius-lg)] border border-dashed border-[var(--border-default)] bg-[var(--surface-card)] p-4 text-[var(--text-secondary)]">
+                                {translations.no_featured_items}
+                            </p>
+                        )}
                     </div>
                 </section>
 
-                <section className="px-3 py-4">
-                    <Card className="p-5 sm:p-5">
-                        <p className="font-ui text-text-secondary text-[11px] font-semibold uppercase tracking-[0.12em]">
-                            {translations.find_us}
-                        </p>
+                {/* The room: prose at 17px, then opening hours in mono. */}
+                <section className="px-[var(--gutter-mobile)] pb-8">
+                    <h2 className="font-display text-title-1 mb-3 font-semibold tracking-[var(--tracking-title)]">
+                        {translations.room}
+                    </h2>
 
-                        <div className="mt-4 overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br from-stone-200 via-stone-100 to-amber-100">
-                            <div className="flex h-[180px] items-end p-4">
-                                <div className="bg-surface-card/85 rounded-[var(--radius-md)] px-3 py-2 text-xs font-medium shadow-sm backdrop-blur-sm">
-                                    {restaurant.name}
-                                </div>
+                    <p className="text-body-lg leading-[var(--leading-relaxed)] text-[var(--text-secondary)]">
+                        {restaurant.description || translations.room_fallback}
+                    </p>
+
+                    <div
+                        aria-hidden="true"
+                        className="my-5 h-px bg-[var(--border-subtle)]"
+                    />
+
+                    <dl className="grid gap-2">
+                        {hourGroups.map((group) => (
+                            <div
+                                key={group.label}
+                                className={`text-body flex items-baseline gap-3 ${
+                                    group.isToday ? 'font-semibold' : ''
+                                }`}
+                                aria-current={
+                                    group.isToday ? 'date' : undefined
+                                }
+                            >
+                                <dt
+                                    className={`flex-1 ${
+                                        group.isToday
+                                            ? 'text-[var(--text-primary)]'
+                                            : 'text-[var(--text-secondary)]'
+                                    }`}
+                                >
+                                    {group.label}
+                                </dt>
+                                <dd dir="ltr" className="font-mono">
+                                    {group.time ?? translations.closed}
+                                </dd>
                             </div>
-                        </div>
+                        ))}
+                    </dl>
+                </section>
 
-                        <div className="mt-4 space-y-3">
+                {/* Find us: map card, address, phone. */}
+                <section className="px-[var(--gutter-mobile)] pb-8">
+                    <h2 className="font-display text-title-1 mb-3 font-semibold tracking-[var(--tracking-title)]">
+                        {translations.find_us}
+                    </h2>
+
+                    <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-rest)]">
+                        <div
+                            aria-hidden="true"
+                            className="h-[140px] bg-[linear-gradient(150deg,var(--ink-300),var(--ink-800))]"
+                        />
+
+                        <div className="text-body flex flex-col gap-3 p-4 text-[var(--text-secondary)]">
                             {restaurant.address && (
-                                <p className="text-text-secondary text-sm leading-6">
+                                <p className="flex items-center gap-3">
+                                    <MapPin
+                                        aria-hidden="true"
+                                        className="size-[18px] shrink-0 text-[var(--clay-500)]"
+                                    />
                                     {restaurant.address}
                                 </p>
                             )}
@@ -555,30 +648,27 @@ export default function Landing({
                             {restaurant.phone && (
                                 <a
                                     href={`tel:${restaurant.phone.replace(/\s+/g, '')}`}
-                                    className="inline-flex min-h-11 items-center gap-2 text-sm font-medium"
+                                    className="-my-3 flex min-h-11 items-center gap-3"
                                 >
-                                    <PhoneIcon />
-
+                                    <Phone
+                                        aria-hidden="true"
+                                        className="size-[18px] shrink-0 text-[var(--clay-500)]"
+                                    />
                                     <span dir="ltr">{restaurant.phone}</span>
                                 </a>
                             )}
                         </div>
-                    </Card>
+                    </div>
                 </section>
             </main>
 
-            <footer className="px-3 pb-8 pt-10">
-                <Divider />
+            {/* Footer: wordmark, powered-by line. */}
+            <footer className="flex flex-col items-center gap-1 border-t border-[var(--border-subtle)] px-[var(--gutter-mobile)] pb-10 pt-6 text-center">
+                <Wordmark name={restaurant.name} size="text-[17px]" />
 
-                <div className="pt-6 text-center">
-                    <div className="font-ui text-sm font-semibold tracking-tight">
-                        QResto
-                    </div>
-
-                    <p className="text-text-secondary mt-2 text-xs">
-                        {translations.powered_by}
-                    </p>
-                </div>
+                <p className="text-caption text-[var(--text-tertiary)]">
+                    {translations.powered_by}
+                </p>
             </footer>
         </GuestLayout>
     );

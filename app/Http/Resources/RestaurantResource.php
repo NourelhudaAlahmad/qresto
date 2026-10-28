@@ -32,6 +32,8 @@ class RestaurantResource extends JsonResource
             'slug' => $this->slug,
             'name' => $localized('name'),
             'tagline' => $localized('tagline'),
+            // The hero's short line. No column: it lives in translations.
+            'intro' => $translations[$locale]['intro'] ?? $translations['en']['intro'] ?? null,
             'cuisine' => $localized('cuisine'),
             'description' => $localized('description'),
             'address' => $localized('address'),
