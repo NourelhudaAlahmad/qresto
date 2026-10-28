@@ -277,3 +277,17 @@ it('renders the settings screen for the admin', function () {
             ->where('hours.0.day_of_week', 1)
             ->where('restaurant.currency', 'USD'));
 });
+
+it('refuses renaming a table onto a retired table\'s number instead of crashing', function () {
+    $one = tableByNumber($this->restaurant, '01');
+    $two = tableByNumber($this->restaurant, '02');
+
+    $this->actingAs($this->yusuf)->post("/app/settings/tables/{$one->id}/retire");
+
+    $this->actingAs($this->yusuf)
+        ->patch("/app/settings/tables/{$two->id}", ['number' => '01', 'seats' => 2])
+        ->assertRedirect()
+        ->assertSessionHasErrors('number');
+
+    expect($two->fresh()->number)->toBe('02');
+});

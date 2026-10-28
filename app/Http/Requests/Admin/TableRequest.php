@@ -5,6 +5,7 @@ namespace App\Http\Requests\Admin;
 use App\Enums\Capability;
 use App\Models\RestaurantTable;
 use App\Models\User;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -35,6 +36,23 @@ class TableRequest extends FormRequest
                     ->where('restaurant_id', $user->restaurant_id)
                     ->whereNull('retired_at')
                     ->ignore($table?->id),
+                // The database keeps one row per number, retired or not, so
+                // renaming onto a retired number would hit the unique index.
+                function (string $attribute, mixed $value, Closure $fail) use ($user, $table): void {
+                    if ($table === null) {
+                        return; // adding a retired number brings that table back
+                    }
+
+                    $retired = RestaurantTable::withoutGlobalScope(RestaurantTable::ACTIVE_SCOPE)
+                        ->where('restaurant_id', $user->restaurant_id)
+                        ->where('number', trim((string) $value))
+                        ->whereNotNull('retired_at')
+                        ->exists();
+
+                    if ($retired) {
+                        $fail('A retired table uses that number. Add it again from "New table" to bring it back.');
+                    }
+                },
             ],
             'seats' => ['required', 'integer', 'between:1,30'],
             'sort_order' => ['nullable', 'integer', 'between:0,999'],

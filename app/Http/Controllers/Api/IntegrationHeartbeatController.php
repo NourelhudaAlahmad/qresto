@@ -35,7 +35,14 @@ class IntegrationHeartbeatController extends Controller
         $data = $request->validate([
             'status' => ['required', 'string', Rule::in(Integration::REPORTED)],
             'detail' => ['nullable', 'string', 'max:160'],
-            'meta' => ['nullable', 'array'],
+            // Small, flat key/values (paper level, screen count). A device
+            // must not be able to fill the database through a heartbeat.
+            'meta' => ['nullable', 'array', 'max:20'],
+            'meta.*' => ['nullable', function (string $attribute, mixed $value, \Closure $fail): void {
+                if (! is_scalar($value) || mb_strlen((string) $value) > 200) {
+                    $fail('Each meta value must be a short text, number or true/false.');
+                }
+            }],
         ]);
 
         $monitor->recordHeartbeat(

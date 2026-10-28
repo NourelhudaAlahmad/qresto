@@ -217,3 +217,36 @@ it('shows derived health on the admin screen, and only to the admin', function (
 
     $this->actingAs($this->sara)->get('/app/system')->assertForbidden();
 });
+
+it('alerts when a device\'s very first report says it is failing', function () {
+    Notification::fake();
+
+    beat($this->token, $this->kds->id, 'failing', 'both screens down');
+
+    Notification::assertSentToTimes($this->sara, IntegrationFailing::class, 1);
+});
+
+it('refuses an oversized or nested meta payload', function () {
+    beat($this->token, $this->kds->id)->assertOk();
+
+    $this->withToken($this->token)
+        ->postJson("/api/integrations/{$this->kds->id}/heartbeat", [
+            'status' => 'ok',
+            'meta' => array_fill(0, 50, 'x'),
+        ])
+        ->assertUnprocessable();
+
+    $this->withToken($this->token)
+        ->postJson("/api/integrations/{$this->kds->id}/heartbeat", [
+            'status' => 'ok',
+            'meta' => ['paper' => str_repeat('x', 5000)],
+        ])
+        ->assertUnprocessable();
+
+    $this->withToken($this->token)
+        ->postJson("/api/integrations/{$this->kds->id}/heartbeat", [
+            'status' => 'ok',
+            'meta' => ['screens' => 2, 'paper' => 'low', 'online' => true],
+        ])
+        ->assertOk();
+});

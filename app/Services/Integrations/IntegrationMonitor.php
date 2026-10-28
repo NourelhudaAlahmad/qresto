@@ -60,7 +60,13 @@ class IntegrationMonitor
             $wasBad = in_array($was, IntegrationHealth::BAD, true);
             $isBad = in_array($now, IntegrationHealth::BAD, true);
 
-            if ($isBad && ! $wasBad && $was !== null) {
+            // Healthy -> failing or silent. Also a device whose very first
+            // report says it is failing: it has never been healthy, but it
+            // is plainly broken. A device that has simply never reported
+            // ("unknown" from the start) stays quiet.
+            $firstReportFailing = $was === null && $now === IntegrationHealth::FAILING;
+
+            if ($isBad && ! $wasBad && ($was !== null || $firstReportFailing)) {
                 $this->notifyManagers($locked, $now);
             }
 
