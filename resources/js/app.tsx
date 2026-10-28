@@ -6,7 +6,6 @@ import { initializeTheme } from '@/hooks/use-appearance';
 
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
-import GuestLayout from '@/layouts/guest-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import StaffLayout from '@/layouts/staff-layout';
 
@@ -24,8 +23,10 @@ createInertiaApp({
             case name === 'auth/staff-login':
                 return null;
 
+            // Every guest page wraps itself in <GuestLayout>; adding it here
+            // as well drew the phone frame twice, one inside the other.
             case name.startsWith('guest/'):
-                return GuestLayout;
+                return null;
 
             case name.startsWith('auth/'):
                 return AuthLayout;
