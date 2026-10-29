@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\Restaurant;
 use App\Services\CapabilitySnapshot;
 use App\Services\NavigationBuilder;
+use App\Services\Reports\SalesReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Middleware;
@@ -241,6 +242,27 @@ class HandleInertiaRequests extends Middleware
      */
     private function pageSubtitle(Request $request, ?Restaurant $restaurant, string $fallback): string
     {
+        // "01 – 23 Aug · all waiters · USD", as the design's reports title.
+        if ($restaurant !== null && $request->route()?->getName() === 'app.reports') {
+            $preset = (string) $request->query('preset', 'month');
+            $preset = in_array($preset, SalesReport::PRESETS, true) ? $preset : 'month';
+
+            try {
+                $range = app(SalesReport::class)->range(
+                    $restaurant,
+                    $preset,
+                    $request->query('start'),
+                    $request->query('end'),
+                );
+            } catch (\Throwable) {
+                return __($fallback);
+            }
+
+            $start = $range['start']->format($range['start']->isSameMonth($range['end']) ? 'd' : 'd M');
+
+            return "{$start} – {$range['end']->format('d M')} · all waiters · {$restaurant->currency}";
+        }
+
         if ($restaurant !== null && $request->route()?->getName() === 'app.menu') {
             $dishes = MenuItem::query()->where('restaurant_id', $restaurant->id);
 

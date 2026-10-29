@@ -22,6 +22,7 @@ use App\Http\Controllers\MenuItemController;
 use App\Http\Controllers\OrderStatusController;
 use App\Http\Controllers\QrController;
 use App\Http\Controllers\ReceiptController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\WaiterOrderController;
@@ -199,13 +200,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Other staff application routes
 
-    Route::get('/app/reports', function () {
-        return Inertia::render('staff/landing', [
-            'title' => 'Reports',
-        ]);
-    })
-        ->middleware('can:financial_reports')
-        ->name('app.reports');
+    // Issue #32 — Reports: screen, CSV and PDF from one SalesReport.
+    Route::middleware('can:financial_reports')->group(function () {
+        Route::get('/app/reports', [ReportController::class, 'index'])->name('app.reports');
+        Route::get('/app/reports/export.csv', [ReportController::class, 'csv'])->name('app.reports.csv');
+        Route::get('/app/reports/export.pdf', [ReportController::class, 'pdf'])->name('app.reports.pdf');
+    });
 
     // Waiter: view assigned orders only.
 

@@ -30,8 +30,12 @@ it('seeds the Al Bustan design fixtures', function () {
         ->toBe(12)
         ->and(User::whereNotNull('restaurant_id')->count())
         ->toBe(6)
-        ->and(Order::count())
-        ->toBe(5);
+        // Tonight's live orders, from the design; the rest is the
+        // three-week history Reports draws (#32).
+        ->and(Order::where('code', 'not like', '#H-%')->count())
+        ->toBe(5)
+        ->and(Order::where('code', 'like', '#H-%')->count())
+        ->toBeGreaterThan(200);
 });
 
 it('seeds the design order totals', function () {
@@ -127,8 +131,9 @@ it('seeds tonight\'s floor team exactly as the design lists it', function () {
         ->and($onShift('Lin Wu'))->toBeFalse()
         ->and($onShift('Sara Malik'))->toBeTrue();
 
-    // Each seeded order sits on a table its waiter is assigned to.
-    foreach (Order::query()->with(['table', 'assignedUser'])->whereNotNull('table_id')->get() as $order) {
+    // Each of tonight's orders sits on a table its waiter is assigned to.
+    // (History orders were served on past shifts.)
+    foreach (Order::query()->with(['table', 'assignedUser'])->whereNotNull('table_id')->where('code', 'not like', '#H-%')->get() as $order) {
         expect($tablesOf($order->assignedUser->name))->toContain($order->table->number);
     }
 });
