@@ -50,7 +50,7 @@ class MenuItemController extends Controller
                 'description' => $menuItem->translated_description,
                 'category' => $menuItem->category?->translated_name,
                 'price' => $menuItem->price->jsonSerialize(),
-                'photo' => $menuItem->photo_path,
+                'photo' => $menuItem->photoUrl(),
                 'prep_minutes' => $menuItem->prep_minutes,
                 'available' => $menuItem->is_available,
                 'tags' => $menuItem->dietary_tags ?? [],

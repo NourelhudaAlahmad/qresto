@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class MenuItem extends Model
 {
@@ -20,6 +22,10 @@ class MenuItem extends Model
 
     /** @use HasFactory<MenuItemFactory> */
     use HasFactory;
+
+    // #31: a deleted dish stays in the table so historic order lines that
+    // point at it keep resolving; it disappears from every menu.
+    use SoftDeletes;
 
     protected $fillable = [
         'restaurant_id',
@@ -29,6 +35,7 @@ class MenuItem extends Model
         'translations',
         'price',
         'photo_path',
+        'photo_thumb_path',
         'prep_minutes',
         'is_available',
         'is_scheduled',
@@ -166,5 +173,35 @@ class MenuItem extends Model
                             });
                     });
             });
+    }
+
+    /**
+     * Public URL of the original photo (meal page), or null.
+     */
+    public function photoUrl(): ?string
+    {
+        return $this->publicUrl($this->photo_path);
+    }
+
+    /**
+     * Public URL of the square list thumbnail, falling back to the original.
+     */
+    public function thumbUrl(): ?string
+    {
+        return $this->publicUrl($this->photo_thumb_path) ?? $this->photoUrl();
+    }
+
+    private function publicUrl(?string $path): ?string
+    {
+        if ($path === null || $path === '') {
+            return null;
+        }
+
+        // Seeded or external images may already be full URLs.
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '/')) {
+            return $path;
+        }
+
+        return Storage::disk((string) config('qresto.menu.photo_disk', 'public'))->url($path);
     }
 }

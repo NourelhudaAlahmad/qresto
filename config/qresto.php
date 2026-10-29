@@ -60,6 +60,13 @@ return [
 
     'undo_window_seconds' => 6,
 
+    // Menu management (#31): dish photos.
+    'menu' => [
+        'photo_disk' => env('QRESTO_MENU_PHOTO_DISK', 'public'),
+        'photo_min_width' => 1200,
+        'thumb_size' => 240,
+    ],
+
     // System health (#30). A heartbeat older than this reads "unknown".
     // KDS screens post every 30s and printers every minute; the gateway is
     // probed every five minutes by qresto:probe-gateway.

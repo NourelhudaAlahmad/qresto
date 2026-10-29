@@ -187,7 +187,17 @@ class OrderTest extends TestCase
 
         $menuItemId = $menuItem->id;
 
+        // #31: deleting a dish is a soft delete, so the line keeps pointing
+        // at it and history stays complete.
         $menuItem->delete();
+
+        $line->refresh();
+
+        $this->assertSame($menuItemId, $line->menu_item_id);
+        $this->assertSoftDeleted('menu_items', ['id' => $menuItemId]);
+
+        // A permanent delete still detaches the line without losing it.
+        $menuItem->forceDelete();
 
         $line->refresh();
 

@@ -47,7 +47,7 @@ class MenuController extends Controller
                                 'name' => $item->translated_name,
                                 'description' => $item->translated_description,
                                 'price' => $item->price->jsonSerialize(),
-                                'photo' => $item->photo_path,
+                                'photo' => $item->thumbUrl(),
                                 'tags' => $item->dietary_tags ?? [],
                                 'allergens' => $item->allergens
                                     ->map(function (Allergen $allergen): array {

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\MenuAdminController;
 use App\Http\Controllers\Admin\PermissionMatrixController;
 use App\Http\Controllers\Admin\RestaurantSettingsController;
 use App\Http\Controllers\Admin\TableController;
@@ -308,13 +309,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
         )->name('app.system.permissions.audits');
     });
 
-    Route::get('/app/menu', function () {
-        return Inertia::render('staff/landing', [
-            'title' => 'Menu',
-        ]);
-    })
-        ->middleware('can:edit_menu_prices')
-        ->name('app.menu');
+    // Issue #31 — Menu management.
+    Route::middleware('can:edit_menu_prices')->group(function () {
+        Route::get('/app/menu', [MenuAdminController::class, 'index'])->name('app.menu');
+
+        Route::post('/app/menu/categories', [MenuAdminController::class, 'storeCategory'])
+            ->name('app.menu.categories.store');
+        Route::put('/app/menu/categories/order', [MenuAdminController::class, 'reorderCategories'])
+            ->name('app.menu.categories.reorder');
+        Route::patch('/app/menu/categories/{category}', [MenuAdminController::class, 'updateCategory'])
+            ->name('app.menu.categories.update');
+        Route::delete('/app/menu/categories/{category}', [MenuAdminController::class, 'destroyCategory'])
+            ->name('app.menu.categories.destroy');
+
+        Route::post('/app/menu/items', [MenuAdminController::class, 'storeItem'])
+            ->name('app.menu.items.store');
+        Route::put('/app/menu/items/{item}', [MenuAdminController::class, 'updateItem'])
+            ->name('app.menu.items.update');
+        // The only immediate-save endpoint.
+        Route::patch('/app/menu/items/{item}/availability', [MenuAdminController::class, 'availability'])
+            ->name('app.menu.items.availability');
+        Route::delete('/app/menu/items/{item}', [MenuAdminController::class, 'destroyItem'])
+            ->name('app.menu.items.destroy');
+    });
 
     Route::get('/app/pass', function () {
         return Inertia::render('staff/landing', [

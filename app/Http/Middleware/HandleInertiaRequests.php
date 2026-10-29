@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use App\Enums\Capability;
 use App\Enums\Role;
+use App\Models\MenuCategory;
+use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\Restaurant;
 use App\Services\CapabilitySnapshot;
@@ -139,6 +141,10 @@ class HandleInertiaRequests extends Middleware
                 'Your assigned orders and tables',
             ],
 
+            'app.menu' => [
+                'Menu management',
+                'Categories, dishes and the editor',
+            ],
             'app.settings.restaurant' => [
                 'Restaurant',
                 'Details, opening hours, tables and QR codes',
@@ -147,11 +153,6 @@ class HandleInertiaRequests extends Middleware
             'admin.system' => [
                 'System',
                 'Restaurant administration',
-            ],
-
-            'app.menu' => [
-                'Menu',
-                'Restaurant menu management',
             ],
 
             'app.pass',
@@ -240,6 +241,17 @@ class HandleInertiaRequests extends Middleware
      */
     private function pageSubtitle(Request $request, ?Restaurant $restaurant, string $fallback): string
     {
+        if ($restaurant !== null && $request->route()?->getName() === 'app.menu') {
+            $dishes = MenuItem::query()->where('restaurant_id', $restaurant->id);
+
+            return sprintf(
+                '%d categories · %d dishes · %d sold out',
+                MenuCategory::query()->where('restaurant_id', $restaurant->id)->count(),
+                (clone $dishes)->count(),
+                (clone $dishes)->where('is_available', false)->count(),
+            );
+        }
+
         if ($restaurant === null || $request->route()?->getName() !== 'app.system') {
             return __($fallback);
         }
