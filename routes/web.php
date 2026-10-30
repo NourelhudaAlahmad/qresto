@@ -108,9 +108,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // The first-cut role landings (#21) now point at the real screens, so
     // old bookmarks keep working and nobody lands on a placeholder.
-    Route::redirect('waiter/orders', '/app/my-orders')->name('waiter.orders');
-    Route::redirect('kitchen/pass', '/app/pass')->name('kitchen.pass');
-    Route::redirect('admin/system', '/app/system')->name('admin.system');
+    // Plain GET routes, not Route::redirect(): since Laravel 13.3x that
+    // answers every verb including QUERY, which Wayfinder's generated
+    // TypeScript cannot express (types:check fails).
+    Route::get('waiter/orders', fn () => redirect('/app/my-orders'))->name('waiter.orders');
+    Route::get('kitchen/pass', fn () => redirect('/app/pass'))->name('kitchen.pass');
+    Route::get('admin/system', fn () => redirect('/app/system'))->name('admin.system');
 
     Route::patch(
         '/service-requests/{serviceRequest}/acknowledge',
@@ -124,7 +127,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // The overview lives at /manager/overview (#26).
-    Route::redirect('/app/overview', '/manager/overview')
+    Route::get('/app/overview', fn () => redirect('/manager/overview'))
         ->name('app.overview');
 
     // Manager: view all restaurant orders.

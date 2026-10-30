@@ -17,7 +17,10 @@ class IntegrationToken extends Command
 
     public function handle(): int
     {
-        $integration = Integration::query()->withoutGlobalScopes()->find((int) $this->argument('integration'));
+        $id = $this->argument('integration');
+        $integration = is_numeric($id)
+            ? Integration::query()->withoutGlobalScopes()->find((int) $id)
+            : null;
 
         if ($integration === null) {
             $this->error('No integration with that id. List them with: php artisan qresto:integration-token --help');

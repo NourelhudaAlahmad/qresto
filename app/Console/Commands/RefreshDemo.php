@@ -32,8 +32,10 @@ class RefreshDemo extends Command
 
     public function handle(): int
     {
+        $slug = $this->option('restaurant');
+
         $restaurant = Restaurant::query()
-            ->where('slug', (string) $this->option('restaurant'))
+            ->where('slug', is_string($slug) ? $slug : 'al-bustan')
             ->first();
 
         if ($restaurant === null) {
