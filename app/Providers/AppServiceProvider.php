@@ -10,11 +10,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Stripe\StripeClient;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // #35: one Stripe client for the app; tests swap its HTTP client.
+        $this->app->bind(StripeClient::class, fn (): StripeClient => new StripeClient([
+            'api_key' => (string) config('qresto.payments.stripe.secret'),
+        ]));
+
         $this->app->singleton(CurrentRestaurant::class, function () {
             return new CurrentRestaurant;
         });

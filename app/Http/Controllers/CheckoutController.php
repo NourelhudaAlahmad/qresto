@@ -6,9 +6,12 @@ use App\Actions\Orders\PlaceOrder;
 use App\Actions\Payments\PromotionValidator;
 use App\Actions\Payments\SettlePayment;
 use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use App\Models\Cart;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\TableSession;
+use App\Payments\PaymentManager;
 use App\Support\Money;
 use App\Support\OrderTotals;
 use Illuminate\Http\RedirectResponse;
@@ -126,6 +129,16 @@ class CheckoutController extends Controller
                 'intent_id' => null,
                 'status' => null,
                 '3ds_required' => false,
+                // A payment waiting on 3-D Secure: shown in-page, and still
+                // there after a reload.
+                ...$this->pendingAuthentication($request),
+                // #35: which driver the page talks to, and Stripe's public
+                // key when it is Stripe. Secret keys never leave the server.
+                'driver' => $this->driver(),
+                'publishable_key' => $this->driver() === 'stripe'
+                    ? config('qresto.payments.stripe.key')
+                    : null,
+                'country' => (string) config('qresto.payments.stripe.country', 'US'),
             ],
         ]);
     }
@@ -195,7 +208,17 @@ class CheckoutController extends Controller
             $validated['method'],
         );
 
-        if ($method === PaymentMethod::CARD) {
+        // #35: with Stripe, card details are tokenised in the browser and
+        // only a PaymentMethod id arrives. Raw card fields are refused, so a
+        // card number can never reach this server again.
+        if ($this->driver() === 'stripe' && in_array($method, [PaymentMethod::CARD, PaymentMethod::WALLET], true)) {
+            $request->validate([
+                'payment_method' => ['required', 'string', 'max:255', 'regex:/^pm_[A-Za-z0-9_]+$/'],
+                'card_number' => ['prohibited'],
+                'card_expiry' => ['prohibited'],
+                'card_cvc' => ['prohibited'],
+            ]);
+        } elseif ($method === PaymentMethod::CARD) {
             $request->validate([
                 'card_number' => [
                     'required',
@@ -248,7 +271,12 @@ class CheckoutController extends Controller
 
         $paymentPayload = [];
 
-        if ($method === PaymentMethod::CARD) {
+        if ($this->driver() === 'stripe' && in_array($method, [PaymentMethod::CARD, PaymentMethod::WALLET], true)) {
+            $paymentPayload = [
+                'payment_method' => (string) $request->input('payment_method'),
+                'idempotency_key' => (string) $validated['idempotency_key'],
+            ];
+        } elseif ($method === PaymentMethod::CARD) {
             $paymentPayload = [
                 'card_number' => preg_replace(
                     '/\s+/',
@@ -586,5 +614,58 @@ class CheckoutController extends Controller
             'guest.orders.status',
             $order,
         );
+    }
+
+    private function driver(): string
+    {
+        return (string) config('qresto.payments.driver', 'fake');
+    }
+
+    /**
+     * The guest's payment that is waiting on 3-D Secure, if any.
+     *
+     * @return array<string, mixed>
+     */
+    private function pendingAuthentication(Request $request): array
+    {
+        $orderId = $request->session()->get('checkout.pending_order_id');
+
+        if (! is_numeric($orderId)) {
+            return [];
+        }
+
+        $session = $this->tableSession($request);
+
+        $payment = Payment::query()
+            ->whereHas('order', fn ($query) => $query
+                ->whereKey((int) $orderId)
+                ->where('table_session_id', $session->id))
+            ->where('status', PaymentStatus::REQUIRES_ACTION->value)
+            ->latest('id')
+            ->first();
+
+        if ($payment === null || $payment->gateway_intent_id === null) {
+            return [];
+        }
+
+        /** @var array<string, mixed>|null $flash */
+        $flash = $request->session()->get('checkout_3ds');
+
+        // The client secret is not stored; after a reload, ask the gateway.
+        $clientSecret = is_array($flash) && ($flash['payment_id'] ?? null) === $payment->id
+            ? ($flash['client_secret'] ?? null)
+            : app(PaymentManager::class)
+                ->driver($payment->gateway ?: null)
+                ->status($payment->gateway_intent_id)
+                ->clientSecret;
+
+        return [
+            'intent_id' => $payment->gateway_intent_id,
+            'status' => 'requires_action',
+            '3ds_required' => true,
+            'order_id' => (int) $payment->order_id,
+            'payment_id' => (int) $payment->id,
+            'client_secret' => $clientSecret,
+        ];
     }
 }

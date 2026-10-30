@@ -28,6 +28,9 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\WaiterOrderController;
+use App\Http\Controllers\Webhooks\StripeWebhookController;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/locale', [LocaleController::class, 'update'])
@@ -434,3 +437,11 @@ Route::middleware('table.session')->group(function () {
 });
 
 require __DIR__.'/settings.php';
+
+// #35 — Stripe webhooks: signature-verified instead of CSRF-protected.
+Route::post('/webhooks/stripe', StripeWebhookController::class)
+    // Laravel 13's CSRF guard is PreventRequestForgery (ValidateCsrfToken is
+    // its deprecated alias). Stripe sends no CSRF token; it signs instead.
+    ->withoutMiddleware([PreventRequestForgery::class, ValidateCsrfToken::class])
+    ->middleware('throttle:120,1')
+    ->name('webhooks.stripe');

@@ -56,6 +56,18 @@ return [
                 0,
             ),
         ],
+
+        // #35: QRESTO_PAYMENT_DRIVER=stripe switches the gateway. The test
+        // suite always runs on the fake driver (phpunit.xml).
+        'stripe' => [
+            'key' => env('STRIPE_KEY'),
+            'secret' => env('STRIPE_SECRET'),
+            'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+            // Seconds a signed webhook stays valid (replay window).
+            'webhook_tolerance' => (int) env('STRIPE_WEBHOOK_TOLERANCE', 300),
+            // Country for Apple Pay / Google Pay sheets.
+            'country' => env('STRIPE_COUNTRY', 'US'),
+        ],
     ],
 
     'undo_window_seconds' => 6,

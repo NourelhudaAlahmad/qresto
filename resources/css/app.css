@@ -514,3 +514,35 @@
         animation: none;
     }
 }
+
+/*
+ * #35: Stripe's card fields render in iframes inside these containers.
+ * Stripe toggles the state classes; the look is the QResto Input's: same
+ * 44px height, radius, border and 3px clay focus ring.
+ */
+.qr-stripe-field {
+    display: flex;
+    align-items: center;
+    height: 44px;
+    width: 100%;
+    padding: 0 12px;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: var(--surface-card);
+    transition:
+        border-color var(--dur-fast) var(--ease-standard),
+        box-shadow var(--dur-fast) var(--ease-standard);
+}
+
+.qr-stripe-field > div {
+    width: 100%;
+}
+
+.qr-stripe-field--focus {
+    border-color: var(--border-brand);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--clay-500) 30%, transparent);
+}
+
+.qr-stripe-field--invalid {
+    border-color: var(--berry-500);
+}

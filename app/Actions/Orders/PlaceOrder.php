@@ -400,10 +400,13 @@ final class PlaceOrder
                 'gateway_status' => $intent->status,
                 'requires_3ds' => $intent->requiresAction,
                 'failure_reason' => $intent->failure?->message,
+                // Only a succeeded intent is money in hand. A processing one
+                // stays pending until the gateway's webhook settles it (#35).
                 'status' => match (true) {
                     $intent->failure !== null => PaymentStatus::FAILED->value,
                     $intent->requiresAction => PaymentStatus::REQUIRES_ACTION->value,
-                    default => PaymentStatus::PAID->value,
+                    $intent->succeeded() => PaymentStatus::PAID->value,
+                    default => PaymentStatus::PENDING->value,
                 },
                 'paid_at' => $intent->succeeded()
                     ? now()

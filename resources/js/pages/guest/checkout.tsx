@@ -10,6 +10,12 @@ import { PriceSummary } from '@/components/qresto/price-summary';
 import { QuantityStepper } from '@/components/qresto/quantity-stepper';
 import { RadioCard, RadioGroup } from '@/components/qresto/radio-card';
 import { StickyDock } from '@/components/qresto/sticky-dock';
+import {
+    StripeCardFields,
+    useStripe,
+    useWallets,
+} from '@/components/qresto/stripe-payment';
+import type { StripeCardFieldsHandle } from '@/components/qresto/stripe-payment';
 import GuestLayout from '@/layouts/guest-layout';
 import { formatMoney } from '@/lib/formatMoney';
 import type { Money } from '@/types/order';
@@ -48,6 +54,10 @@ type Gateway = {
     order_id?: number | null;
     payment_id?: number | null;
     client_secret?: string | null;
+    /** #35: 'fake' or 'stripe'; Stripe brings its publishable key. */
+    driver?: string;
+    publishable_key?: string | null;
+    country?: string;
 };
 
 type Props = {
@@ -301,7 +311,15 @@ export default function CheckoutPage({
     gateway,
 }: Props) {
     const page = usePage<PageProps>();
-    const errors = page.props.errors ?? {};
+    const serverErrors = page.props.errors ?? {};
+    // Stripe reports card problems in the browser, before any request.
+    const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
+    const errors: Record<string, string> = { ...serverErrors, ...cardErrors };
+
+    const stripeOn =
+        gateway.driver === 'stripe' && Boolean(gateway.publishable_key);
+    const stripe = useStripe(stripeOn ? gateway.publishable_key : null);
+    const stripeCard = useRef<StripeCardFieldsHandle>(null);
 
     const availableMethods = useMemo(
         () => new Set(payment_methods),
@@ -372,7 +390,7 @@ export default function CheckoutPage({
         }
     }, [errors.card_cvc]);
 
-    const submitCheckout = (event: FormEvent) => {
+    const submitCheckout = async (event: FormEvent) => {
         event.preventDefault();
 
         if (submitting || requires3ds) {
@@ -380,6 +398,32 @@ export default function CheckoutPage({
         }
 
         setSubmitting(true);
+        setCardErrors({});
+
+        // #35: with Stripe the card becomes a PaymentMethod in the browser;
+        // only its id is sent. Never the number.
+        let card: Record<string, string | null> = {
+            card_number:
+                method === 'card' ? cardNumber.replace(/\s/g, '') : null,
+            card_expiry: method === 'card' ? cardExpiry : null,
+            card_cvc: method === 'card' ? cardCvc : null,
+        };
+
+        if (stripeOn && method === 'card') {
+            const result = await stripeCard.current?.tokenise();
+
+            if (!result || !('paymentMethodId' in result)) {
+                setCardErrors({
+                    [result?.field ?? 'card_number']:
+                        result?.message ?? 'Check your card details.',
+                });
+                setSubmitting(false);
+
+                return;
+            }
+
+            card = { payment_method: result.paymentMethodId };
+        }
 
         router.post(
             '/checkout',
@@ -388,10 +432,7 @@ export default function CheckoutPage({
                 tip_pct: tipPct,
                 split_ways: splitEnabled ? splitWays : 1,
                 idempotency_key: idempotencyKey,
-                card_number:
-                    method === 'card' ? cardNumber.replace(/\s/g, '') : null,
-                card_expiry: method === 'card' ? cardExpiry : null,
-                card_cvc: method === 'card' ? cardCvc : null,
+                ...card,
             },
             {
                 preserveScroll: true,
@@ -473,6 +514,75 @@ export default function CheckoutPage({
             },
         );
     };
+
+    // #35: 3-D Secure in the page. Stripe shows the bank's challenge in a
+    // frame over the checkout; never a redirect, never a new tab.
+    const [authError, setAuthError] = useState<string | null>(null);
+    const autoAuthenticated = useRef(false);
+
+    const authenticate = async () => {
+        if (!stripe || !gateway.client_secret || confirming3ds) {
+            return;
+        }
+
+        setAuthError(null);
+
+        const { error } = await stripe.handleNextAction({
+            clientSecret: gateway.client_secret,
+        });
+
+        if (error) {
+            setAuthError(
+                error.message ?? 'Your bank could not verify this payment.',
+            );
+
+            return;
+        }
+
+        confirm3ds();
+    };
+
+    useEffect(() => {
+        if (
+            stripeOn &&
+            requires3ds &&
+            stripe &&
+            gateway.client_secret &&
+            !autoAuthenticated.current
+        ) {
+            autoAuthenticated.current = true;
+            void authenticate();
+        }
+        // authenticate reads the latest props; run once per challenge.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [stripeOn, requires3ds, stripe, gateway.client_secret]);
+
+    // #35: Apple Pay / Google Pay, offered only where the device supports
+    // them. The wallet hands back a PaymentMethod, paid like a card.
+    const wallets = useWallets(stripeOn ? stripe : null, {
+        country: gateway.country ?? 'US',
+        currency: restaurant.currency,
+        label: restaurant.name,
+        amountMinor: shareMinor,
+        onPaymentMethod: (walletEvent) => {
+            router.post(
+                '/checkout',
+                {
+                    method: 'wallet',
+                    tip_pct: tipPct,
+                    split_ways: splitEnabled ? splitWays : 1,
+                    idempotency_key: idempotencyKey,
+                    payment_method: walletEvent.paymentMethod.id,
+                },
+                {
+                    preserveScroll: true,
+                    preserveState: true,
+                    onSuccess: () => walletEvent.complete('success'),
+                    onError: () => walletEvent.complete('fail'),
+                },
+            );
+        },
+    });
 
     const selectMethod = (value: string) => {
         if (value === 'card' || value === 'cash' || value === 'pos') {
@@ -557,12 +667,12 @@ export default function CheckoutPage({
                                         </div>
                                     </div>
 
-                                    {errors.payment ? (
+                                    {errors.payment || authError ? (
                                         <p
                                             role="alert"
                                             className="text-caption text-danger"
                                         >
-                                            {errors.payment}
+                                            {authError ?? errors.payment}
                                         </p>
                                     ) : null}
 
@@ -571,49 +681,105 @@ export default function CheckoutPage({
                                         fullWidth
                                         size="lg"
                                         loading={confirming3ds}
-                                        onClick={confirm3ds}
+                                        onClick={
+                                            stripeOn
+                                                ? () => void authenticate()
+                                                : confirm3ds
+                                        }
                                     >
                                         Complete authentication
                                     </Button>
                                 </Card>
                             ) : (
                                 <>
-                                    <section className="grid grid-cols-2 gap-2">
-                                        <Button
-                                            type="button"
-                                            disabled
-                                            fullWidth
-                                            title="Apple Pay will be available in K3."
-                                            className="h-12 bg-black text-white opacity-100 disabled:bg-black disabled:text-white disabled:opacity-100"
-                                        >
-                                            <span className="text-body-lg font-semibold">
-                                                Apple Pay
-                                            </span>
-                                        </Button>
+                                    {stripeOn ? (
+                                        wallets.applePay ||
+                                        wallets.googlePay ? (
+                                            <>
+                                                <section className="grid grid-cols-2 gap-2">
+                                                    {wallets.applePay ? (
+                                                        <Button
+                                                            type="button"
+                                                            fullWidth
+                                                            onClick={
+                                                                wallets.show
+                                                            }
+                                                            className="h-12 bg-black text-white hover:bg-black"
+                                                        >
+                                                            <span className="text-body-lg font-semibold">
+                                                                Apple Pay
+                                                            </span>
+                                                        </Button>
+                                                    ) : null}
 
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            disabled
-                                            fullWidth
-                                            title="Google Pay will be available in K3."
-                                            className="h-12 opacity-100 disabled:opacity-100"
-                                        >
-                                            <span className="text-body font-semibold">
-                                                Google Pay
-                                            </span>
-                                        </Button>
-                                    </section>
+                                                    {wallets.googlePay ? (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            fullWidth
+                                                            onClick={
+                                                                wallets.show
+                                                            }
+                                                            className="h-12"
+                                                        >
+                                                            <span className="text-body font-semibold">
+                                                                Google Pay
+                                                            </span>
+                                                        </Button>
+                                                    ) : null}
+                                                </section>
 
-                                    <div className="flex items-center gap-3">
-                                        <span className="bg-border-subtle h-px flex-1" />
+                                                <div className="flex items-center gap-3">
+                                                    <span className="bg-border-subtle h-px flex-1" />
 
-                                        <span className="text-caption text-text-tertiary whitespace-nowrap">
-                                            or choose a method
-                                        </span>
+                                                    <span className="text-caption text-text-tertiary whitespace-nowrap">
+                                                        or choose a method
+                                                    </span>
 
-                                        <span className="bg-border-subtle h-px flex-1" />
-                                    </div>
+                                                    <span className="bg-border-subtle h-px flex-1" />
+                                                </div>
+                                            </>
+                                        ) : null
+                                    ) : (
+                                        <>
+                                            <section className="grid grid-cols-2 gap-2">
+                                                <Button
+                                                    type="button"
+                                                    disabled
+                                                    fullWidth
+                                                    title="Apple Pay will be available in K3."
+                                                    className="h-12 bg-black text-white opacity-100 disabled:bg-black disabled:text-white disabled:opacity-100"
+                                                >
+                                                    <span className="text-body-lg font-semibold">
+                                                        Apple Pay
+                                                    </span>
+                                                </Button>
+
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    disabled
+                                                    fullWidth
+                                                    title="Google Pay will be available in K3."
+                                                    className="h-12 opacity-100 disabled:opacity-100"
+                                                >
+                                                    <span className="text-body font-semibold">
+                                                        Google Pay
+                                                    </span>
+                                                </Button>
+                                            </section>
+
+                                            <div className="flex items-center gap-3">
+                                                <span className="bg-border-subtle h-px flex-1" />
+
+                                                <span className="text-caption text-text-tertiary whitespace-nowrap">
+                                                    or choose a method
+                                                </span>
+
+                                                <span className="bg-border-subtle h-px flex-1" />
+                                            </div>
+                                        </>
+                                    )}
 
                                     <section>
                                         <RadioGroup
@@ -642,160 +808,173 @@ export default function CheckoutPage({
                                             {method === 'card' &&
                                             availableMethods.has('card') ? (
                                                 <div className="border-border-subtle bg-surface-subtle -mt-1 rounded-md border p-4">
-                                                    <div className="flex flex-col gap-3">
-                                                        <label className="flex flex-col gap-1.5">
-                                                            <span className="text-caption text-text-secondary">
-                                                                Card number
-                                                            </span>
-
-                                                            <div className="relative">
-                                                                <Input
-                                                                    value={
-                                                                        cardNumber
-                                                                    }
-                                                                    onChange={(
-                                                                        event,
-                                                                    ) =>
-                                                                        setCardNumber(
-                                                                            formatCardNumber(
-                                                                                event
-                                                                                    .target
-                                                                                    .value,
-                                                                            ),
-                                                                        )
-                                                                    }
-                                                                    inputMode="numeric"
-                                                                    autoComplete="cc-number"
-                                                                    placeholder="4242 4242 4242 4242"
-                                                                    className="pe-16"
-                                                                    aria-invalid={
-                                                                        errors.card_number
-                                                                            ? true
-                                                                            : undefined
-                                                                    }
-                                                                />
-
-                                                                <span className="text-caption text-text-secondary pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 font-semibold">
-                                                                    VISA
+                                                    {stripeOn ? (
+                                                        <StripeCardFields
+                                                            ref={stripeCard}
+                                                            stripe={stripe}
+                                                            errors={errors}
+                                                            restaurantName={
+                                                                restaurant.name
+                                                            }
+                                                        />
+                                                    ) : (
+                                                        <div className="flex flex-col gap-3">
+                                                            <label className="flex flex-col gap-1.5">
+                                                                <span className="text-caption text-text-secondary">
+                                                                    Card number
                                                                 </span>
+
+                                                                <div className="relative">
+                                                                    <Input
+                                                                        value={
+                                                                            cardNumber
+                                                                        }
+                                                                        onChange={(
+                                                                            event,
+                                                                        ) =>
+                                                                            setCardNumber(
+                                                                                formatCardNumber(
+                                                                                    event
+                                                                                        .target
+                                                                                        .value,
+                                                                                ),
+                                                                            )
+                                                                        }
+                                                                        inputMode="numeric"
+                                                                        autoComplete="cc-number"
+                                                                        placeholder="4242 4242 4242 4242"
+                                                                        className="pe-16"
+                                                                        aria-invalid={
+                                                                            errors.card_number
+                                                                                ? true
+                                                                                : undefined
+                                                                        }
+                                                                    />
+
+                                                                    <span className="text-caption text-text-secondary pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 font-semibold">
+                                                                        VISA
+                                                                    </span>
+                                                                </div>
+
+                                                                {errors.card_number ? (
+                                                                    <span
+                                                                        role="alert"
+                                                                        className="text-caption text-danger"
+                                                                    >
+                                                                        {
+                                                                            errors.card_number
+                                                                        }
+                                                                    </span>
+                                                                ) : null}
+                                                            </label>
+
+                                                            <div className="grid grid-cols-2 gap-3">
+                                                                <label className="flex flex-col gap-1.5">
+                                                                    <span className="text-caption text-text-secondary">
+                                                                        Expiry
+                                                                    </span>
+
+                                                                    <Input
+                                                                        value={
+                                                                            cardExpiry
+                                                                        }
+                                                                        onChange={(
+                                                                            event,
+                                                                        ) =>
+                                                                            setCardExpiry(
+                                                                                formatExpiry(
+                                                                                    event
+                                                                                        .target
+                                                                                        .value,
+                                                                                ),
+                                                                            )
+                                                                        }
+                                                                        inputMode="numeric"
+                                                                        autoComplete="cc-exp"
+                                                                        placeholder="09 / 28"
+                                                                        aria-invalid={
+                                                                            errors.card_expiry
+                                                                                ? true
+                                                                                : undefined
+                                                                        }
+                                                                    />
+
+                                                                    {errors.card_expiry ? (
+                                                                        <span
+                                                                            role="alert"
+                                                                            className="text-caption text-danger"
+                                                                        >
+                                                                            {
+                                                                                errors.card_expiry
+                                                                            }
+                                                                        </span>
+                                                                    ) : null}
+                                                                </label>
+
+                                                                <label className="flex flex-col gap-1.5">
+                                                                    <span className="text-caption text-text-secondary">
+                                                                        CVC
+                                                                    </span>
+
+                                                                    <Input
+                                                                        ref={
+                                                                            cvcRef
+                                                                        }
+                                                                        value={
+                                                                            cardCvc
+                                                                        }
+                                                                        onChange={(
+                                                                            event,
+                                                                        ) =>
+                                                                            setCardCvc(
+                                                                                event.target.value
+                                                                                    .replace(
+                                                                                        /\D/g,
+                                                                                        '',
+                                                                                    )
+                                                                                    .slice(
+                                                                                        0,
+                                                                                        4,
+                                                                                    ),
+                                                                            )
+                                                                        }
+                                                                        inputMode="numeric"
+                                                                        autoComplete="cc-csc"
+                                                                        placeholder="123"
+                                                                        aria-invalid={
+                                                                            errors.card_cvc
+                                                                                ? true
+                                                                                : undefined
+                                                                        }
+                                                                    />
+
+                                                                    {errors.card_cvc ? (
+                                                                        <span
+                                                                            role="alert"
+                                                                            className="text-caption text-danger"
+                                                                        >
+                                                                            {
+                                                                                errors.card_cvc
+                                                                            }
+                                                                        </span>
+                                                                    ) : null}
+                                                                </label>
                                                             </div>
 
-                                                            {errors.card_number ? (
-                                                                <span
-                                                                    role="alert"
-                                                                    className="text-caption text-danger"
-                                                                >
+                                                            <div className="text-caption text-text-tertiary flex items-center gap-2 pt-1">
+                                                                <LockIcon />
+
+                                                                <span>
+                                                                    Card details
+                                                                    never touch{' '}
                                                                     {
-                                                                        errors.card_number
+                                                                        restaurant.name
                                                                     }
+                                                                    's servers.
                                                                 </span>
-                                                            ) : null}
-                                                        </label>
-
-                                                        <div className="grid grid-cols-2 gap-3">
-                                                            <label className="flex flex-col gap-1.5">
-                                                                <span className="text-caption text-text-secondary">
-                                                                    Expiry
-                                                                </span>
-
-                                                                <Input
-                                                                    value={
-                                                                        cardExpiry
-                                                                    }
-                                                                    onChange={(
-                                                                        event,
-                                                                    ) =>
-                                                                        setCardExpiry(
-                                                                            formatExpiry(
-                                                                                event
-                                                                                    .target
-                                                                                    .value,
-                                                                            ),
-                                                                        )
-                                                                    }
-                                                                    inputMode="numeric"
-                                                                    autoComplete="cc-exp"
-                                                                    placeholder="09 / 28"
-                                                                    aria-invalid={
-                                                                        errors.card_expiry
-                                                                            ? true
-                                                                            : undefined
-                                                                    }
-                                                                />
-
-                                                                {errors.card_expiry ? (
-                                                                    <span
-                                                                        role="alert"
-                                                                        className="text-caption text-danger"
-                                                                    >
-                                                                        {
-                                                                            errors.card_expiry
-                                                                        }
-                                                                    </span>
-                                                                ) : null}
-                                                            </label>
-
-                                                            <label className="flex flex-col gap-1.5">
-                                                                <span className="text-caption text-text-secondary">
-                                                                    CVC
-                                                                </span>
-
-                                                                <Input
-                                                                    ref={cvcRef}
-                                                                    value={
-                                                                        cardCvc
-                                                                    }
-                                                                    onChange={(
-                                                                        event,
-                                                                    ) =>
-                                                                        setCardCvc(
-                                                                            event.target.value
-                                                                                .replace(
-                                                                                    /\D/g,
-                                                                                    '',
-                                                                                )
-                                                                                .slice(
-                                                                                    0,
-                                                                                    4,
-                                                                                ),
-                                                                        )
-                                                                    }
-                                                                    inputMode="numeric"
-                                                                    autoComplete="cc-csc"
-                                                                    placeholder="123"
-                                                                    aria-invalid={
-                                                                        errors.card_cvc
-                                                                            ? true
-                                                                            : undefined
-                                                                    }
-                                                                />
-
-                                                                {errors.card_cvc ? (
-                                                                    <span
-                                                                        role="alert"
-                                                                        className="text-caption text-danger"
-                                                                    >
-                                                                        {
-                                                                            errors.card_cvc
-                                                                        }
-                                                                    </span>
-                                                                ) : null}
-                                                            </label>
+                                                            </div>
                                                         </div>
-
-                                                        <div className="text-caption text-text-tertiary flex items-center gap-2 pt-1">
-                                                            <LockIcon />
-
-                                                            <span>
-                                                                Card details
-                                                                never touch{' '}
-                                                                {
-                                                                    restaurant.name
-                                                                }
-                                                                's servers.
-                                                            </span>
-                                                        </div>
-                                                    </div>
+                                                    )}
                                                 </div>
                                             ) : null}
 

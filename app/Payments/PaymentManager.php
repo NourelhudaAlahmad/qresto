@@ -4,6 +4,7 @@ namespace App\Payments;
 
 use App\Payments\Contracts\PaymentGateway;
 use App\Payments\Gateways\FakeGateway;
+use App\Payments\Gateways\StripeGateway;
 use InvalidArgumentException;
 
 final class PaymentManager
@@ -23,6 +24,7 @@ final class PaymentManager
                 ),
             ),
 
+            'stripe' => app(StripeGateway::class),
             default => throw new InvalidArgumentException(
                 "Unsupported payment gateway driver [{$driver}].",
             ),

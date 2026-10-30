@@ -25,6 +25,7 @@ class NotificationController extends Controller
         'integration_failing' => ['System health', '/app/system'],
         'order_voided' => ['Order voided', '/app/orders'],
         'staff_account_locked' => ['Account locked', '/manager/overview'],
+        'payment_disputed' => ['Payment disputed', '/app/reports'],
     ];
 
     public function index(Request $request): JsonResponse
