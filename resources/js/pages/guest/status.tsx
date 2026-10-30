@@ -448,28 +448,18 @@ export default function Status({
                     </div>
                 </main>
 
+                {/* The canvas's "Advance status" only steps the prototype's
+                    timeline for reviewers; guests never move their own order. */}
                 <StickyDock>
-                    <div className="grid grid-cols-2 gap-3">
-                        <Button
-                            asChild
-                            variant="outline"
-                            size="lg"
-                            fullWidth
-                            className="rounded-full"
-                        >
-                            <Link href="/menu">Order more</Link>
-                        </Button>
-
-                        <Button
-                            type="button"
-                            size="lg"
-                            fullWidth
-                            disabled
-                            className="rounded-full"
-                        >
-                            Advance status
-                        </Button>
-                    </div>
+                    <Button
+                        asChild
+                        variant="outline"
+                        size="lg"
+                        fullWidth
+                        className="rounded-full"
+                    >
+                        <Link href="/menu">Order more</Link>
+                    </Button>
                 </StickyDock>
 
                 <TabBar

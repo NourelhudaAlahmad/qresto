@@ -327,7 +327,7 @@ export default function Landing({
 
             {flash?.error && (
                 <div role="alert" className="mx-auto max-w-[390px] px-3 pt-3">
-                    <div className="rounded-[var(--radius-container)] border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]">
+                    <div className="border-[var(--danger-solid)]/30 rounded-[var(--radius-md)] border bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]">
                         {flash.error}
                     </div>
                 </div>
@@ -340,7 +340,7 @@ export default function Landing({
                     aria-labelledby="landing-scanner-title"
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
                 >
-                    <div className="bg-surface-card relative w-full max-w-[390px] rounded-[var(--radius-container)] p-4 shadow-xl">
+                    <div className="bg-surface-card relative w-full max-w-[390px] rounded-[var(--radius-xl)] p-4 shadow-xl">
                         <button
                             type="button"
                             onClick={() => setScannerOpen(false)}
@@ -373,7 +373,7 @@ export default function Landing({
                         {scannerError && (
                             <div
                                 role="alert"
-                                className="mt-4 rounded-[var(--radius-md)] border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]"
+                                className="border-[var(--danger-solid)]/30 mt-4 rounded-[var(--radius-md)] border bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]"
                             >
                                 {scannerError}
                             </div>
@@ -389,7 +389,7 @@ export default function Landing({
                     aria-labelledby="landing-booking-title"
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
                 >
-                    <div className="bg-surface-card relative w-full max-w-[390px] rounded-[var(--radius-container)] p-5 shadow-xl">
+                    <div className="bg-surface-card relative w-full max-w-[390px] rounded-[var(--radius-xl)] p-5 shadow-xl">
                         <button
                             type="button"
                             onClick={() => setBookingOpen(false)}

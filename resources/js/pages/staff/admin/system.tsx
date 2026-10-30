@@ -222,7 +222,7 @@ function MatrixCell({
                     onToggle(!cell.granted);
                 }
             }}
-            className={`mx-auto grid h-10 w-11 place-items-center rounded-[var(--radius-md)] font-mono text-[18px] outline-none transition-colors duration-[var(--duration-fast)] focus-visible:ring-[3px] focus-visible:ring-[var(--border-focus-color)] ${
+            className={`duration-fast mx-auto grid h-10 w-11 place-items-center rounded-[var(--radius-md)] font-mono text-[18px] outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-[var(--border-focus-color)] ${
                 cell.granted
                     ? 'text-[var(--herb-500)]'
                     : 'text-[var(--ink-300)]'
@@ -575,7 +575,7 @@ export default function AdminSystem({
 
                             <Link
                                 href="/app/settings/restaurant"
-                                className="text-body mt-4 flex h-11 w-full items-center justify-center rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--surface-card)] font-semibold transition-colors duration-[var(--duration-fast)] hover:bg-[var(--ink-50)]"
+                                className="text-body duration-fast mt-4 flex h-11 w-full items-center justify-center rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--surface-card)] font-semibold transition-colors hover:bg-[var(--ink-50)]"
                             >
                                 Edit details · reprint QR codes
                             </Link>

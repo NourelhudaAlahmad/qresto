@@ -193,7 +193,7 @@ export function OrderTicket({
                 <div
                     className={`flex items-center gap-2 border-t px-3 py-2 ${
                         variant === 'dark'
-                            ? 'border-[var(--alpha-paper-08)] bg-[var(--alpha-paper-04)]'
+                            ? 'border-[var(--alpha-paper-08)] bg-transparent'
                             : 'border-[var(--border-subtle)] bg-[var(--surface-sunken)]'
                     }`}
                 >
@@ -231,7 +231,7 @@ export function OrderTicket({
                         className={
                             pass
                                 ? `${runner ? 'text-title-1 min-h-[88px]' : 'text-body-lg min-h-[60px]'} w-full flex-1 rounded-[var(--radius-pill)] bg-[var(--action-primary)] px-3 py-2 font-semibold text-[var(--text-on-brand)] transition-transform duration-[var(--dur-fast)] active:scale-[var(--press-scale)] disabled:opacity-60`
-                                : 'text-body min-h-11 flex-1 rounded-full bg-[var(--action-primary)] px-3 py-2 font-semibold leading-snug text-[var(--text-on-brand)] transition-transform duration-[var(--duration-fast)] hover:bg-[var(--action-primary-hover)] active:scale-[var(--press-scale)] disabled:opacity-60'
+                                : 'text-body duration-fast min-h-11 flex-1 rounded-full bg-[var(--action-primary)] px-3 py-2 font-semibold leading-snug text-[var(--text-on-brand)] transition-transform hover:bg-[var(--action-primary-hover)] active:scale-[var(--press-scale)] disabled:opacity-60'
                         }
                     >
                         {advanceLabel ?? 'Advance status'}

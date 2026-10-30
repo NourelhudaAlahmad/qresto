@@ -72,7 +72,7 @@ export default function Tables({ current_table_id, tables }: TablesProps) {
                                     type="button"
                                     disabled={isCurrent || !table.url}
                                     onClick={() => selectTable(table)}
-                                    className="border-border-subtle bg-surface-card focus-visible:ring-border-focus-color/30 flex min-h-[112px] flex-col items-start justify-between rounded-[var(--radius-lg)] border p-4 text-start outline-none transition-[background-color,border-color,transform,opacity] duration-[var(--duration-fast)] focus-visible:ring-[3px] active:scale-[var(--press-scale)] disabled:cursor-default disabled:opacity-60 disabled:active:scale-100"
+                                    className="border-border-subtle bg-surface-card focus-visible:ring-border-focus-color/30 duration-fast flex min-h-[112px] flex-col items-start justify-between rounded-[var(--radius-lg)] border p-4 text-start outline-none transition-[background-color,border-color,transform,opacity] focus-visible:ring-[3px] active:scale-[var(--press-scale)] disabled:cursor-default disabled:opacity-60 disabled:active:scale-100"
                                 >
                                     <div className="flex w-full items-start justify-between gap-2">
                                         <span className="text-text-primary font-mono text-[36px] font-semibold tabular-nums leading-none">

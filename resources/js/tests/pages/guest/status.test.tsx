@@ -259,4 +259,15 @@ describe('Guest order status', () => {
 
         expect(link).toHaveAttribute('href', '/menu');
     });
+
+    it('never offers the guest a way to move their own order', () => {
+        render(<Status {...baseProps} />);
+
+        expect(
+            screen.queryByRole('button', { name: /Advance status/i }),
+        ).toBeNull();
+        expect(
+            screen.getByRole('link', { name: 'Order more' }),
+        ).toHaveAttribute('href', '/menu');
+    });
 });

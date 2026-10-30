@@ -90,7 +90,7 @@ export function MenuItemCard({
                     src={photo}
                     alt=""
                     className={cn(
-                        'size-[84px] shrink-0 rounded-[var(--radius-container)] object-cover',
+                        'size-[84px] shrink-0 rounded-[var(--radius-md)] object-cover',
                         !available && 'grayscale',
                     )}
                 />
@@ -98,7 +98,7 @@ export function MenuItemCard({
                 <span
                     aria-hidden="true"
                     className={cn(
-                        'block size-[84px] shrink-0 rounded-[var(--radius-container)]',
+                        'block size-[84px] shrink-0 rounded-[var(--radius-md)]',
                         !available && 'grayscale',
                     )}
                     style={{

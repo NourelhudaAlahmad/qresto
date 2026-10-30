@@ -502,7 +502,7 @@ export default function OrderList(props: Props) {
                                 type="button"
                                 key={order.id}
                                 onClick={() => setSelectedId(order.id)}
-                                className="min-w-0 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 text-start shadow-[var(--shadow-card)] transition-transform duration-[var(--duration-fast)] active:scale-[var(--press-scale)]"
+                                className="duration-fast min-w-0 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 text-start shadow-[var(--shadow-card)] transition-transform active:scale-[var(--press-scale)]"
                             >
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                     <Numeric className="text-title-3 font-medium text-[var(--text-primary)]">

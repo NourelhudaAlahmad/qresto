@@ -234,6 +234,24 @@
  * from tokens/typography.css directly (font-size: var(--text-caption)),
  * so the theme never re-declares --text-* and cannot shadow the tokens.
  */
+/*
+ * Motion tokens as Tailwind utilities: duration-fast, ease-standard and
+ * friends resolve to the design's --dur-* and --ease-* tokens. Without this
+ * those classes generated no CSS at all.
+ */
+@theme inline {
+    --transition-duration-instant: var(--dur-instant);
+    --transition-duration-fast: var(--dur-fast);
+    --transition-duration-base: var(--dur-base);
+    --transition-duration-slow: var(--dur-slow);
+    --transition-duration-sheet: var(--dur-sheet);
+
+    --ease-standard: var(--ease-standard);
+    --ease-enter: var(--ease-enter);
+    --ease-exit: var(--ease-exit);
+    --ease-spring: var(--ease-spring);
+}
+
 @theme inline {
     --text-display-1: var(--text-display-1);
     --text-display-1--line-height: var(--leading-tight);

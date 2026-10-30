@@ -117,7 +117,7 @@ function SidebarLink({
         <Link
             href={item.href}
             aria-current={active ? 'page' : undefined}
-            className={`text-body flex min-h-11 w-full items-center gap-3 rounded-[var(--radius-md)] px-3 transition-colors duration-[var(--duration-fast)] ${
+            className={`text-body duration-fast flex min-h-11 w-full items-center gap-3 rounded-[var(--radius-md)] px-3 transition-colors ${
                 active
                     ? 'bg-[var(--ink-800)] font-semibold !text-[var(--ink-25)]'
                     : 'hover:bg-[var(--ink-800)]/60 !text-[var(--ink-300)] hover:!text-[var(--ink-25)]'

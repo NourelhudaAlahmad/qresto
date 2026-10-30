@@ -81,7 +81,7 @@ export function TableTile({
         return (
             <button
                 type="button"
-                className={`${className} outline-none transition-transform duration-[var(--duration-fast)] focus-visible:ring-[3px] focus-visible:ring-[var(--border-focus-color)] active:scale-[var(--press-scale)]`}
+                className={`${className} duration-fast outline-none transition-transform focus-visible:ring-[3px] focus-visible:ring-[var(--border-focus-color)] active:scale-[var(--press-scale)]`}
                 data-state={state}
                 aria-pressed={selected}
                 aria-label={ariaLabel}
