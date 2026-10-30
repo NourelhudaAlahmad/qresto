@@ -86,8 +86,10 @@ it('shows the seeded matrix exactly as the design draws it', function () {
                     $cells['manager']['granted'],
                     $cells['admin']['granted'],
                 ])->toBe($design[$row['label']])
-                    ->and($cells['runner']['granted'])->toBeFalse()
-                    ->and($cells['cashier']['granted'])->toBeFalse();
+                    // #34: the runner moves plates on; the cashier sees
+                    // the floor's orders and takes payment.
+                    ->and($cells['runner']['granted'])->toBe($row['label'] === 'Change order status')
+                    ->and($cells['cashier']['granted'])->toBe(in_array($row['label'], ['See all orders', 'Take payment · refund'], true));
             }
 
             return $page;

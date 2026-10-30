@@ -30,13 +30,21 @@ class WaiterOrderController extends Controller
             403
         );
 
+        // #34: the cashier's view is this same list scoped to unpaid
+        // orders, settled through the floor's checkout. No new endpoint.
+        $cashier = $this->isCashier($user);
+
         $orders = fn (): array => $this->visibleOrders($request)
+            ->when($cashier, fn (Collection $orders): Collection => $orders
+                ->filter(fn (Order $order): bool => ! $order->is_paid)
+                ->values())
             ->map(function (Order $order): array {
                 return [
                     'id' => $order->id,
                     'code' => $order->code,
                     'status' => $order->status->value,
                     'table' => $order->table?->number,
+                    'table_id' => $order->table?->id,
                     'guest_name' => $order->guest_name,
                     'placed_at' => $order->placed_at?->toIso8601String(),
                     'total_minor' => $order->total?->amount() ?? 0,
@@ -54,7 +62,7 @@ class WaiterOrderController extends Controller
             })
             ->all();
 
-        return Inertia::render('staff/orders/kanban', [
+        return Inertia::render($cashier ? 'staff/cashier' : 'staff/orders/kanban', [
             'orders' => $orders,
             'canAdvance' => $user->can(
                 Capability::CHANGE_ORDER_STATUS->value
@@ -254,5 +262,13 @@ class WaiterOrderController extends Controller
         }
 
         return $query->get();
+    }
+
+    /**
+     * A cashier who is not also on the floor or in management.
+     */
+    private function isCashier(User $user): bool
+    {
+        return $user->hasRole('cashier') && ! $user->hasAnyRole(['waiter', 'kitchen', 'manager', 'admin']);
     }
 }

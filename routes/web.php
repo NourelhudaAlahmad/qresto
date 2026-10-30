@@ -148,7 +148,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         '/app/tables/{table}',
         [FloorController::class, 'show'],
     )
-        ->middleware('can:see_own_tables')
+        ->middleware('can:view-floor-bill')
         ->name('app.tables.show');
 
     // Seat guests at a free table.
@@ -186,7 +186,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         '/app/tables/{table}/orders/{order}/receipt',
         [ReceiptController::class, 'show'],
     )
-        ->middleware('can:see_own_tables')
+        ->middleware('can:view-floor-bill')
         ->name('app.tables.orders.receipt');
 
     // Issue #25 — Email Receipt.

@@ -56,6 +56,21 @@ class AlBustanStaffSeeder extends Seeder
                 'job_title' => 'Kitchen',
                 'role' => Role::KITCHEN,
             ],
+            // #34: the runner and cashier variants.
+            [
+                'name' => 'Sami Haddad',
+                'email' => 'runner@al-bustan.test',
+                'initials' => 'SH',
+                'job_title' => 'Runner',
+                'role' => Role::RUNNER,
+            ],
+            [
+                'name' => 'Layla Nasser',
+                'email' => 'cashier@al-bustan.test',
+                'initials' => 'LN',
+                'job_title' => 'Cashier',
+                'role' => Role::CASHIER,
+            ],
         ];
 
         foreach ($staff as $member) {

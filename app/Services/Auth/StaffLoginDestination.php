@@ -26,6 +26,13 @@ class StaffLoginDestination
             ['app.pass', Capability::CHANGE_ORDER_STATUS],
             ['app.orders', Capability::SEE_ALL_ORDERS],
         ],
+        // #34: the runner's ready list and the cashier's unpaid bills.
+        'runner' => [
+            ['app.pass', Capability::CHANGE_ORDER_STATUS],
+        ],
+        'cashier' => [
+            ['app.orders', Capability::SEE_ALL_ORDERS],
+        ],
         'manager' => [
             ['manager.overview', Capability::MANAGE_WAITER_ACCOUNTS],
             ['app.orders', Capability::SEE_ALL_ORDERS],

@@ -28,8 +28,9 @@ it('seeds the Al Bustan design fixtures', function () {
         ->toBe(11)
         ->and(RestaurantTable::count())
         ->toBe(12)
+        // Six from the design, plus the runner and cashier of #34.
         ->and(User::whereNotNull('restaurant_id')->count())
-        ->toBe(6)
+        ->toBe(8)
         // Tonight's live orders, from the design; the rest is the
         // three-week history Reports draws (#32).
         ->and(Order::where('code', 'not like', '#H-%')->count())

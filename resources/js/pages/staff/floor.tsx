@@ -601,11 +601,12 @@ function OrderBill({
     );
 }
 
-function TableCheckout({
+export function TableCheckout({
     detail,
     loading,
     busy,
     canPay,
+    canManageTable = true,
     partySize,
     onPartySizeChange,
     onSeat,
@@ -617,6 +618,8 @@ function TableCheckout({
     loading: boolean;
     busy: Busy;
     canPay: boolean;
+    /** Seat, free and acknowledge. The cashier (#34) only settles. */
+    canManageTable?: boolean;
     partySize: string;
     onPartySizeChange: (value: string) => void;
     onSeat: () => void;
@@ -675,7 +678,7 @@ function TableCheckout({
                 </span>
             </div>
 
-            {detail.table.state === 'free' && (
+            {canManageTable && detail.table.state === 'free' && (
                 <Section title="Seat guests">
                     <div className="flex flex-col gap-1.5">
                         <Label htmlFor="floor-party-size">
@@ -710,7 +713,7 @@ function TableCheckout({
                 </Section>
             )}
 
-            {detail.service_requests.length > 0 && (
+            {canManageTable && detail.service_requests.length > 0 && (
                 <Section title="Waiting on you">
                     {detail.service_requests.map((request) => (
                         <div
@@ -756,68 +759,57 @@ function TableCheckout({
                 )}
             </Section>
 
-            <div className="border-t border-[var(--border-subtle)] pt-4">
-                {unpaid ? (
-                    <Tooltip content="Settle every order before freeing the table.">
-                        {/* A disabled button swallows hover, so wrap it. */}
-                        <span tabIndex={0} className="block">
-                            {freeButton}
-                        </span>
-                    </Tooltip>
-                ) : (
-                    freeButton
-                )}
+            {canManageTable && (
+                <div className="border-t border-[var(--border-subtle)] pt-4">
+                    {unpaid ? (
+                        <Tooltip content="Settle every order before freeing the table.">
+                            {/* A disabled button swallows hover, so wrap it. */}
+                            <span tabIndex={0} className="block">
+                                {freeButton}
+                            </span>
+                        </Tooltip>
+                    ) : (
+                        freeButton
+                    )}
 
-                {unpaid && (
-                    <p className="text-caption mt-2 text-center text-[var(--text-tertiary)]">
-                        A table cannot be freed while a bill is unpaid.
-                    </p>
-                )}
-            </div>
+                    {unpaid && (
+                        <p className="text-caption mt-2 text-center text-[var(--text-tertiary)]">
+                            A table cannot be freed while a bill is unpaid.
+                        </p>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
 
-export default function Floor({ tables = [] }: Props) {
-    const { qresto, capabilities } = usePage().props as unknown as {
-        qresto?: { live?: { floor_interval?: number } };
-        capabilities?: string[];
-    };
-    const interval = qresto?.live?.floor_interval ?? 8000;
-    const canPay = capabilities?.includes('take_payment') ?? false;
-    const seesWholeFloor = capabilities?.includes('see_all_orders') ?? false;
-
-    const isMobile = useIsMobile();
-    const { isPaused } = useLiveData(interval, { only: ['tables'] });
-
-    const [filter, setFilter] = useState<StateFilter>('all');
+/**
+ * The floor's checkout, as a hook: load a table's bill, seat, free,
+ * acknowledge a request and take payment, all through the floor's own
+ * endpoints. The floor map uses it, and so does the cashier view (#34),
+ * so there is one checkout and one settle action.
+ */
+export function useTableCheckout({
+    canPay,
+    canManageTable = true,
+    interval,
+    isPaused,
+    onChanged,
+}: {
+    canPay: boolean;
+    canManageTable?: boolean;
+    interval: number;
+    isPaused: boolean;
+    onChanged: () => void;
+}) {
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [detail, setDetail] = useState<TableDetail | null>(null);
     const [loading, setLoading] = useState(false);
     const [busy, setBusy] = useState<Busy>(null);
-    const [now, setNow] = useState(0);
     const [partySize, setPartySize] = useState('1');
 
     const selectedIdRef = useRef<number | null>(null);
     const requestRef = useRef(0);
-
-    const counts = useMemo(
-        () =>
-            Object.fromEntries(
-                STATES.map((state) => [
-                    state,
-                    tables.filter((table) => table.state === state).length,
-                ]),
-            ) as Record<TableState, number>,
-        [tables],
-    );
-
-    const visibleTables =
-        filter === 'all'
-            ? tables
-            : tables.filter((table) => table.state === filter);
-
-    const selectedTable = tables.find((table) => table.id === selectedId);
 
     const loadDetail = useCallback(async (id: number, showLoader = true) => {
         const requestId = ++requestRef.current;
@@ -876,18 +868,6 @@ export default function Floor({ tables = [] }: Props) {
         setLoading(false);
     };
 
-    // Elapsed times on the tiles age between polls.
-    useEffect(() => {
-        const update = () => setNow(Date.now());
-        const first = window.setTimeout(update, 0);
-        const tick = window.setInterval(update, 30_000);
-
-        return () => {
-            window.clearTimeout(first);
-            window.clearInterval(tick);
-        };
-    }, []);
-
     // The open bill follows the floor's polling rhythm.
     useEffect(() => {
         if (selectedId === null || isPaused) {
@@ -903,7 +883,7 @@ export default function Floor({ tables = [] }: Props) {
     }, [selectedId, isPaused, interval, loadDetail]);
 
     const afterAction = () => {
-        router.reload({ only: ['tables'] });
+        onChanged();
 
         if (selectedIdRef.current !== null) {
             void loadDetail(selectedIdRef.current, false);
@@ -1036,6 +1016,7 @@ export default function Floor({ tables = [] }: Props) {
             loading={loading}
             busy={busy}
             canPay={canPay}
+            canManageTable={canManageTable}
             partySize={partySize}
             onPartySizeChange={setPartySize}
             onSeat={seat}
@@ -1044,6 +1025,71 @@ export default function Floor({ tables = [] }: Props) {
             onPayment={pay}
         />
     );
+
+    return {
+        selectedId,
+        select: selectTable,
+        close: closeDetail,
+        checkout,
+        detail,
+    };
+}
+
+export default function Floor({ tables = [] }: Props) {
+    const { qresto, capabilities } = usePage().props as unknown as {
+        qresto?: { live?: { floor_interval?: number } };
+        capabilities?: string[];
+    };
+    const interval = qresto?.live?.floor_interval ?? 8000;
+    const canPay = capabilities?.includes('take_payment') ?? false;
+    const seesWholeFloor = capabilities?.includes('see_all_orders') ?? false;
+
+    const isMobile = useIsMobile();
+    const { isPaused } = useLiveData(interval, { only: ['tables'] });
+
+    const [filter, setFilter] = useState<StateFilter>('all');
+    const [now, setNow] = useState(0);
+
+    const {
+        selectedId,
+        select: selectTable,
+        close: closeDetail,
+        checkout,
+    } = useTableCheckout({
+        canPay,
+        interval,
+        isPaused,
+        onChanged: () => router.reload({ only: ['tables'] }),
+    });
+    const counts = useMemo(
+        () =>
+            Object.fromEntries(
+                STATES.map((state) => [
+                    state,
+                    tables.filter((table) => table.state === state).length,
+                ]),
+            ) as Record<TableState, number>,
+        [tables],
+    );
+
+    const visibleTables =
+        filter === 'all'
+            ? tables
+            : tables.filter((table) => table.state === filter);
+
+    const selectedTable = tables.find((table) => table.id === selectedId);
+
+    // Elapsed times on the tiles age between polls.
+    useEffect(() => {
+        const update = () => setNow(Date.now());
+        const first = window.setTimeout(update, 0);
+        const tick = window.setInterval(update, 30_000);
+
+        return () => {
+            window.clearTimeout(first);
+            window.clearInterval(tick);
+        };
+    }, []);
 
     const selectedTitle = selectedTable
         ? `Table ${tableNumber(selectedTable.number)}`

@@ -39,8 +39,11 @@ type OrderTicketProps = {
      * under 15px, items at 17px, a full-width clay bump pill of at least
      * 48px, no payment row and no overflow. A ticket past its SLA gets a
      * saffron or berry border, as the design draws it.
+     *
+     * runner: the pass re-projected for the runner (#34), read across a
+     * room: the code and table at 60px, items at 24px, one big action.
      */
-    size?: 'default' | 'pass';
+    size?: 'default' | 'pass' | 'runner';
 };
 
 const variantStyles = {
@@ -86,7 +89,9 @@ export function OrderTicket({
     size = 'default',
 }: OrderTicketProps) {
     const styles = variantStyles[variant];
-    const pass = size === 'pass';
+    // The runner view is the pass, bigger.
+    const runner = size === 'runner';
+    const pass = size === 'pass' || runner;
 
     return (
         <div
@@ -111,7 +116,9 @@ export function OrderTicket({
             <div
                 className={`flex items-center gap-2 border-b ${pass ? 'mx-5 px-0 pb-3 pt-5' : 'px-3 pb-2 pt-3'} ${styles.divider}`}
             >
-                <Numeric className={`text-title-3 font-medium ${styles.code}`}>
+                <Numeric
+                    className={`${runner ? 'text-[3.75rem] leading-none' : 'text-title-3'} font-medium ${styles.code}`}
+                >
                     {code}
                 </Numeric>
 
@@ -131,7 +138,7 @@ export function OrderTicket({
             </div>
 
             <div
-                className={`${pass ? 'text-body px-5 pt-4 font-mono' : 'text-caption px-3 pt-2'} flex items-center gap-1.5 ${
+                className={`${runner ? 'px-5 pt-4 font-mono text-[3.75rem] leading-tight' : pass ? 'text-body px-5 pt-4 font-mono' : 'text-caption px-3 pt-2'} flex items-center gap-1.5 ${
                     variant === 'dark'
                         ? 'text-[var(--ink-400)]'
                         : 'text-[var(--text-secondary)]'
@@ -150,7 +157,7 @@ export function OrderTicket({
                 {items.map((item, index) => (
                     <div key={`${item.name}-${index}`}>
                         <div
-                            className={`${pass ? 'text-title-3' : 'text-body'} flex gap-2`}
+                            className={`${runner ? 'text-title-1' : pass ? 'text-title-3' : 'text-body'} flex gap-2`}
                         >
                             <Numeric
                                 className={
@@ -223,7 +230,7 @@ export function OrderTicket({
                         }
                         className={
                             pass
-                                ? 'text-body-lg min-h-[60px] w-full flex-1 rounded-[var(--radius-pill)] bg-[var(--action-primary)] px-3 py-2 font-semibold text-[var(--text-on-brand)] transition-transform duration-[var(--dur-fast)] active:scale-[var(--press-scale)] disabled:opacity-60'
+                                ? `${runner ? 'text-title-1 min-h-[88px]' : 'text-body-lg min-h-[60px]'} w-full flex-1 rounded-[var(--radius-pill)] bg-[var(--action-primary)] px-3 py-2 font-semibold text-[var(--text-on-brand)] transition-transform duration-[var(--dur-fast)] active:scale-[var(--press-scale)] disabled:opacity-60`
                                 : 'text-body min-h-11 flex-1 rounded-full bg-[var(--action-primary)] px-3 py-2 font-semibold leading-snug text-[var(--text-on-brand)] transition-transform duration-[var(--duration-fast)] hover:bg-[var(--action-primary-hover)] active:scale-[var(--press-scale)] disabled:opacity-60'
                         }
                     >

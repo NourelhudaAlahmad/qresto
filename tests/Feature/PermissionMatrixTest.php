@@ -24,8 +24,14 @@ class PermissionMatrixTest extends TestCase
                 Capability::CHANGE_ORDER_STATUS->value,
                 Capability::TAKE_PAYMENT->value,
             ],
-            Role::RUNNER->value => [],
-            Role::CASHIER->value => [],
+            // #34
+            Role::RUNNER->value => [
+                Capability::CHANGE_ORDER_STATUS->value,
+            ],
+            Role::CASHIER->value => [
+                Capability::SEE_ALL_ORDERS->value,
+                Capability::TAKE_PAYMENT->value,
+            ],
             Role::KITCHEN->value => [
                 Capability::SEE_ALL_ORDERS->value,
                 Capability::CHANGE_ORDER_STATUS->value,

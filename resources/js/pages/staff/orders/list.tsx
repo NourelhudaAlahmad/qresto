@@ -23,6 +23,8 @@ export type Ticket = {
     total_minor: number;
     currency: string;
     paid: boolean;
+    /** The table's id, so a cashier can open its checkout (#34). */
+    table_id?: number | null;
     lines: { id: number; qty: number; name: string; note: string | null }[];
 };
 
@@ -37,6 +39,12 @@ type Props = {
     userId: number | string;
     onAdvance: (order: Ticket) => void;
     onVoid: (order: Ticket) => void;
+    /**
+     * When set, a served order gets a "Take payment" action here instead of
+     * a pointer to the floor map. The cashier view (#34) opens the floor's
+     * checkout with it.
+     */
+    onTakePayment?: (order: Ticket) => void;
 };
 
 const FILTERS: { value: StatusFilter; label: string }[] = [
@@ -168,6 +176,7 @@ function TicketOverlay({
     onClose,
     onAdvance,
     onVoid,
+    onTakePayment,
     canAdvance,
     canTakePayment,
     busy,
@@ -240,7 +249,23 @@ function TicketOverlay({
                 </div>
 
                 <div className="flex flex-wrap gap-2 border-t border-[var(--border-subtle)] pt-3">
-                    {action ? (
+                    {!action &&
+                    order.status === 'served' &&
+                    canTakePayment &&
+                    onTakePayment ? (
+                        <Button
+                            type="button"
+                            variant="primary"
+                            className="min-w-0 flex-1"
+                            disabled={busy !== null}
+                            onClick={() => {
+                                onTakePayment(order);
+                                onClose();
+                            }}
+                        >
+                            Take payment
+                        </Button>
+                    ) : action ? (
                         <Button
                             type="button"
                             variant="primary"

@@ -33,6 +33,18 @@ class KitchenDisplayController extends Controller
             'station' => ['nullable', 'string', Rule::in(MenuCategory::STATIONS)],
         ])['station'] ?? null;
 
+        $user = $this->user($request);
+
+        // #34: the runner's view is this same collection scoped to Ready,
+        // projected one column at 60px. No new endpoint.
+        if ($this->isRunner($user)) {
+            return Inertia::render('staff/kitchen/runner', [
+                'tickets' => fn (): array => $this->tickets($user, null, [OrderStatus::READY]),
+                'pollIntervalMs' => (int) config('qresto.live.kds_interval', 4) * 1000,
+                'now' => now()->valueOf(),
+            ]);
+        }
+
         return Inertia::render('staff/kitchen/pass', [
             'station' => $station,
             'stations' => MenuCategory::STATIONS,
@@ -56,15 +68,21 @@ class KitchenDisplayController extends Controller
 
         abort_unless((int) $order->restaurant_id === (int) $user->restaurant_id, 404);
 
-        $next = match ($order->status) {
-            OrderStatus::PENDING => OrderStatus::PREPARING,
-            OrderStatus::PREPARING => OrderStatus::READY,
-            default => null,
-        };
+        // The pass bumps pending → preparing → ready; the runner's one
+        // action, "Collected", takes ready → served (#34).
+        $next = $this->isRunner($user)
+            ? ($order->status === OrderStatus::READY ? OrderStatus::SERVED : null)
+            : match ($order->status) {
+                OrderStatus::PENDING => OrderStatus::PREPARING,
+                OrderStatus::PREPARING => OrderStatus::READY,
+                default => null,
+            };
 
         if ($next === null) {
             throw ValidationException::withMessages([
-                'order' => "{$order->code} is no longer on the pass.",
+                'order' => $this->isRunner($user)
+                    ? "{$order->code} is not ready to collect."
+                    : "{$order->code} is no longer on the pass.",
             ]);
         }
 
@@ -92,15 +110,24 @@ class KitchenDisplayController extends Controller
     }
 
     /**
+     * A runner who is not also kitchen or management sees the runner view.
+     */
+    private function isRunner(User $user): bool
+    {
+        return $user->hasRole('runner') && ! $user->hasAnyRole(['kitchen', 'manager', 'admin']);
+    }
+
+    /**
+     * @param  list<OrderStatus>|null  $statuses
      * @return list<array<string, mixed>>
      */
-    private function tickets(User $user, ?string $station): array
+    private function tickets(User $user, ?string $station, ?array $statuses = null): array
     {
         $now = now();
 
         $orders = Order::query()
             ->where('restaurant_id', $user->restaurant_id)
-            ->whereIn('status', array_map(fn (OrderStatus $status): string => $status->value, self::OPEN))
+            ->whereIn('status', array_map(fn (OrderStatus $status): string => $status->value, $statuses ?? self::OPEN))
             ->with([
                 'table:id,number',
                 'tableSession:id,guest_name',

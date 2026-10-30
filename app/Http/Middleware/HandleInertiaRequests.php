@@ -248,6 +248,15 @@ class HandleInertiaRequests extends Middleware
     private function pageSubtitle(Request $request, ?Restaurant $restaurant, string $fallback): string
     {
         // "Pass screen · 2 stations": the stations with work on the pass.
+        $viewer = $request->user();
+
+        if ($restaurant !== null
+            && $request->route()?->getName() === 'app.pass'
+            && $viewer?->hasRole('runner')
+            && ! $viewer->hasAnyRole(['kitchen', 'manager', 'admin'])) {
+            return 'Runner · ready to collect';
+        }
+
         if ($restaurant !== null && $request->route()?->getName() === 'app.pass') {
             $stations = DB::table('order_lines')
                 ->join('orders', 'orders.id', '=', 'order_lines.order_id')

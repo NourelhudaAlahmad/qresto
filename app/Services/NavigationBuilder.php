@@ -152,6 +152,27 @@ class NavigationBuilder
                 ],
             ],
 
+            // #34: role-scoped views of the pass and the order list.
+            Role::RUNNER->value => [
+                [
+                    'id' => 'kds',
+                    'title' => 'Ready to collect',
+                    'href' => '/app/pass',
+                    'badge' => null,
+                    'capability' => Capability::CHANGE_ORDER_STATUS,
+                ],
+            ],
+
+            Role::CASHIER->value => [
+                [
+                    'id' => 'waiter',
+                    'title' => 'Unpaid bills',
+                    'href' => '/app/orders',
+                    'badge' => null,
+                    'capability' => Capability::TAKE_PAYMENT,
+                ],
+            ],
+
             default => [],
         };
     }

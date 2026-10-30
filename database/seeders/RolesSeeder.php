@@ -29,11 +29,18 @@ class RolesSeeder extends Seeder
                 Capability::TAKE_PAYMENT->value,
             ],
 
-            // No default grants specified in Issue #7.
-            Role::RUNNER->value => [],
+            // #34: the runner collects ready plates (ready → served) and
+            // never takes money.
+            Role::RUNNER->value => [
+                Capability::CHANGE_ORDER_STATUS->value,
+            ],
 
-            // No default grants specified in Issue #7.
-            Role::CASHIER->value => [],
+            // #34: the cashier settles bills across the floor and never
+            // moves an order through the kitchen.
+            Role::CASHIER->value => [
+                Capability::SEE_ALL_ORDERS->value,
+                Capability::TAKE_PAYMENT->value,
+            ],
 
             Role::KITCHEN->value => [
                 Capability::SEE_ALL_ORDERS->value,

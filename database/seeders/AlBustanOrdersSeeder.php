@@ -47,7 +47,7 @@ class AlBustanOrdersSeeder extends Seeder
                 'total' => '23.06',
                 'tip' => '0.00',
                 'discount' => '0.00',
-                'paid' => false,
+                'paid' => true,
                 'items' => [
                     [
                         'name' => 'Fattoush',
@@ -70,7 +70,7 @@ class AlBustanOrdersSeeder extends Seeder
                 'total' => '36.56',
                 'tip' => '0.00',
                 'discount' => '0.00',
-                'paid' => false,
+                'paid' => true,
                 'items' => [
                     [
                         'name' => 'Whole sea bass',

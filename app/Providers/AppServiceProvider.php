@@ -3,8 +3,11 @@
 namespace App\Providers;
 
 use App\CurrentRestaurant;
+use App\Enums\Capability;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,6 +23,15 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureGuestRateLimits();
+
+        // A table's bill and receipt: the waiter whose table it is, or the
+        // cashier settling across the floor (#34). TableAccess then checks
+        // the table itself.
+        Gate::define(
+            'view-floor-bill',
+            fn (User $user): bool => $user->can(Capability::SEE_OWN_TABLES->value)
+                || $user->can(Capability::TAKE_PAYMENT->value),
+        );
     }
 
     /**
