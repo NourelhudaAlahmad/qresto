@@ -23,6 +23,8 @@ type OrderTicketProps = {
     onOverflow?: () => void;
     /** The design's verb for the next step: Start cooking, Mark ready… */
     advanceLabel?: string;
+    /** Accessible name when the visible label is short ("Bump"). */
+    advanceAriaLabel?: string;
     advancing?: boolean;
     /** Shown instead of the advance button when there is no next step. */
     footerNote?: ReactNode;
@@ -32,6 +34,13 @@ type OrderTicketProps = {
     elapsedLevel?: 'normal' | 'warn' | 'late';
     /** CSS colour for the 3px status edge on the inline-start side. */
     accentColor?: string;
+    /**
+     * pass: the kitchen pass screen (#33), read from two metres. Nothing
+     * under 15px, items at 17px, a full-width clay bump pill of at least
+     * 48px, no payment row and no overflow. A ticket past its SLA gets a
+     * saffron or berry border, as the design draws it.
+     */
+    size?: 'default' | 'pass';
 };
 
 const variantStyles = {
@@ -68,19 +77,28 @@ export function OrderTicket({
     onAdvance,
     onOverflow,
     advanceLabel,
+    advanceAriaLabel,
     advancing = false,
     footerNote,
     overflow,
     elapsedLevel = 'normal',
     accentColor,
+    size = 'default',
 }: OrderTicketProps) {
     const styles = variantStyles[variant];
+    const pass = size === 'pass';
 
     return (
         <div
             className={`overflow-hidden rounded-[var(--radius-lg)] border ${
                 accentColor ? 'border-s-[3px]' : ''
-            } ${styles.card}`}
+            } ${styles.card} ${
+                pass && elapsedLevel === 'warn'
+                    ? '!border-[var(--saffron-500)]'
+                    : pass && elapsedLevel === 'late'
+                      ? '!border-[var(--berry-500)]'
+                      : ''
+            }`}
             style={
                 accentColor
                     ? { borderInlineStartColor: accentColor }
@@ -88,9 +106,10 @@ export function OrderTicket({
             }
             data-status={status}
             data-elapsed-level={elapsedLevel}
+            data-size={size}
         >
             <div
-                className={`flex items-center gap-2 border-b px-3 pb-2 pt-3 ${styles.divider}`}
+                className={`flex items-center gap-2 border-b ${pass ? 'mx-5 px-0 pb-3 pt-5' : 'px-3 pb-2 pt-3'} ${styles.divider}`}
             >
                 <Numeric className={`text-title-3 font-medium ${styles.code}`}>
                     {code}
@@ -99,31 +118,47 @@ export function OrderTicket({
                 <span className="flex-1" />
 
                 <Numeric
-                    className={`text-caption ${styles.elapsed} ${elapsedLevelStyles[elapsedLevel]}`}
+                    className={`${pass ? 'text-body-lg font-mono' : 'text-caption'} ${styles.elapsed} ${
+                        pass && elapsedLevel === 'warn'
+                            ? 'font-semibold !text-[var(--saffron-500)]'
+                            : pass && elapsedLevel === 'late'
+                              ? 'font-semibold !text-[var(--berry-500)]'
+                              : elapsedLevelStyles[elapsedLevel]
+                    }`}
                 >
                     {elapsed}
                 </Numeric>
             </div>
 
             <div
-                className={`text-caption flex items-center gap-1.5 px-3 pt-2 ${
+                className={`${pass ? 'text-body px-5 pt-4 font-mono' : 'text-caption px-3 pt-2'} flex items-center gap-1.5 ${
                     variant === 'dark'
                         ? 'text-[var(--ink-400)]'
                         : 'text-[var(--text-secondary)]'
                 }`}
             >
-                <span aria-hidden="true">▦</span>
+                {!pass && <span aria-hidden="true">▦</span>}
 
                 <span>
                     <Numeric>{table}</Numeric> · {guest}
                 </span>
             </div>
 
-            <div className="flex flex-col gap-1 px-3 pb-3 pt-2">
+            <div
+                className={`flex flex-col ${pass ? 'gap-2 px-5 pb-4 pt-3' : 'gap-1 px-3 pb-3 pt-2'}`}
+            >
                 {items.map((item, index) => (
                     <div key={`${item.name}-${index}`}>
-                        <div className="text-body flex gap-2">
-                            <Numeric className="text-[var(--text-tertiary)]">
+                        <div
+                            className={`${pass ? 'text-title-3' : 'text-body'} flex gap-2`}
+                        >
+                            <Numeric
+                                className={
+                                    pass
+                                        ? 'font-mono text-[var(--clay-400)]'
+                                        : 'text-[var(--text-tertiary)]'
+                                }
+                            >
                                 {item.qty}
                             </Numeric>
 
@@ -134,7 +169,7 @@ export function OrderTicket({
 
                         {item.note && (
                             <span
-                                className={`text-caption ms-[26px] inline-block break-words ${
+                                className={`${pass ? 'text-body' : 'text-caption'} ms-[26px] inline-block break-words ${
                                     variant === 'dark'
                                         ? 'text-[var(--saffron-300)]'
                                         : 'rounded-[var(--radius-sm)] bg-[var(--saffron-50)] px-2 py-0.5 text-[var(--saffron-700)]'
@@ -147,29 +182,33 @@ export function OrderTicket({
                 ))}
             </div>
 
-            <div
-                className={`flex items-center gap-2 border-t px-3 py-2 ${
-                    variant === 'dark'
-                        ? 'border-[var(--alpha-paper-08)] bg-[var(--alpha-paper-04)]'
-                        : 'border-[var(--border-subtle)] bg-[var(--surface-sunken)]'
-                }`}
-            >
-                <span
-                    className={`text-micro inline-flex h-6 items-center rounded-full px-2.5 font-semibold ${
-                        paid
-                            ? 'bg-[var(--status-paid-bg)] text-[var(--status-paid-fg)]'
-                            : 'bg-[var(--status-pending-bg)] text-[var(--status-pending-fg)]'
+            {!pass && (
+                <div
+                    className={`flex items-center gap-2 border-t px-3 py-2 ${
+                        variant === 'dark'
+                            ? 'border-[var(--alpha-paper-08)] bg-[var(--alpha-paper-04)]'
+                            : 'border-[var(--border-subtle)] bg-[var(--surface-sunken)]'
                     }`}
                 >
-                    {paid ? 'Paid' : 'Unpaid'}
-                </span>
+                    <span
+                        className={`text-micro inline-flex h-6 items-center rounded-full px-2.5 font-semibold ${
+                            paid
+                                ? 'bg-[var(--status-paid-bg)] text-[var(--status-paid-fg)]'
+                                : 'bg-[var(--status-pending-bg)] text-[var(--status-pending-fg)]'
+                        }`}
+                    >
+                        {paid ? 'Paid' : 'Unpaid'}
+                    </span>
 
-                <span className="flex-1" />
+                    <span className="flex-1" />
 
-                <Numeric className="text-body font-medium">{total}</Numeric>
-            </div>
+                    <Numeric className="text-body font-medium">{total}</Numeric>
+                </div>
+            )}
 
-            <div className="flex items-stretch gap-2 p-3">
+            <div
+                className={`flex items-stretch gap-2 ${pass ? 'px-5 pb-5 pt-1' : 'p-3'}`}
+            >
                 {onAdvance ? (
                     <button
                         type="button"
@@ -177,34 +216,42 @@ export function OrderTicket({
                         disabled={advancing}
                         aria-busy={advancing || undefined}
                         aria-label={
-                            advanceLabel
+                            advanceAriaLabel ??
+                            (advanceLabel
                                 ? undefined
-                                : `Advance order status from ${status}`
+                                : `Advance order status from ${status}`)
                         }
-                        className="text-body min-h-11 flex-1 rounded-full bg-[var(--action-primary)] px-3 py-2 font-semibold leading-snug text-[var(--text-on-brand)] transition-transform duration-[var(--duration-fast)] hover:bg-[var(--action-primary-hover)] active:scale-[var(--press-scale)] disabled:opacity-60"
+                        className={
+                            pass
+                                ? 'text-body-lg min-h-[60px] w-full flex-1 rounded-[var(--radius-pill)] bg-[var(--action-primary)] px-3 py-2 font-semibold text-[var(--text-on-brand)] transition-transform duration-[var(--dur-fast)] active:scale-[var(--press-scale)] disabled:opacity-60'
+                                : 'text-body min-h-11 flex-1 rounded-full bg-[var(--action-primary)] px-3 py-2 font-semibold leading-snug text-[var(--text-on-brand)] transition-transform duration-[var(--duration-fast)] hover:bg-[var(--action-primary-hover)] active:scale-[var(--press-scale)] disabled:opacity-60'
+                        }
                     >
                         {advanceLabel ?? 'Advance status'}
                     </button>
                 ) : (
-                    <span className="text-caption flex min-h-11 flex-1 items-center text-[var(--text-secondary)]">
+                    <span
+                        className={`${pass ? 'text-body min-h-12' : 'text-caption min-h-11'} flex flex-1 items-center text-[var(--text-secondary)]`}
+                    >
                         {footerNote}
                     </span>
                 )}
 
-                {overflow ?? (
-                    <button
-                        type="button"
-                        onClick={onOverflow}
-                        aria-label="More actions"
-                        className={`h-11 w-11 shrink-0 rounded-full border ${
-                            variant === 'dark'
-                                ? 'border-[var(--alpha-paper-08)] bg-[var(--ink-950)] text-[var(--ink-25)]'
-                                : 'border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-secondary)]'
-                        }`}
-                    >
-                        ⋮
-                    </button>
-                )}
+                {!pass &&
+                    (overflow ?? (
+                        <button
+                            type="button"
+                            onClick={onOverflow}
+                            aria-label="More actions"
+                            className={`h-11 w-11 shrink-0 rounded-full border ${
+                                variant === 'dark'
+                                    ? 'border-[var(--alpha-paper-08)] bg-[var(--ink-950)] text-[var(--ink-25)]'
+                                    : 'border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-secondary)]'
+                            }`}
+                        >
+                            ⋮
+                        </button>
+                    ))}
             </div>
         </div>
     );

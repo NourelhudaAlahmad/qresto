@@ -12,6 +12,7 @@ use App\Services\CapabilitySnapshot;
 use App\Services\NavigationBuilder;
 use App\Services\Reports\SalesReport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Middleware;
 
@@ -142,6 +143,10 @@ class HandleInertiaRequests extends Middleware
                 'Your assigned orders and tables',
             ],
 
+            'app.pass' => [
+                'Kitchen display',
+                'Pass screen',
+            ],
             'app.menu' => [
                 'Menu management',
                 'Categories, dishes and the editor',
@@ -242,6 +247,19 @@ class HandleInertiaRequests extends Middleware
      */
     private function pageSubtitle(Request $request, ?Restaurant $restaurant, string $fallback): string
     {
+        // "Pass screen · 2 stations": the stations with work on the pass.
+        if ($restaurant !== null && $request->route()?->getName() === 'app.pass') {
+            $stations = DB::table('order_lines')
+                ->join('orders', 'orders.id', '=', 'order_lines.order_id')
+                ->where('orders.restaurant_id', $restaurant->id)
+                ->whereIn('orders.status', ['pending', 'preparing'])
+                ->whereNotNull('order_lines.station')
+                ->distinct()
+                ->count('order_lines.station');
+
+            return 'Pass screen · '.$stations.' '.($stations === 1 ? 'station' : 'stations');
+        }
+
         // "01 – 23 Aug · all waiters · USD", as the design's reports title.
         if ($restaurant !== null && $request->route()?->getName() === 'app.reports') {
             $preset = (string) $request->query('preset', 'month');

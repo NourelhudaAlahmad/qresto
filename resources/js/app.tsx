@@ -23,6 +23,11 @@ createInertiaApp({
             case name === 'auth/staff-login':
                 return null;
 
+            // The pass is a dark, full-screen display behind a hot line; it
+            // ignores the standard staff chrome (#33).
+            case name === 'staff/kitchen/pass':
+                return null;
+
             // Error pages stand alone: no shell, no navigation to break.
             case name.startsWith('errors/'):
                 return null;

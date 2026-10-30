@@ -108,7 +108,7 @@ test('staff members are redirected to an available landing screen after login', 
         // Each role's real working screen, never a placeholder.
         $destinations = [
             'waiter' => 'app.my-orders',
-            'kitchen' => 'app.orders',
+            'kitchen' => 'app.pass',
             'manager' => 'manager.overview',
             'admin' => 'app.system',
         ];
@@ -130,7 +130,7 @@ test('the old role landings redirect to the real screens', function () {
     $this->actingAs($admin);
 
     $this->get('/waiter/orders')->assertRedirect('/app/my-orders');
-    $this->get('/kitchen/pass')->assertRedirect('/app/orders');
+    $this->get('/kitchen/pass')->assertRedirect('/app/pass');
     $this->get('/admin/system')->assertRedirect('/app/system');
     $this->get('/app/overview')->assertRedirect('/manager/overview');
 });

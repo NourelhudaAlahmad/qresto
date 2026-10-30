@@ -21,8 +21,12 @@ class MenuCategory extends Model
         'name',
         'translations',
         'sort_order',
+        'station',
         'is_active',
     ];
+
+    /** Kitchen stations the pass can filter by (#33). */
+    public const STATIONS = ['grill', 'cold', 'sweet'];
 
     protected function casts(): array
     {

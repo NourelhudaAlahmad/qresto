@@ -21,8 +21,9 @@ class StaffLoginDestination
         'waiter' => [
             ['app.my-orders', Capability::SEE_OWN_TABLES],
         ],
-        // The pass display is #33; until then the order feed.
+        // The pass display (#33), then the order feed.
         'kitchen' => [
+            ['app.pass', Capability::CHANGE_ORDER_STATUS],
             ['app.orders', Capability::SEE_ALL_ORDERS],
         ],
         'manager' => [

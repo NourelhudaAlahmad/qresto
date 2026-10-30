@@ -7,6 +7,7 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Cart;
+use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Payments\PaymentManager;
@@ -461,6 +462,9 @@ final class PlaceOrder
                 'qty' => $cartLine->qty,
                 'line_total' => $cartLine->line_total,
                 'note' => $cartLine->note,
+                // Snapshot the kitchen station with the name and price
+                // (#33), so moving a dish later does not reroute old tickets.
+                'station' => $this->stationFor((int) $cartLine->menu_item_id),
             ]);
 
             if (
@@ -540,5 +544,18 @@ final class PlaceOrder
             ],
             true,
         );
+    }
+
+    /**
+     * The kitchen station of a dish, from its category (#33).
+     */
+    private function stationFor(int $menuItemId): ?string
+    {
+        $item = MenuItem::withTrashed()
+            ->with('category:id,station')
+            ->whereKey($menuItemId)
+            ->first();
+
+        return $item?->category?->station;
     }
 }

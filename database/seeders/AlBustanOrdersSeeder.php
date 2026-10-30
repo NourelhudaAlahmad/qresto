@@ -35,6 +35,54 @@ class AlBustanOrdersSeeder extends Seeder
             ->keyBy('name');
 
         $orders = [
+            // Two more tickets for the kitchen pass (#33): with #A-1044 and
+            // #A-1043 that is the design's four on the pass.
+            [
+                'code' => '#A-1046',
+                'table' => '12',
+                'guest' => 'Huda',
+                'waiter' => 'Nadia Rahman',
+                'status' => OrderStatus::PENDING,
+                'minutes_ago' => 1,
+                'total' => '23.06',
+                'tip' => '0.00',
+                'discount' => '0.00',
+                'paid' => false,
+                'items' => [
+                    [
+                        'name' => 'Fattoush',
+                        'qty' => 1,
+                    ],
+                    [
+                        'name' => 'Knafeh, orange blossom',
+                        'qty' => 1,
+                        'note' => 'extra syrup on the side',
+                    ],
+                ],
+            ],
+            [
+                'code' => '#A-1045',
+                'table' => '02',
+                'guest' => 'Karim',
+                'waiter' => 'Omar Faruk',
+                'status' => OrderStatus::PREPARING,
+                'minutes_ago' => 9,
+                'total' => '36.56',
+                'tip' => '0.00',
+                'discount' => '0.00',
+                'paid' => false,
+                'items' => [
+                    [
+                        'name' => 'Whole sea bass',
+                        'qty' => 1,
+                        'note' => 'no chilli',
+                    ],
+                    [
+                        'name' => 'Burnt-butter rice',
+                        'qty' => 1,
+                    ],
+                ],
+            ],
             [
                 'code' => '#A-1044',
                 'table' => '04',
@@ -405,19 +453,16 @@ class AlBustanOrdersSeeder extends Seeder
         }
     }
 
-    private function stationFor(string $menuItem): string
+    /**
+     * The station the dish is cooked at, from its category (#33).
+     */
+    private function stationFor(string $menuItem): ?string
     {
-        return match ($menuItem) {
-            'Mint lemonade',
-            'Cardamom coffee' => 'bar',
-
-            'Knafeh, orange blossom' => 'dessert',
-
-            'Lamb kofta',
-            'Chicken musakhan',
-            'Grilled flatbread' => 'grill',
-
-            default => 'kitchen',
-        };
+        return MenuItem::query()
+            ->where('name', $menuItem)
+            ->with('category:id,station')
+            ->first()
+            ?->category
+            ?->station;
     }
 }

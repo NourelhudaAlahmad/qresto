@@ -1,7 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     BarChart3,
-    Bell,
     ChefHat,
     ClipboardList,
     LayoutDashboard,
@@ -19,6 +18,7 @@ import { Avatar } from '@/components/qresto/avatar';
 import { Badge } from '@/components/qresto/badge';
 import { LiveIndicator } from '@/components/qresto/LiveIndicator';
 import type { LiveStatus } from '@/components/qresto/LiveIndicator';
+import { NotificationBell } from '@/components/qresto/notification-bell';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { TabBar } from '@/components/qresto/tab-bar';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
@@ -246,22 +246,7 @@ function Topbar({
                 <LiveIndicator status={liveStatus} />
             </span>
 
-            <div
-                role="status"
-                aria-label={`Unread notifications: ${unreadNotifications}`}
-                className="relative grid size-11 shrink-0 place-items-center rounded-full border border-[var(--border-default)] bg-[var(--surface-card)]"
-            >
-                <Bell
-                    className="size-[19px] text-[var(--ink-800)]"
-                    aria-hidden="true"
-                />
-
-                {unreadNotifications > 0 && (
-                    <Badge className="absolute -end-0.5 -top-0.5 h-[18px]">
-                        {formatCount(unreadNotifications)}
-                    </Badge>
-                )}
-            </div>
+            <NotificationBell unread={unreadNotifications} />
 
             <div className="relative shrink-0">
                 <button

@@ -14,11 +14,13 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailReceiptController;
 use App\Http\Controllers\FloorController;
+use App\Http\Controllers\Kitchen\KitchenDisplayController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ManagerDashboardController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MenuItemController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderStatusController;
 use App\Http\Controllers\QrController;
 use App\Http\Controllers\ReceiptController;
@@ -27,7 +29,6 @@ use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\WaiterOrderController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::post('/locale', [LocaleController::class, 'update'])
     ->name('locale.update');
@@ -105,8 +106,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // The first-cut role landings (#21) now point at the real screens, so
     // old bookmarks keep working and nobody lands on a placeholder.
     Route::redirect('waiter/orders', '/app/my-orders')->name('waiter.orders');
-    // The kitchen pass display is #33; until then the order feed.
-    Route::redirect('kitchen/pass', '/app/orders')->name('kitchen.pass');
+    Route::redirect('kitchen/pass', '/app/pass')->name('kitchen.pass');
     Route::redirect('admin/system', '/app/system')->name('admin.system');
 
     Route::patch(
@@ -199,6 +199,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('app.tables.orders.receipt.email');
 
     // Other staff application routes
+
+    // The topbar bell: your own notifications only.
+    Route::get('/app/notifications', [NotificationController::class, 'index'])
+        ->name('app.notifications.index');
+    Route::post('/app/notifications/read-all', [NotificationController::class, 'readAll'])
+        ->name('app.notifications.read-all');
+    Route::post('/app/notifications/{notification}/read', [NotificationController::class, 'read'])
+        ->whereUuid('notification')
+        ->name('app.notifications.read');
 
     // Issue #32 — Reports: screen, CSV and PDF from one SalesReport.
     Route::middleware('can:financial_reports')->group(function () {
@@ -333,13 +342,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('app.menu.items.destroy');
     });
 
-    Route::get('/app/pass', function () {
-        return Inertia::render('staff/landing', [
-            'title' => 'Kitchen Pass',
-        ]);
-    })
-        ->middleware('can:see_all_orders')
-        ->name('app.pass');
+    // Issue #33 — The kitchen pass display.
+    Route::middleware('can:change_order_status')->group(function () {
+        Route::get('/app/pass', [KitchenDisplayController::class, 'index'])->name('app.pass');
+        Route::post('/app/kds/tickets/{order}/bump', [KitchenDisplayController::class, 'bump'])
+            ->name('app.kds.bump');
+        Route::post('/app/kds/heartbeat', [KitchenDisplayController::class, 'heartbeat'])
+            ->name('app.kds.heartbeat');
+    });
 });
 
 // Guest table QR routes

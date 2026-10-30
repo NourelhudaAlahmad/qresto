@@ -167,7 +167,7 @@ class OrderCodeGeneratorTest extends TestCase
         $restaurant = Restaurant::query()->where('slug', 'al-bustan')->firstOrFail();
 
         $this->assertSame(
-            '#A-1045',
+            '#A-1047',
             app(OrderCodeGenerator::class)->generate($restaurant->id),
         );
     }

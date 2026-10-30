@@ -33,7 +33,7 @@ it('seeds the Al Bustan design fixtures', function () {
         // Tonight's live orders, from the design; the rest is the
         // three-week history Reports draws (#32).
         ->and(Order::where('code', 'not like', '#H-%')->count())
-        ->toBe(5)
+        ->toBe(7)
         ->and(Order::where('code', 'like', '#H-%')->count())
         ->toBeGreaterThan(200);
 });

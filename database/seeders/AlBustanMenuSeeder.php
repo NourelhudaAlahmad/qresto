@@ -16,6 +16,7 @@ class AlBustanMenuSeeder extends Seeder
         $categoryData = [
             'small' => [
                 'name' => 'Small plates',
+                'station' => 'cold',
                 'translations' => [
                     'en' => 'Small plates',
                     'ar' => 'أطباق صغيرة',
@@ -25,6 +26,7 @@ class AlBustanMenuSeeder extends Seeder
             ],
             'grill' => [
                 'name' => 'From the grill',
+                'station' => 'grill',
                 'translations' => [
                     'en' => 'From the grill',
                     'ar' => 'من المشواة',
@@ -34,6 +36,7 @@ class AlBustanMenuSeeder extends Seeder
             ],
             'sides' => [
                 'name' => 'Sides',
+                'station' => 'grill',
                 'translations' => [
                     'en' => 'Sides',
                     'ar' => 'أطباق جانبية',
@@ -43,6 +46,7 @@ class AlBustanMenuSeeder extends Seeder
             ],
             'sweet' => [
                 'name' => 'Sweet',
+                'station' => 'sweet',
                 'translations' => [
                     'en' => 'Sweet',
                     'ar' => 'حلويات',
@@ -52,6 +56,7 @@ class AlBustanMenuSeeder extends Seeder
             ],
             'drinks' => [
                 'name' => 'Drinks',
+                'station' => null,
                 'translations' => [
                     'en' => 'Drinks',
                     'ar' => 'مشروبات',
@@ -72,6 +77,7 @@ class AlBustanMenuSeeder extends Seeder
                 [
                     'translations' => $data['translations'],
                     'sort_order' => $data['sort_order'],
+                    'station' => $data['station'],
                     'is_active' => $data['is_active'],
                 ],
             );
