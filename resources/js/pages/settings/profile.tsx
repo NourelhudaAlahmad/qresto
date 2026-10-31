@@ -24,6 +24,9 @@ export default function Profile({
     status?: string;
 }) {
     const { auth } = usePage<PageProps>().props;
+    const { translations } = usePage<{
+        translations: { language: string };
+    }>().props;
 
     return (
         <>
@@ -39,7 +42,12 @@ export default function Profile({
                         description="Update your name and email address"
                     />
 
-                    <LanguageSwitcher />
+                    <div className="flex flex-col gap-2">
+                        <span className="text-sm font-medium">
+                            {translations.language}
+                        </span>
+                        <LanguageSwitcher label={translations.language} />
+                    </div>
                 </div>
 
                 <Form

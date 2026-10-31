@@ -10,7 +10,7 @@ const labels = {
     ar: 'العربية',
 };
 
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ label = 'Language' }: { label?: string }) {
     const { locale, available_locales } = usePage<PageProps>().props;
 
     function switchLocale(nextLocale: string) {
@@ -32,7 +32,8 @@ export function LanguageSwitcher() {
     return (
         <div
             className="flex items-center gap-1 rounded-md border p-1"
-            aria-label="Language"
+            role="group"
+            aria-label={label}
         >
             {available_locales.map((availableLocale) => (
                 <button
