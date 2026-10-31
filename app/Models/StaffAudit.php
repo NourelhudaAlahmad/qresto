@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\BelongsToRestaurant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -19,6 +20,8 @@ use Illuminate\Support\Carbon;
  */
 class StaffAudit extends Model
 {
+    use BelongsToRestaurant;
+
     public const CREATED = 'created';
 
     public const UPDATED = 'updated';

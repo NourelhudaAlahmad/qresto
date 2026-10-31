@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\BelongsToRestaurant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -18,6 +19,8 @@ use Illuminate\Support\Carbon;
  */
 class ReportExport extends Model
 {
+    use BelongsToRestaurant;
+
     public $timestamps = false;
 
     protected $fillable = [

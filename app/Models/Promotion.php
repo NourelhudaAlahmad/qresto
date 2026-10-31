@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\BelongsToRestaurant;
 use Database\Factories\PromotionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Promotion extends Model
 {
+    use BelongsToRestaurant;
+
     /** @use HasFactory<PromotionFactory> */
     use HasFactory;
 
