@@ -105,8 +105,6 @@ export function ShiftQrScanner({ onClose }: Props) {
                         },
                     },
                     (decodedText) => {
-                        console.log('QR detected:', decodedText.length);
-
                         if (disposed || submittedRef.current) {
                             return;
                         }
