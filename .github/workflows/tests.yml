@@ -1,14 +1,26 @@
 name: tests
 
+# Re-enabled by #37 (disabled in 81eba48): runs on every push to main and
+# dev and on every pull request. Each gate is its own step, so a red check
+# names what broke.
 on:
+  push:
+    branches:
+      - main
+      - dev
   pull_request:
 
 permissions:
   contents: read
 
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ci:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -28,8 +40,34 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Setup Application
+      # composer install, .env, key, migrate, npm install, build (which also
+      # generates the Wayfinder route types the type check reads).
+      - name: Setup application
         run: composer setup
 
-      - name: Run CI Checks
-        run: composer ci:check
+      - name: ESLint
+        run: npx eslint .
+
+      - name: 'Design non-negotiables and contrast (#36)'
+        run: npm run lint:design
+
+      - name: Design tokens match the design files
+        run: npm run test:tokens
+
+      - name: Prettier
+        run: npm run format:check
+
+      - name: TypeScript
+        run: npm run types:check
+
+      - name: Pint
+        run: vendor/bin/pint --test
+
+      - name: PHPStan
+        run: vendor/bin/phpstan analyse --memory-limit=512M --no-progress
+
+      - name: 'Pest (includes the service journey, #37)'
+        run: php artisan test --compact
+
+      - name: Vitest
+        run: npm run test:components

@@ -40,6 +40,28 @@ class TableAccess
             ->all());
     }
 
+    /**
+     * Who has this table on tonight's live shift, if anyone (#37). An order
+     * a guest places from the table goes to them, so it reaches "My
+     * orders" and they can accept it without a manager stepping in.
+     */
+    public function waiterTonight(int $tableId): ?int
+    {
+        $now = now();
+
+        $userId = DB::table('table_user')
+            ->join('shifts', 'shifts.id', '=', 'table_user.shift_id')
+            ->join('users', 'users.id', '=', 'table_user.user_id')
+            ->where('table_user.table_id', $tableId)
+            ->where('shifts.starts_at', '<=', $now)
+            ->where('shifts.ends_at', '>=', $now)
+            ->where('users.is_active', true)
+            ->orderByDesc('shifts.starts_at')
+            ->value('table_user.user_id');
+
+        return $userId === null ? null : (int) $userId;
+    }
+
     public function sameRestaurant(User $user, RestaurantTable $table): bool
     {
         return $user->restaurant_id !== null

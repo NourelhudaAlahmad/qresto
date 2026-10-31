@@ -7,15 +7,18 @@ use App\Actions\Payments\PromotionValidator;
 use App\Actions\Payments\SettlePayment;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\TableState;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\RestaurantTable;
 use App\Models\TableSession;
 use App\Payments\PaymentManager;
 use App\Support\Money;
 use App\Support\OrderTotals;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -148,6 +151,23 @@ class CheckoutController extends Controller
         PlaceOrder $placeOrder,
     ): RedirectResponse {
         $session = $this->tableSession($request);
+
+        // A repeat of a checkout that already went through (a double tap,
+        // a retried request) lands on that order. The cart is empty by
+        // then, so this has to come before the empty-cart check (#37).
+        $key = $request->input('idempotency_key');
+
+        if (is_string($key) && $key !== '') {
+            $existing = Order::query()
+                ->where('table_session_id', $session->id)
+                ->where('idempotency_key', $key)
+                ->first();
+
+            if ($existing !== null) {
+                return $this->statusRedirect($existing);
+            }
+        }
+
         $cart = $this->cartForSession($session);
 
         if ($cart === null) {
@@ -346,6 +366,8 @@ class CheckoutController extends Controller
                 ]);
         }
 
+        $this->afterOrderPlaced($result['order']);
+
         return $this->statusRedirect(
             $result['order'],
         );
@@ -428,6 +450,8 @@ class CheckoutController extends Controller
         $request->session()->forget(
             'checkout.pending_order_id',
         );
+
+        $this->afterOrderPlaced($order);
 
         return $this->statusRedirect(
             $order->fresh(),
@@ -667,5 +691,45 @@ class CheckoutController extends Controller
             'payment_id' => (int) $payment->id,
             'client_secret' => $clientSecret,
         ];
+    }
+
+    /**
+     * Once an order is placed (paid, deferred, or confirmed after 3-D
+     * Secure), found by the service journey (#37):
+     *
+     * - its cart is emptied, so the guest's next visit starts fresh and a
+     *   second checkout cannot order the same dishes again;
+     * - its table shows as ordered on the floor, so a table with guests
+     *   and an open bill never looks free.
+     *
+     * A failed payment never gets here: its cart stays for another try.
+     */
+    private function afterOrderPlaced(Order $order): void
+    {
+        DB::transaction(function () use ($order): void {
+            $cart = Cart::query()
+                ->where('table_session_id', $order->table_session_id)
+                ->first();
+
+            if ($cart !== null) {
+                $cart->lines()->each(function ($line): void {
+                    $line->addons()->delete();
+                    $line->delete();
+                });
+
+                $cart->forceFill(['note' => null])->save();
+            }
+
+            $table = $order->table_id === null
+                ? null
+                : RestaurantTable::query()->withoutGlobalScopes()->find($order->table_id);
+
+            if ($table !== null && in_array($table->state, [TableState::FREE, TableState::SEATED], true)) {
+                $table->forceFill([
+                    'state' => TableState::ORDERED,
+                    'seated_at' => $table->seated_at ?? now(),
+                ])->save();
+            }
+        });
     }
 }

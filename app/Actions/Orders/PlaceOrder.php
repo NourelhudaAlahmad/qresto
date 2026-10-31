@@ -12,6 +12,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Payments\PaymentManager;
 use App\Payments\ValueObjects\Failure;
+use App\Services\Floor\TableAccess;
 use App\Support\Money;
 use App\Support\OrderCodeGenerator;
 use App\Support\OrderTotals;
@@ -316,6 +317,11 @@ final class PlaceOrder
                     $serviceTimestamp,
                 ),
                 'guest_name' => $session?->guest_name,
+                // The waiter who has this table tonight (#37). Without it a
+                // guest's order reached nobody's "My orders".
+                'assigned_user_id' => $session?->restaurant_table_id === null
+                    ? null
+                    : app(TableAccess::class)->waiterTonight((int) $session->restaurant_table_id),
                 'status' => OrderStatus::PLACED,
                 'placed_at' => $serviceTimestamp,
                 'subtotal' => $totals->subtotal,
