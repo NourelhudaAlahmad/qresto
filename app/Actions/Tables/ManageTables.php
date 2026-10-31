@@ -78,7 +78,7 @@ class ManageTables
 
             if ($hasOpenSession) {
                 throw ValidationException::withMessages([
-                    'table' => "Table {$table->number} has guests right now. Free it first.",
+                    'table' => __('messages.tables.has_guests', ['table' => $table->number]),
                 ]);
             }
 
@@ -90,7 +90,7 @@ class ManageTables
 
             if ($unpaid) {
                 throw ValidationException::withMessages([
-                    'table' => "Table {$table->number} still has an unpaid bill.",
+                    'table' => __('messages.tables.unpaid_bill', ['table' => $table->number]),
                 ]);
             }
 

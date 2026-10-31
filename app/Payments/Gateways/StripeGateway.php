@@ -124,7 +124,7 @@ final class StripeGateway implements PaymentGateway, ProbesHealth
             return new Result((string) $payment->gateway_intent_id, 'failed', failure: new Failure(
                 code: 'invalid_amount',
                 field: 'amount',
-                message: 'The refund amount must be greater than zero.',
+                message: __('messages.refund.positive'),
             ));
         }
 

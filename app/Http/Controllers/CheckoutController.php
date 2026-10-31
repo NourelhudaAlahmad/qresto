@@ -172,7 +172,7 @@ class CheckoutController extends Controller
 
         if ($cart === null) {
             throw ValidationException::withMessages([
-                'cart' => 'Your cart is empty.',
+                'cart' => __('messages.cart.empty'),
             ]);
         }
 
@@ -267,7 +267,7 @@ class CheckoutController extends Controller
 
         if ($cart->lines->isEmpty()) {
             throw ValidationException::withMessages([
-                'cart' => 'Your cart is empty.',
+                'cart' => __('messages.cart.empty'),
             ]);
         }
 
@@ -400,7 +400,7 @@ class CheckoutController extends Controller
             || (int) $pendingOrderId !== (int) $validated['order_id']
         ) {
             throw ValidationException::withMessages([
-                'payment' => 'This payment challenge is no longer valid.',
+                'payment' => __('messages.checkout.challenge_invalid'),
             ]);
         }
 
@@ -424,7 +424,7 @@ class CheckoutController extends Controller
 
         if (! $validated['confirmed']) {
             throw ValidationException::withMessages([
-                'payment' => 'The card authentication was not completed.',
+                'payment' => __('messages.checkout.auth_not_completed'),
             ]);
         }
 
@@ -443,7 +443,7 @@ class CheckoutController extends Controller
 
         if ($result['requires_action']) {
             throw ValidationException::withMessages([
-                'payment' => 'Card authentication is still required.',
+                'payment' => __('messages.checkout.auth_required'),
             ]);
         }
 
@@ -467,7 +467,7 @@ class CheckoutController extends Controller
 
         if ($cart === null) {
             throw ValidationException::withMessages([
-                'promo_code' => 'Your cart is empty.',
+                'promo_code' => __('messages.cart.empty'),
             ]);
         }
 
@@ -487,7 +487,7 @@ class CheckoutController extends Controller
 
         if ($cart->lines->isEmpty()) {
             throw ValidationException::withMessages([
-                'promo_code' => 'Your cart is empty.',
+                'promo_code' => __('messages.cart.empty'),
             ]);
         }
 

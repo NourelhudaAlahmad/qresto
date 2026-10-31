@@ -32,7 +32,7 @@ class ReportRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'end.after_or_equal' => 'The end date must be on or after the start date.',
+            'end.after_or_equal' => __('messages.reports.end_after_start'),
         ];
     }
 

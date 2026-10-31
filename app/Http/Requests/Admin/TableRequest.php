@@ -65,8 +65,8 @@ class TableRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'number.unique' => 'There is already a table with that number.',
-            'number.regex' => 'Use letters, numbers, spaces or dashes.',
+            'number.unique' => __('messages.tables.number_taken'),
+            'number.regex' => __('messages.tables.number_format'),
         ];
     }
 }

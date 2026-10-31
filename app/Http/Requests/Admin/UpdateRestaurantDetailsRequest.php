@@ -44,11 +44,11 @@ class UpdateRestaurantDetailsRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'currency.in' => 'Pick a currency from the list.',
-            'timezone.in' => 'Pick a timezone from the list.',
-            'supported_locales.*.in' => 'That language is not available yet.',
-            'default_locale.in' => 'The default language must be one of the languages you offer.',
-            'service_charge_pct.max' => 'A service charge above 30% is almost certainly a typo.',
+            'currency.in' => __('messages.restaurant.currency'),
+            'timezone.in' => __('messages.restaurant.timezone'),
+            'supported_locales.*.in' => __('messages.restaurant.locale_unavailable'),
+            'default_locale.in' => __('messages.restaurant.default_locale'),
+            'service_charge_pct.max' => __('messages.restaurant.service_charge_max'),
         ];
     }
 }

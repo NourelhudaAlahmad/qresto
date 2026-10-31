@@ -221,7 +221,7 @@ final class FakeGateway implements PaymentGateway, ProbesHealth
                 failure: new Failure(
                     code: 'invalid_amount',
                     field: 'amount',
-                    message: 'The refund amount must be greater than zero.',
+                    message: __('messages.refund.positive'),
                 ),
             );
         }

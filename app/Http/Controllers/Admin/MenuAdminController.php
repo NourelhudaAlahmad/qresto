@@ -145,7 +145,7 @@ class MenuAdminController extends Controller
 
         if ($category->items()->exists()) {
             throw ValidationException::withMessages([
-                'category' => 'Move or delete its dishes first.',
+                'category' => __('messages.menu.category_not_empty'),
             ]);
         }
 
@@ -250,7 +250,7 @@ class MenuAdminController extends Controller
 
         if ($onOpenOrder) {
             throw ValidationException::withMessages([
-                'dish' => "{$item->name} is on an open order. Delete it once those orders are paid.",
+                'dish' => __('messages.menu.dish_on_open_order', ['dish' => $item->name]),
             ]);
         }
 

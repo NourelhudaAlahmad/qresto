@@ -488,7 +488,7 @@ class ManagerDashboardController extends Controller
 
         if ($waiter === null) {
             throw ValidationException::withMessages([
-                'assigned_user_id' => 'Select an active waiter from this restaurant.',
+                'assigned_user_id' => __('messages.orders.reassign_waiter'),
             ]);
         }
 
@@ -503,7 +503,7 @@ class ManagerDashboardController extends Controller
                 OrderStatus::CANCELLED,
             ], true)) {
                 throw ValidationException::withMessages([
-                    'order' => 'Only active orders can be reassigned.',
+                    'order' => __('messages.orders.reassign_active_only'),
                 ]);
             }
 

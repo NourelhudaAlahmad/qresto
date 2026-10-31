@@ -62,7 +62,7 @@ final class SettlePayment
             if ($this->isOfflineMethod($method)) {
                 if ($takenBy === null) {
                     throw ValidationException::withMessages([
-                        'payment' => 'A staff member is required to settle this payment.',
+                        'payment' => __('messages.payment.staff_required'),
                     ]);
                 }
 
@@ -88,7 +88,7 @@ final class SettlePayment
 
             if ($payment->gateway_intent_id === null) {
                 throw ValidationException::withMessages([
-                    'payment' => 'This payment does not have a gateway intent.',
+                    'payment' => __('messages.payment.no_intent'),
                 ]);
             }
 
@@ -175,19 +175,19 @@ final class SettlePayment
 
         if ($paymentMinor <= 0) {
             throw ValidationException::withMessages([
-                'payment' => 'Payment amount must be greater than zero.',
+                'payment' => __('messages.payment.positive'),
             ]);
         }
 
         if ($remainingMinor <= 0) {
             throw ValidationException::withMessages([
-                'payment' => 'This order has already been fully paid.',
+                'payment' => __('messages.payment.already_paid_full'),
             ]);
         }
 
         if ($paymentMinor > $remainingMinor) {
             throw ValidationException::withMessages([
-                'payment' => 'Payment amount exceeds the remaining balance.',
+                'payment' => __('messages.payment.exceeds_balance'),
             ]);
         }
     }
@@ -209,7 +209,7 @@ final class SettlePayment
 
         if ($paidMinor > $totalMinor) {
             throw ValidationException::withMessages([
-                'payment' => 'Payments exceed the order total.',
+                'payment' => __('messages.payment.exceeds_total'),
             ]);
         }
 

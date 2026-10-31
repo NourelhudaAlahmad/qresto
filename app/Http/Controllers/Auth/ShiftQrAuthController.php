@@ -51,7 +51,7 @@ class ShiftQrAuthController extends Controller
 
         if ($restaurant === null) {
             throw ValidationException::withMessages([
-                'token' => 'Invalid or expired shift QR.',
+                'token' => __('messages.auth.shift_qr_invalid'),
             ]);
         }
 
@@ -62,7 +62,7 @@ class ShiftQrAuthController extends Controller
 
         if ($staff === null) {
             throw ValidationException::withMessages([
-                'token' => 'Invalid, expired, or already used shift QR.',
+                'token' => __('messages.auth.shift_qr_used'),
             ]);
         }
 

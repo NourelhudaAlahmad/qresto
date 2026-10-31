@@ -169,7 +169,7 @@ final class FloorController extends Controller
 
             if ($lockedTable->state !== TableState::FREE) {
                 throw ValidationException::withMessages([
-                    'table' => 'Only free tables can be seated.',
+                    'table' => __('messages.floor.only_free_seated'),
                 ]);
             }
 
@@ -177,7 +177,7 @@ final class FloorController extends Controller
 
             if ($partySize > (int) $lockedTable->seats) {
                 throw ValidationException::withMessages([
-                    'party_size' => 'Party size cannot exceed the table capacity.',
+                    'party_size' => __('messages.floor.party_too_big'),
                 ]);
             }
 
@@ -194,7 +194,7 @@ final class FloorController extends Controller
 
             if ($hasUnpaidOrders) {
                 throw ValidationException::withMessages([
-                    'table' => 'Cannot seat a table with an unpaid order.',
+                    'table' => __('messages.floor.seat_unpaid'),
                 ]);
             }
 
@@ -231,7 +231,7 @@ final class FloorController extends Controller
 
             if ($hasUnpaidOrders) {
                 throw ValidationException::withMessages([
-                    'table' => 'Cannot free this table while an unpaid bill exists.',
+                    'table' => __('messages.floor.free_unpaid'),
                 ]);
             }
 
@@ -304,19 +304,19 @@ final class FloorController extends Controller
 
             if ($order === null) {
                 throw ValidationException::withMessages([
-                    'order_id' => 'Order not found for this table.',
+                    'order_id' => __('messages.floor.order_not_found'),
                 ]);
             }
 
             if ($order->is_paid) {
                 throw ValidationException::withMessages([
-                    'payment' => 'This order has already been paid.',
+                    'payment' => __('messages.floor.already_paid'),
                 ]);
             }
 
             if ($order->status !== OrderStatus::SERVED) {
                 throw ValidationException::withMessages([
-                    'payment' => 'The order must be served before payment.',
+                    'payment' => __('messages.floor.serve_first'),
                 ]);
             }
 
@@ -332,7 +332,7 @@ final class FloorController extends Controller
 
             if ($remainingMinor <= 0) {
                 throw ValidationException::withMessages([
-                    'payment' => 'This order has already been fully paid.',
+                    'payment' => __('messages.payment.already_paid_full'),
                 ]);
             }
 
@@ -345,7 +345,7 @@ final class FloorController extends Controller
 
             if ($amountMinor > $remainingMinor) {
                 throw ValidationException::withMessages([
-                    'amount_minor' => 'Payment exceeds the remaining balance.',
+                    'amount_minor' => __('messages.floor.exceeds_balance'),
                 ]);
             }
 
@@ -361,7 +361,7 @@ final class FloorController extends Controller
             if ($pendingPayment !== null) {
                 if ($pendingPayment->method !== $validated['method']) {
                     throw ValidationException::withMessages([
-                        'method' => 'Payment method does not match the order.',
+                        'method' => __('messages.floor.method_mismatch'),
                     ]);
                 }
 
@@ -374,7 +374,7 @@ final class FloorController extends Controller
                         !== $remainingMinor
                     ) {
                         throw ValidationException::withMessages([
-                            'payment' => 'An existing pending payment must be settled as recorded.',
+                            'payment' => __('messages.floor.pending_as_recorded'),
                         ]);
                     }
 
@@ -405,7 +405,7 @@ final class FloorController extends Controller
                 !== PaymentStatus::PAID->value
             ) {
                 throw ValidationException::withMessages([
-                    'payment' => 'Payment could not be completed.',
+                    'payment' => __('messages.floor.payment_failed'),
                 ]);
             }
 

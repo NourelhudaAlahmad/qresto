@@ -140,7 +140,7 @@ class ReportController extends Controller
         );
 
         if ($range['start']->diffInDays($range['end']) + 1 > self::MAX_DAYS) {
-            throw ValidationException::withMessages(['end' => 'Pick a range of at most a year.']);
+            throw ValidationException::withMessages(['end' => __('messages.reports.range_max')]);
         }
 
         return [$restaurant, $range, $this->report->build($restaurant, $range['start'], $range['end'])];

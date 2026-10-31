@@ -109,7 +109,7 @@ class WaiterOrderController extends Controller
 
             if ($next === null) {
                 throw ValidationException::withMessages([
-                    'order' => 'This order cannot be advanced.',
+                    'order' => __('messages.orders.cannot_advance'),
                 ]);
             }
 
@@ -159,7 +159,7 @@ class WaiterOrderController extends Controller
                 )
             ) {
                 throw ValidationException::withMessages([
-                    'order' => 'This order cannot be voided.',
+                    'order' => __('messages.orders.cannot_void'),
                 ]);
             }
 

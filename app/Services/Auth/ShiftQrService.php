@@ -22,7 +22,7 @@ class ShiftQrService
             || ! $staff->is_active
         ) {
             throw ValidationException::withMessages([
-                'staff' => 'Not authorized to issue a shift QR for this staff member.',
+                'staff' => __('messages.auth.shift_qr_not_authorized'),
             ]);
         }
 

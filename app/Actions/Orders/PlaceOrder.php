@@ -67,19 +67,19 @@ final class PlaceOrder
 
             if ($lines->isEmpty()) {
                 throw ValidationException::withMessages([
-                    'cart' => 'Your cart is empty.',
+                    'cart' => __('messages.cart.empty'),
                 ]);
             }
 
             if ($tipAmount->currency() !== $cart->currency) {
                 throw ValidationException::withMessages([
-                    'tip' => 'The tip currency does not match the cart currency.',
+                    'tip' => __('messages.checkout.tip_currency'),
                 ]);
             }
 
             if ($splitWays < 1 || $splitWays > 8) {
                 throw ValidationException::withMessages([
-                    'split_ways' => 'Split ways must be between 1 and 8.',
+                    'split_ways' => __('messages.checkout.split_ways'),
                 ]);
             }
 
@@ -108,7 +108,7 @@ final class PlaceOrder
 
                     if ($existingPayment === null) {
                         throw ValidationException::withMessages([
-                            'checkout' => 'The existing order does not have a payment.',
+                            'checkout' => __('messages.checkout.existing_order_no_payment'),
                         ]);
                     }
 
@@ -203,7 +203,7 @@ final class PlaceOrder
 
                 if ($payment === null) {
                     throw ValidationException::withMessages([
-                        'checkout' => 'The current order does not have a payment.',
+                        'checkout' => __('messages.checkout.current_order_no_payment'),
                     ]);
                 }
 
@@ -212,7 +212,7 @@ final class PlaceOrder
                     !== PaymentStatus::PENDING->value
                 ) {
                     throw ValidationException::withMessages([
-                        'checkout' => 'The current bill cannot accept more items.',
+                        'checkout' => __('messages.checkout.bill_closed'),
                     ]);
                 }
 
@@ -222,7 +222,7 @@ final class PlaceOrder
                  */
                 if (! $this->isOfflineMethod($method)) {
                     throw ValidationException::withMessages([
-                        'checkout' => 'Order more requires cash or POS while the current bill is open.',
+                        'checkout' => __('messages.checkout.order_more_method'),
                     ]);
                 }
 
@@ -535,7 +535,7 @@ final class PlaceOrder
 
         if (strlen($key) > 100) {
             throw ValidationException::withMessages([
-                'idempotency_key' => 'The idempotency key may not be greater than 100 characters.',
+                'idempotency_key' => __('messages.checkout.idempotency_key'),
             ]);
         }
 

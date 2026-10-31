@@ -35,7 +35,7 @@ class EnsureStaffAccountCanAuthenticate
             ]);
 
             throw ValidationException::withMessages([
-                'code' => 'This account is unavailable.',
+                'code' => __('messages.auth.account_unavailable'),
             ]);
         }
 
@@ -48,7 +48,7 @@ class EnsureStaffAccountCanAuthenticate
             ]);
 
             throw ValidationException::withMessages([
-                'code' => "Account locked. Try again in {$minutes} minute(s).",
+                'code' => __('messages.auth.locked_for', ['minutes' => $minutes]),
             ]);
         }
 

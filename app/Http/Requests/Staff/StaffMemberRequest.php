@@ -60,12 +60,12 @@ abstract class StaffMemberRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Enter the full name.',
-            'email.required' => 'Enter a work email.',
-            'email.email' => 'Enter a work email, like name@albustan.co.',
-            'email.unique' => 'Someone already uses this email.',
-            'role.in' => 'You can add waiters, runners, cashiers and kitchen staff only.',
-            'tables.*.exists' => 'One of those tables is not on this floor.',
+            'name.required' => __('messages.staff.name_required'),
+            'email.required' => __('messages.staff.email_required'),
+            'email.email' => __('messages.staff.email_format'),
+            'email.unique' => __('messages.staff.email_taken'),
+            'role.in' => __('messages.staff.role_allowed'),
+            'tables.*.exists' => __('messages.staff.table_not_on_floor'),
         ];
     }
 }

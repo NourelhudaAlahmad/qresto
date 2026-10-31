@@ -24,7 +24,7 @@ final class PromotionValidator
 
         if ($promotion === null) {
             throw ValidationException::withMessages([
-                'promo_code' => 'This promo code is invalid.',
+                'promo_code' => __('messages.promo.invalid'),
             ]);
         }
 
@@ -33,7 +33,7 @@ final class PromotionValidator
             && $promotion->starts_at->isFuture()
         ) {
             throw ValidationException::withMessages([
-                'promo_code' => 'This promo code is not active yet.',
+                'promo_code' => __('messages.promo.not_active'),
             ]);
         }
 
@@ -42,7 +42,7 @@ final class PromotionValidator
             && $promotion->ends_at->isPast()
         ) {
             throw ValidationException::withMessages([
-                'promo_code' => 'This promo code has expired.',
+                'promo_code' => __('messages.promo.expired'),
             ]);
         }
 
@@ -51,7 +51,7 @@ final class PromotionValidator
             && $promotion->uses >= $promotion->max_uses
         ) {
             throw ValidationException::withMessages([
-                'promo_code' => 'This promo code has reached its usage limit.',
+                'promo_code' => __('messages.promo.limit_reached'),
             ]);
         }
 
@@ -64,7 +64,7 @@ final class PromotionValidator
             ),
 
             default => throw ValidationException::withMessages([
-                'promo_code' => 'This promo code is invalid.',
+                'promo_code' => __('messages.promo.invalid'),
             ]),
         };
 

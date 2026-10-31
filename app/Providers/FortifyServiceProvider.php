@@ -72,9 +72,9 @@ class FortifyServiceProvider extends ServiceProvider
             if ($lockout->isLocked($user)) {
                 throw ValidationException::withMessages([
                     'email' => [
-                        'Account locked. Try again in '
-                            .$lockout->remainingMinutes($user)
-                            .' minute(s).',
+                        __('messages.auth.locked_for', [
+                            'minutes' => $lockout->remainingMinutes($user),
+                        ]),
                     ],
                 ]);
             }
@@ -94,7 +94,7 @@ class FortifyServiceProvider extends ServiceProvider
 
                     throw ValidationException::withMessages([
                         'email' => [
-                            'Account locked for 10 minutes after 3 failed sign-in attempts.',
+                            __('messages.auth.locked_after_attempts'),
                         ],
                     ]);
                 }

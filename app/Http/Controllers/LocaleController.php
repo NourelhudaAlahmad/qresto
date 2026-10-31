@@ -24,7 +24,7 @@ class LocaleController extends Controller
                 $restaurant !== null
                 && ! in_array($locale, $restaurant->supported_locales ?? [], true)
             ) {
-                abort(422, 'The selected locale is not supported by this restaurant.');
+                abort(422, __('messages.locale.unsupported'));
             }
 
             $user->update([

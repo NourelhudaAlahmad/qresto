@@ -44,19 +44,19 @@ final class RefundPayment
 
             if ($payment->status !== PaymentStatus::PAID->value) {
                 throw ValidationException::withMessages([
-                    'payment' => 'Only paid payments can be refunded.',
+                    'payment' => __('messages.refund.only_paid'),
                 ]);
             }
 
             if ($amount->currency() !== $payment->amount->currency()) {
                 throw ValidationException::withMessages([
-                    'amount' => 'The refund currency does not match the payment currency.',
+                    'amount' => __('messages.refund.currency'),
                 ]);
             }
 
             if ($amount->amount() <= 0) {
                 throw ValidationException::withMessages([
-                    'amount' => 'The refund amount must be greater than zero.',
+                    'amount' => __('messages.refund.positive'),
                 ]);
             }
 
@@ -72,7 +72,7 @@ final class RefundPayment
 
             if ($amount->amount() > $remaining->amount()) {
                 throw ValidationException::withMessages([
-                    'amount' => 'The refund amount exceeds the remaining payment amount.',
+                    'amount' => __('messages.refund.exceeds'),
                 ]);
             }
 

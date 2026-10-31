@@ -78,9 +78,9 @@ class DishRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'photo.dimensions' => 'Use a 4:3 photo at least 1200px wide.',
-            'photo.mimes' => 'Use a JPEG, PNG or WebP photo.',
-            'price.regex' => 'Enter a price like 18 or 18.50.',
+            'photo.dimensions' => __('messages.menu.photo_dimensions'),
+            'photo.mimes' => __('messages.menu.photo_type'),
+            'price.regex' => __('messages.menu.price_format'),
         ];
     }
 }

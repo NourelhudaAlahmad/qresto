@@ -41,7 +41,7 @@ class CartLineController extends Controller
 
         if ($item === null) {
             throw ValidationException::withMessages([
-                'menu_item_id' => __('The selected menu item is invalid.'),
+                'menu_item_id' => __('messages.cart.item_invalid'),
             ]);
         }
 
@@ -53,7 +53,7 @@ class CartLineController extends Controller
 
         if (! $availableItem) {
             throw ValidationException::withMessages([
-                'menu_item_id' => __('This item is currently unavailable.'),
+                'menu_item_id' => __('messages.cart.item_unavailable'),
             ]);
         }
 
@@ -69,9 +69,7 @@ class CartLineController extends Controller
 
             if ($variant === null) {
                 throw ValidationException::withMessages([
-                    'menu_item_variant_id' => __(
-                        'The selected variant is invalid.',
-                    ),
+                    'menu_item_variant_id' => __('messages.cart.variant_invalid'),
                 ]);
             }
         }
@@ -82,7 +80,7 @@ class CartLineController extends Controller
 
         if ($hasVariants && $variant === null) {
             throw ValidationException::withMessages([
-                'menu_item_variant_id' => __('Please select a variant.'),
+                'menu_item_variant_id' => __('messages.cart.variant_required'),
             ]);
         }
 
@@ -100,9 +98,7 @@ class CartLineController extends Controller
 
         if ($addons->count() !== count($addonIds)) {
             throw ValidationException::withMessages([
-                'addon_ids' => __(
-                    'One or more selected add-ons are invalid.',
-                ),
+                'addon_ids' => __('messages.cart.addons_invalid'),
             ]);
         }
 
@@ -110,9 +106,7 @@ class CartLineController extends Controller
             fn (MenuItemAddon $addon): bool => ! $addon->is_available,
         )) {
             throw ValidationException::withMessages([
-                'addon_ids' => __(
-                    'One or more selected add-ons are unavailable.',
-                ),
+                'addon_ids' => __('messages.cart.addons_unavailable'),
             ]);
         }
 
@@ -205,9 +199,7 @@ class CartLineController extends Controller
 
                 if ($newQty > 99) {
                     throw ValidationException::withMessages([
-                        'qty' => __(
-                            'The total quantity may not be greater than 99.',
-                        ),
+                        'qty' => __('messages.cart.qty_max'),
                     ]);
                 }
 
