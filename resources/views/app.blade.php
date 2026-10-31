@@ -47,7 +47,7 @@
         crossorigin
     >
     <link
-        href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+Arabic:wght@300..800&family=Outfit:wght@300..700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Kufi+Arabic:wght@400..700&family=Noto+Sans+Arabic:wght@300..800&family=Outfit:wght@300..700&display=swap"
         rel="stylesheet"
     >
 

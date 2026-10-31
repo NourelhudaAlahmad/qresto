@@ -1,12 +1,28 @@
 /* Webfonts — served from Google Fonts.
-   SUBSTITUTION NOTE: QResto shipped no font binaries. These three faces are the
+   SUBSTITUTION NOTE: QResto shipped no font binaries. These faces are the
    chosen brand faces, loaded from the Google Fonts CDN. If licensed binaries
    arrive later, drop them in assets/fonts/ and swap these @import lines for
-   local @font-face rules — the token names below never change. */
+   local @font-face rules — the token names below never change.
+
+   ARABIC (#40): Outfit, Familjen Grotesk and JetBrains Mono have no Arabic,
+   so without an Arabic face every Arabic glyph fell to whatever system-ui
+   is on the device (Geeza Pro, Segoe UI, Roboto…). Chosen alongside them:
+     - UI:      Noto Sans Arabic — clear at 13–17px, low contrast like Outfit.
+     - Display: Noto Kufi Arabic — geometric Kufi with weights to 700, the
+                Arabic partner to Familjen Grotesk's titles (كفتة لحم beside
+                Lamb kofta). Same Noto family, so the two Arabic faces agree.
+   Each sits AFTER the Latin faces in its stack: Latin text, digits and
+   punctuation keep Outfit / Familjen, and only Arabic reaches the Arabic
+   face. Numbers inside <Numeric> stay JetBrains Mono in both directions
+   ([data-numeric] / .qr-numeric force --font-mono). The CSS2 API serves each
+   face split by unicode-range, so a page downloads the Arabic or Latin
+   subset only when it draws those characters. */
 
 :root {
-    --font-display: 'Familjen Grotesk', 'Helvetica Neue', Helvetica, sans-serif;
+    --font-display:
+        'Familjen Grotesk', 'Noto Kufi Arabic', 'Helvetica Neue', Helvetica,
+        sans-serif;
     --font-ui:
-        'Noto Sans Arabic', 'Outfit', 'Familjen Grotesk', system-ui, sans-serif;
+        'Outfit', 'Familjen Grotesk', 'Noto Sans Arabic', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
