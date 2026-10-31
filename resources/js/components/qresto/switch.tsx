@@ -12,7 +12,7 @@ function Switch({
             <SwitchPrimitive.Root
                 data-slot="qresto-switch"
                 className={cn(
-                    'rounded-pill peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center',
+                    'touch-target rounded-pill peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center',
                     'border-border-default bg-surface-sunken border',
                     'duration-fast ease-standard transition-[background-color,border-color,box-shadow]',
                     'outline-none',

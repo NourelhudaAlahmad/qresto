@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import Floor from '@/pages/staff/floor';
+import { expectNoCriticalA11y } from '@/tests/a11y';
 
 vi.mock('@inertiajs/react', () => ({
     Head: () => null,
@@ -88,5 +89,13 @@ describe('Floor map on the design components', () => {
         );
 
         expect(document.querySelectorAll('[data-state]').length).toBe(1);
+    });
+});
+
+describe('accessibility (#36)', () => {
+    it('has no critical axe violations', async () => {
+        const { container } = render(<Floor tables={tables} />);
+
+        await expectNoCriticalA11y(container);
     });
 });

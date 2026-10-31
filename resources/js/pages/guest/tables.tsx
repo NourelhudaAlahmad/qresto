@@ -93,7 +93,7 @@ export default function Tables({ current_table_id, tables }: TablesProps) {
                                     </div>
 
                                     <div className="mt-4">
-                                        <p className="text-text-primary text-sm font-semibold">
+                                        <p className="text-text-primary text-body font-semibold">
                                             Table {table.number}
                                         </p>
 

@@ -69,7 +69,7 @@ export function MenuItemCard({
                 )}
 
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-sm font-medium tabular-nums">
+                    <span className="text-body font-mono font-medium tabular-nums">
                         {price}
                     </span>
 

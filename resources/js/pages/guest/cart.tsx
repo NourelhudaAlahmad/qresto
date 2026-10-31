@@ -396,7 +396,7 @@ export default function CartPage({
                     <Link
                         href="/menu"
                         aria-label="Back to menu"
-                        className="-ms-2 grid size-9 shrink-0 place-items-center rounded-full text-[var(--text-primary)] transition-colors hover:bg-[var(--action-ghost-hover)]"
+                        className="touch-target -ms-2 grid size-9 shrink-0 place-items-center rounded-full text-[var(--text-primary)] transition-colors hover:bg-[var(--action-ghost-hover)]"
                     >
                         <svg
                             viewBox="0 0 24 24"

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Menu from '@/pages/guest/menu';
+import { expectNoCriticalA11y } from '@/tests/a11y';
 
 const visit = vi.fn();
 
@@ -375,5 +376,13 @@ describe('Guest menu page', () => {
         expect(
             screen.getByRole('dialog', { name: 'How can we help?' }),
         ).toBeInTheDocument();
+    });
+});
+
+describe('accessibility (#36)', () => {
+    it('has no critical axe violations', async () => {
+        const { container } = render(<Menu {...menuProps} />);
+
+        await expectNoCriticalA11y(container);
     });
 });

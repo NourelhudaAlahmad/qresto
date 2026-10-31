@@ -564,3 +564,21 @@
 .qr-stripe-field--invalid {
     border-color: var(--berry-500);
 }
+
+/*
+ * #36, rule 02: nothing interactive is under 44px. A control that is
+ * smaller to the eye keeps a 44 × 44 hit area around its centre.
+ */
+.touch-target {
+    position: relative;
+}
+
+.touch-target::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+}

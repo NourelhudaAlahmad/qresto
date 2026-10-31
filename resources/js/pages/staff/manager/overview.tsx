@@ -809,7 +809,7 @@ export default function ManagerOverview({
                                                     event.target.value,
                                                 )
                                             }
-                                            className="text-caption h-8 max-w-full rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--surface-card)] px-2 outline-none focus-visible:border-[var(--border-focus-color)] disabled:opacity-50"
+                                            className="text-caption h-11 max-w-full rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--surface-card)] px-3 outline-none focus-visible:border-[var(--border-focus-color)] disabled:opacity-50"
                                         >
                                             {order.assigned_waiter === null && (
                                                 <option value="">

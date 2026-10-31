@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Status from '@/pages/guest/status';
+import { expectNoCriticalA11y } from '@/tests/a11y';
 
 const useLiveDataMock = vi.fn();
 
@@ -269,5 +270,13 @@ describe('Guest order status', () => {
         expect(
             screen.getByRole('link', { name: 'Order more' }),
         ).toHaveAttribute('href', '/menu');
+    });
+});
+
+describe('accessibility (#36)', () => {
+    it('has no critical axe violations', async () => {
+        const { container } = render(<Status {...baseProps} />);
+
+        await expectNoCriticalA11y(container);
     });
 });

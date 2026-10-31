@@ -48,7 +48,7 @@ export function TabBar({ items, className = '', ariaLabel }: TabBarProps) {
                             {item.badge !== undefined && (
                                 <span
                                     key={String(item.badge)}
-                                    className="cart-badge-bump absolute -end-2.5 -top-1.5 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-[var(--clay-500)] px-1 font-mono text-[10px] text-white"
+                                    className="cart-badge-bump text-micro absolute -end-2.5 -top-1.5 grid h-[17px] min-w-[17px] place-items-center rounded-full bg-[var(--clay-500)] px-1 font-mono text-white"
                                 >
                                     {item.badge}
                                 </span>

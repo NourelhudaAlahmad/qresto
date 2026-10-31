@@ -86,7 +86,8 @@ const buttonVariants = cva(
             },
 
             size: {
-                sm: 'text-label h-[34px] px-4',
+                // 34px to the eye, a 44px hit area (#36, rule 02).
+                sm: 'text-label touch-target h-[34px] px-4',
                 md: 'text-label h-[44px] px-5',
                 lg: 'text-body-lg h-[54px] px-6',
             },
@@ -136,6 +137,8 @@ function Button({
     return (
         <Comp
             data-slot="qresto-button"
+            data-variant={variant ?? 'primary'}
+            data-size={size ?? 'md'}
             data-loading={loading || undefined}
             aria-busy={loading || undefined}
             disabled={!asChild ? isDisabled : undefined}

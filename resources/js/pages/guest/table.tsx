@@ -121,7 +121,7 @@ export default function Table({
                     className="flex min-h-[100dvh] items-center justify-center px-[var(--gutter-mobile)]"
                 >
                     <div
-                        className="text-herb-700 flex items-center gap-2 text-sm font-semibold"
+                        className="text-herb-700 text-body flex items-center gap-2 font-semibold"
                         role="status"
                         aria-live="polite"
                     >
@@ -143,7 +143,7 @@ export default function Table({
                 className="flex min-h-[100dvh] flex-col"
             >
                 <main className="flex flex-1 flex-col px-[var(--gutter-mobile)] pb-6 pt-8">
-                    <div className="text-herb-700 flex items-center gap-2 text-sm font-semibold">
+                    <div className="text-herb-700 text-body flex items-center gap-2 font-semibold">
                         <Icon iconNode={CircleCheck} className="size-4" />
                         <span>QR code read</span>
                     </div>

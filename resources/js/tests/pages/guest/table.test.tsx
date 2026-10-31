@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Table from '@/pages/guest/table';
+import { expectNoCriticalA11y } from '@/tests/a11y';
 
 const post = vi.fn();
 const visit = vi.fn();
@@ -149,5 +150,13 @@ describe('Guest table page', () => {
                 name: /open the menu/i,
             }),
         ).toBeEnabled();
+    });
+});
+
+describe('accessibility (#36)', () => {
+    it('has no critical axe violations', async () => {
+        const { container } = render(<Table {...tableProps} />);
+
+        await expectNoCriticalA11y(container);
     });
 });

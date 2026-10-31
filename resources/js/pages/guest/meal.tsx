@@ -203,7 +203,7 @@ export default function MealPage({ restaurant, item, translations }: Props) {
                             />
                         ) : (
                             <div className="flex h-full items-center justify-center bg-gradient-to-br from-stone-200 via-stone-100 to-amber-100">
-                                <span className="text-text-secondary text-xs font-medium">
+                                <span className="text-text-secondary text-caption font-medium">
                                     {item.name}
                                 </span>
                             </div>
@@ -223,7 +223,7 @@ export default function MealPage({ restaurant, item, translations }: Props) {
 
                         <div className="absolute inset-x-0 bottom-0 p-5 text-white">
                             {heroEyebrow ? (
-                                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/80">
+                                <p className="text-caption mb-2 font-semibold uppercase tracking-[0.12em] text-white/80">
                                     {heroEyebrow}
                                 </p>
                             ) : null}
@@ -245,7 +245,7 @@ export default function MealPage({ restaurant, item, translations }: Props) {
                                 </span>
 
                                 {prepText ? (
-                                    <span className="text-text-secondary text-xs">
+                                    <span className="text-text-secondary text-caption">
                                         {prepText}
                                     </span>
                                 ) : null}
@@ -258,7 +258,7 @@ export default function MealPage({ restaurant, item, translations }: Props) {
                             ) : null}
 
                             {!item.available ? (
-                                <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                                <div className="text-body rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-amber-950">
                                     {translations.sold_out_message}
                                 </div>
                             ) : null}
@@ -277,13 +277,13 @@ export default function MealPage({ restaurant, item, translations }: Props) {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-text-secondary text-sm">
+                                    <p className="text-text-secondary text-body">
                                         {translations.no_allergens}
                                     </p>
                                 )}
 
                                 {mayContainAllergens.length > 0 ? (
-                                    <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                                    <div className="text-body rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-amber-950">
                                         <span className="font-medium">
                                             {translations.allergens_nearby}:
                                         </span>{' '}
@@ -331,14 +331,14 @@ export default function MealPage({ restaurant, item, translations }: Props) {
                                 </RadioGroup>
                             ) : (
                                 <div className="border-border-default bg-surface-card flex min-h-14 items-center rounded-md border px-4">
-                                    <span className="text-text-secondary text-sm">
+                                    <span className="text-text-secondary text-body">
                                         {translations.no_size_options}
                                     </span>
                                 </div>
                             )}
 
                             {errors.menu_item_variant_id ? (
-                                <p className="text-sm text-red-600">
+                                <p className="text-body text-red-600">
                                     {errors.menu_item_variant_id}
                                 </p>
                             ) : null}
@@ -352,7 +352,7 @@ export default function MealPage({ restaurant, item, translations }: Props) {
                                     {translations.add_on}
                                 </h2>
 
-                                <span className="text-text-secondary text-xs">
+                                <span className="text-text-secondary text-caption">
                                     {translations.optional}
                                 </span>
                             </div>
@@ -405,7 +405,7 @@ export default function MealPage({ restaurant, item, translations }: Props) {
 
                                                 <span
                                                     dir="ltr"
-                                                    className="font-mono text-sm tabular-nums"
+                                                    className="text-body font-mono tabular-nums"
                                                 >
                                                     {formatDelta(
                                                         addon.price_delta,
@@ -417,14 +417,14 @@ export default function MealPage({ restaurant, item, translations }: Props) {
                                 </div>
                             ) : (
                                 <div className="border-border-default bg-surface-card flex min-h-14 items-center rounded-md border px-4">
-                                    <span className="text-text-secondary text-sm">
+                                    <span className="text-text-secondary text-body">
                                         {translations.no_addons}
                                     </span>
                                 </div>
                             )}
 
                             {errors.addon_ids ? (
-                                <p className="text-sm text-red-600">
+                                <p className="text-body text-red-600">
                                     {errors.addon_ids}
                                 </p>
                             ) : null}
@@ -449,24 +449,26 @@ export default function MealPage({ restaurant, item, translations }: Props) {
                             />
 
                             {errors.note ? (
-                                <p className="text-sm text-red-600">
+                                <p className="text-body text-red-600">
                                     {errors.note}
                                 </p>
                             ) : null}
 
-                            <p className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
+                            <p className="text-body rounded-md border border-amber-300 bg-amber-50 px-4 py-3 leading-6 text-amber-950">
                                 {translations.note_promise}
                             </p>
                         </section>
 
                         {errors.menu_item_id ? (
-                            <p className="text-sm text-red-600">
+                            <p className="text-body text-red-600">
                                 {errors.menu_item_id}
                             </p>
                         ) : null}
 
                         {errors.qty ? (
-                            <p className="text-sm text-red-600">{errors.qty}</p>
+                            <p className="text-body text-red-600">
+                                {errors.qty}
+                            </p>
                         ) : null}
                     </div>
                 </main>

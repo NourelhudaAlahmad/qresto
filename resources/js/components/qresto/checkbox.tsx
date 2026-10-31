@@ -13,7 +13,7 @@ function Checkbox({
             <CheckboxPrimitive.Root
                 data-slot="qresto-checkbox"
                 className={cn(
-                    'rounded-xs border-border-default bg-surface-card peer size-5 shrink-0 border',
+                    'touch-target rounded-xs border-border-default bg-surface-card peer size-5 shrink-0 border',
                     'duration-fast ease-standard transition-[background-color,border-color,box-shadow,color]',
                     'outline-none',
                     'focus-visible:border-border-brand focus-visible:ring-[var(--clay-500)]/30 focus-visible:ring-[3px]',

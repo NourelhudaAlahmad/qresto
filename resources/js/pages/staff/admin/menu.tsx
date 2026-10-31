@@ -872,7 +872,7 @@ function Editor({
                             <button
                                 type="button"
                                 aria-label={`Remove ${tag.name}`}
-                                className="grid size-6 place-items-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--action-ghost-hover)]"
+                                className="touch-target grid size-6 place-items-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--action-ghost-hover)]"
                                 onClick={() =>
                                     set(
                                         'allergens',
@@ -1077,7 +1077,7 @@ function OptionRows({
             <button
                 type="button"
                 onClick={() => onChange([...rows, { ...blank }])}
-                className="text-label flex min-h-9 items-center gap-1 self-start font-semibold text-[var(--text-link)]"
+                className="text-label touch-target flex min-h-9 items-center gap-1 self-start font-semibold text-[var(--text-link)]"
             >
                 <Plus className="size-4" aria-hidden />
                 Add {title.toLowerCase().replace(/s$/, '')}

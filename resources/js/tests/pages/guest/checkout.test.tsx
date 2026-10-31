@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import CheckoutPage from '@/pages/guest/checkout';
+import { expectNoCriticalA11y } from '@/tests/a11y';
 
 class ResizeObserverMock {
     observe() {}
@@ -478,5 +479,13 @@ describe('Guest checkout page', () => {
         );
 
         expect(visit).toHaveBeenCalledWith('/cart');
+    });
+});
+
+describe('accessibility (#36)', () => {
+    it('has no critical axe violations', async () => {
+        const { container } = render(<CheckoutPage {...checkoutProps} />);
+
+        await expectNoCriticalA11y(container);
     });
 });

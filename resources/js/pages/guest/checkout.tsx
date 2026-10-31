@@ -2,6 +2,7 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 
+import { Numeric } from '@/components/numeric';
 import { Button } from '@/components/qresto/button';
 import { Card } from '@/components/qresto/card';
 import { ChipFilter } from '@/components/qresto/chip-filter';
@@ -699,6 +700,7 @@ export default function CheckoutPage({
                                                 <section className="grid grid-cols-2 gap-2">
                                                     {wallets.applePay ? (
                                                         <Button
+                                                            variant="secondary"
                                                             type="button"
                                                             fullWidth
                                                             onClick={
@@ -744,6 +746,7 @@ export default function CheckoutPage({
                                         <>
                                             <section className="grid grid-cols-2 gap-2">
                                                 <Button
+                                                    variant="secondary"
                                                     type="button"
                                                     disabled
                                                     fullWidth
@@ -1196,7 +1199,11 @@ export default function CheckoutPage({
                                                 </span>
 
                                                 <strong className="text-title-3 text-text-primary">
-                                                    {formatMoney(shareMoney)}
+                                                    <Numeric>
+                                                        {formatMoney(
+                                                            shareMoney,
+                                                        )}
+                                                    </Numeric>
                                                 </strong>
                                             </div>
 

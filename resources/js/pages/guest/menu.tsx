@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
+import { Numeric } from '@/components/numeric';
 import { Button } from '@/components/qresto/button';
 import { CallWaiterSheet } from '@/components/qresto/call-waiter-sheet';
 import { ChipFilter } from '@/components/qresto/chip-filter';
@@ -212,7 +213,7 @@ export default function Menu({
                                 </h1>
 
                                 {restaurant.closes_today_at && (
-                                    <p className="mt-1 font-mono text-xs tracking-[0.02em] text-[var(--text-tertiary)]">
+                                    <p className="text-caption mt-1 font-mono tracking-[0.02em] text-[var(--text-tertiary)]">
                                         Kitchen closes{' '}
                                         <span dir="ltr">
                                             {restaurant.closes_today_at}
@@ -221,7 +222,7 @@ export default function Menu({
                                 )}
                             </div>
 
-                            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--clay-50)] px-3 py-2 text-xs font-semibold text-[var(--clay-700)]">
+                            <span className="text-caption inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--clay-50)] px-3 py-2 font-semibold text-[var(--clay-700)]">
                                 <span aria-hidden="true">🍴</span>
                                 Table {table.number}
                             </span>
@@ -376,7 +377,7 @@ export default function Menu({
                         >
                             View order · {cart.count}{' '}
                             {cart.count === 1 ? 'item' : 'items'} ·{' '}
-                            {cart.subtotal.formatted}
+                            <Numeric>{cart.subtotal.formatted}</Numeric>
                         </Button>
                     </StickyDock>
                 )}

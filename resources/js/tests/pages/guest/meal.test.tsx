@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import MealPage from '@/pages/guest/meal';
+import { expectNoCriticalA11y } from '@/tests/a11y';
 
 const visit = vi.fn();
 const post = vi.fn();
@@ -138,5 +139,13 @@ describe('Guest meal page', () => {
         fireEvent.click(addButton);
 
         expect(post).not.toHaveBeenCalled();
+    });
+});
+
+describe('accessibility (#36)', () => {
+    it('has no critical axe violations', async () => {
+        const { container } = render(<MealPage {...baseProps} />);
+
+        await expectNoCriticalA11y(container);
     });
 });

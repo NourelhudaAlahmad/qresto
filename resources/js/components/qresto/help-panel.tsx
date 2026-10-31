@@ -49,7 +49,7 @@ export function HelpPanel({
             <div className="space-y-5">
                 <section className="space-y-2">
                     <h3 className="font-semibold">Allergen information</h3>
-                    <p className="text-sm text-[var(--text-secondary)]">
+                    <p className="text-body text-[var(--text-secondary)]">
                         Allergens are listed on each dish. Please tell your
                         waiter about any food allergies before ordering. Kitchen
                         equipment may be shared.
@@ -62,12 +62,12 @@ export function HelpPanel({
                     {restaurantPhone ? (
                         <a
                             href={`tel:${restaurantPhone}`}
-                            className="inline-block text-sm font-medium underline"
+                            className="text-body inline-block font-medium underline"
                         >
                             {restaurantPhone}
                         </a>
                     ) : (
-                        <p className="text-sm text-[var(--text-secondary)]">
+                        <p className="text-body text-[var(--text-secondary)]">
                             Phone number unavailable.
                         </p>
                     )}

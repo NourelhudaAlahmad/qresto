@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Reports, { methodLabel } from '@/pages/staff/reports';
+import { expectNoCriticalA11y } from '@/tests/a11y';
 
 const get = vi.fn();
 
@@ -150,5 +151,13 @@ describe('Reports (#32)', () => {
         expect(methodLabel('pos')).toBe('POS');
         expect(methodLabel('card')).toBe('Card');
         expect(methodLabel(null)).toBe('');
+    });
+});
+
+describe('accessibility (#36)', () => {
+    it('has no critical axe violations', async () => {
+        const { container } = render(<Reports {...props} />);
+
+        await expectNoCriticalA11y(container);
     });
 });

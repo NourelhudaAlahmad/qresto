@@ -145,8 +145,9 @@
                                 {{ $line->name_snapshot }}
                             </p>
 
+                            {{-- #36, rule 04: guest notes echo in saffron everywhere. --}}
                             @if ($line->note)
-                                <p class="mt-1 text-xs leading-relaxed text-text-secondary">
+                                <p class="mt-1 text-caption leading-relaxed font-medium text-[var(--warning-fg)]" data-guest-note>
                                     {{ $line->note }}
                                 </p>
                             @endif

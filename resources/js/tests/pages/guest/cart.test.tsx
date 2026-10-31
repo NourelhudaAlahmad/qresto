@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import CartPage from '@/pages/guest/cart';
+import { expectNoCriticalA11y } from '@/tests/a11y';
 
 const visit = vi.fn();
 
@@ -201,5 +202,13 @@ describe('Guest cart page', () => {
         expect(screen.getByRole('button', { name: /Status/ })).toBeDisabled();
 
         expect(screen.getByRole('button', { name: 'Help' })).toBeDisabled();
+    });
+});
+
+describe('accessibility (#36)', () => {
+    it('has no critical axe violations', async () => {
+        const { container } = render(<CartPage {...cartProps} />);
+
+        await expectNoCriticalA11y(container);
     });
 });

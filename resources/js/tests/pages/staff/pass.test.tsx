@@ -8,6 +8,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Pass, { aggregates } from '@/pages/staff/kitchen/pass';
+import { expectNoCriticalA11y } from '@/tests/a11y';
 
 const post = vi.fn();
 const get = vi.fn();
@@ -236,5 +237,13 @@ describe('Kitchen pass (#33)', () => {
             '/app/kds/heartbeat',
             expect.objectContaining({ method: 'POST' }),
         );
+    });
+});
+
+describe('accessibility (#36)', () => {
+    it('has no critical axe violations', async () => {
+        const { container } = render(<Pass {...props} />);
+
+        await expectNoCriticalA11y(container);
     });
 });

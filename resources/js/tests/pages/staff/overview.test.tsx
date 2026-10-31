@@ -8,6 +8,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ManagerOverview from '@/pages/staff/manager/overview';
+import { expectNoCriticalA11y } from '@/tests/a11y';
 
 type VisitOptions = {
     onStart?: () => void;
@@ -256,5 +257,13 @@ describe('Manager overview staff management (#27)', () => {
         expect(within(dialog).getByRole('alert').textContent).toContain(
             'Reassign them first',
         );
+    });
+});
+
+describe('accessibility (#36)', () => {
+    it('has no critical axe violations', async () => {
+        const { container } = render(<ManagerOverview {...props} />);
+
+        await expectNoCriticalA11y(container);
     });
 });

@@ -327,7 +327,7 @@ export default function Landing({
 
             {flash?.error && (
                 <div role="alert" className="mx-auto max-w-[390px] px-3 pt-3">
-                    <div className="border-[var(--danger-solid)]/30 rounded-[var(--radius-md)] border bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]">
+                    <div className="border-[var(--danger-solid)]/30 text-body rounded-[var(--radius-md)] border bg-[var(--danger-bg)] px-4 py-3 text-[var(--danger-fg)]">
                         {flash.error}
                     </div>
                 </div>
@@ -358,7 +358,7 @@ export default function Landing({
                                 {scannerCopy.title}
                             </h2>
 
-                            <p className="text-text-secondary mt-2 text-sm leading-6">
+                            <p className="text-text-secondary text-body mt-2 leading-6">
                                 {scannerCopy.description}
                             </p>
                         </div>
@@ -373,7 +373,7 @@ export default function Landing({
                         {scannerError && (
                             <div
                                 role="alert"
-                                className="border-[var(--danger-solid)]/30 mt-4 rounded-[var(--radius-md)] border bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]"
+                                className="border-[var(--danger-solid)]/30 text-body mt-4 rounded-[var(--radius-md)] border bg-[var(--danger-bg)] px-4 py-3 text-[var(--danger-fg)]"
                             >
                                 {scannerError}
                             </div>
@@ -407,7 +407,7 @@ export default function Landing({
                                 {bookingCopy.title}
                             </h2>
 
-                            <p className="text-text-secondary mt-2 text-sm leading-6">
+                            <p className="text-text-secondary text-body mt-2 leading-6">
                                 {bookingCopy.description}
                             </p>
                         </div>
@@ -438,7 +438,7 @@ export default function Landing({
                                     </Button>
                                 </>
                             ) : (
-                                <p className="text-text-secondary text-sm">
+                                <p className="text-text-secondary text-body">
                                     {bookingCopy.unavailable}
                                 </p>
                             )}

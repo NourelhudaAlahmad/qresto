@@ -19,7 +19,7 @@ function Input({
                 'focus-visible:ring-[var(--clay-500)]/30 focus-visible:border-[var(--border-brand)] focus-visible:ring-[3px]',
                 'disabled:bg-action-disabled-bg disabled:text-action-disabled-text disabled:cursor-not-allowed',
                 'disabled:opacity-60',
-                'file:border-0 file:bg-transparent file:text-sm file:font-medium',
+                'file:text-label file:border-0 file:bg-transparent file:font-medium',
                 className,
             )}
             {...props}

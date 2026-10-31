@@ -222,7 +222,7 @@ function MatrixCell({
                     onToggle(!cell.granted);
                 }
             }}
-            className={`duration-fast mx-auto grid h-10 w-11 place-items-center rounded-[var(--radius-md)] font-mono text-[18px] outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-[var(--border-focus-color)] ${
+            className={`touch-target duration-fast mx-auto grid h-10 w-11 place-items-center rounded-[var(--radius-md)] font-mono text-[18px] outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-[var(--border-focus-color)] ${
                 cell.granted
                     ? 'text-[var(--herb-500)]'
                     : 'text-[var(--ink-300)]'

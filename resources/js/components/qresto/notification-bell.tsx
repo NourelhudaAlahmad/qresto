@@ -184,7 +184,7 @@ export function NotificationBell({ unread }: { unread: number }) {
                             <button
                                 type="button"
                                 onClick={readAll}
-                                className="text-label flex min-h-9 items-center gap-1 rounded-[var(--radius-sm)] px-2 font-semibold text-[var(--text-link)] hover:bg-[var(--action-ghost-hover)]"
+                                className="text-label touch-target flex min-h-9 items-center gap-1 rounded-[var(--radius-sm)] px-2 font-semibold text-[var(--text-link)] hover:bg-[var(--action-ghost-hover)]"
                             >
                                 <CheckCheck className="size-4" aria-hidden />
                                 Mark all read
