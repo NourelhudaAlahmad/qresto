@@ -53,7 +53,7 @@ class LogicalUtilitiesTest extends TestCase
 
                 foreach ($strings[1] as $classes) {
                     foreach (preg_split('/\s+/', $classes) ?: [] as $class) {
-                        $utility = preg_replace('/^(?:[\w-]+:|\[[^\]]*\]:)+/', '', $class) ?? $class;
+                        $utility = ltrim(preg_replace('/^(?:(?:[^\s:\[]|\[[^\]]*\])+:)+/', '', $class) ?? $class, '!');
 
                         $this->assertDoesNotMatchRegularExpression(
                             '/^-?(?:(?:ml|mr|pl|pr|left|right)-|rounded-(?:l|r|tl|tr|bl|br)(?:-|$)|border-(?:l|r)(?:-|$)|text-(?:left|right)$)/',
