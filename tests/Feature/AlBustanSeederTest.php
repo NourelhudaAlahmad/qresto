@@ -7,6 +7,7 @@ use App\Models\Restaurant;
 use App\Models\RestaurantTable;
 use App\Models\Shift;
 use App\Models\User;
+use App\Services\TableSessionService;
 use Database\Seeders\AlBustanSeeder;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -137,4 +138,56 @@ it('seeds tonight\'s floor team exactly as the design lists it', function () {
     foreach (Order::query()->with(['table', 'assignedUser'])->whereNotNull('table_id')->where('code', 'not like', '#H-%')->get() as $order) {
         expect($tablesOf($order->assignedUser->name))->toContain($order->table->number);
     }
+});
+
+it('keeps every qr_token byte-for-byte when seeded twice (#44)', function () {
+    $this->seed([
+        RolesSeeder::class,
+        AlBustanSeeder::class,
+    ]);
+
+    $before = RestaurantTable::withoutGlobalScopes()
+        ->orderBy('number')
+        ->pluck('qr_token', 'number')
+        ->all();
+
+    $this->seed([
+        RolesSeeder::class,
+        AlBustanSeeder::class,
+    ]);
+
+    $after = RestaurantTable::withoutGlobalScopes()
+        ->orderBy('number')
+        ->pluck('qr_token', 'number')
+        ->all();
+
+    // Row counts alone stayed stable while every token churned, which is
+    // why the idempotency test above could not catch #44.
+    expect($before)
+        ->toHaveCount(12)
+        ->and($after)
+        ->toBe($before);
+});
+
+it('still opens a session from a QR token issued before a re-seed (#44)', function () {
+    $this->seed([
+        RolesSeeder::class,
+        AlBustanSeeder::class,
+    ]);
+
+    $table = RestaurantTable::withoutGlobalScopes()
+        ->whereNull('retired_at')
+        ->orderBy('number')
+        ->firstOrFail();
+
+    $printedToken = $table->qr_token;
+
+    $this->seed([
+        RolesSeeder::class,
+        AlBustanSeeder::class,
+    ]);
+
+    $session = app(TableSessionService::class)->startFromQrToken($printedToken);
+
+    expect($session->restaurant_table_id)->toBe($table->id);
 });
