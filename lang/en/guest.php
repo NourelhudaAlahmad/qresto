@@ -1,9 +1,9 @@
 <?php
 
-// Guest screens: menu, table, status, help and the call-waiter sheet.
-// Shared to every page as i18n.guest. Keep en and ar key-for-key;
-// tests/Feature/SharedTranslationsTest.php checks both, and that
-// resources/js/i18n/en.json matches English.
+// Guest screens: menu, table, status, cart, landing, help and the
+// call-waiter sheet. Shared to every page as i18n.guest. Keep en and ar
+// key-for-key; tests/Feature/SharedTranslationsTest.php checks both, and
+// that resources/js/i18n/en.json matches English.
 
 return [
     'nav' => [
@@ -127,5 +127,47 @@ return [
         'waiter_notified' => 'Your waiter has been notified.',
         'failed' => 'Could not send request',
         'try_again' => 'Please try again.',
+    ],
+
+    'cart' => [
+        'back' => 'Back to menu',
+        'your_order' => 'Your order',
+        'table' => 'Table :table',
+        'items_one' => '1 item',
+        'items_other' => ':count items',
+        'empty_body' => 'Your order is empty. Add something from the menu when you\'re ready.',
+        'remove' => 'Remove',
+        'add_more' => 'Add something else',
+        'table_note' => 'Anything for the table?',
+        'table_note_placeholder' => 'One birthday candle for the knafeh',
+        'subtotal' => 'Subtotal',
+        'service' => 'Service',
+        'total' => 'Total',
+        'choose_payment' => 'Choose how to pay',
+        'restored' => 'Item restored',
+        'undo_expired' => 'Undo expired',
+        'undo_expired_body' => 'This item can no longer be restored.',
+        'restore_failed' => 'Could not restore item',
+        'removed' => ':name removed',
+        'undo_window' => 'Undo available for :seconds seconds.',
+        'undo' => 'Undo',
+        'remove_failed' => 'Could not remove item',
+        'quantity_failed' => 'Could not update quantity',
+        'note_saved' => 'Table note saved',
+        'note_failed' => 'Could not save note',
+        'try_again' => 'Please try again.',
+    ],
+
+    'landing' => [
+        'scan_title' => 'Scan your table code',
+        'scan_body' => 'Point your camera at the QR code on your table.',
+        'scan_close' => 'Close scanner',
+        'scan_invalid' => 'This is not a valid QResto table code.',
+        'scan_camera_error' => 'The camera could not be opened. Allow camera access and try again.',
+        'book_title' => 'Book a table',
+        'book_body' => 'To make a reservation, contact the restaurant directly.',
+        'book_call' => 'Call now',
+        'book_close' => 'Close booking dialog',
+        'book_unavailable' => 'The phone number is currently unavailable.',
     ],
 ];

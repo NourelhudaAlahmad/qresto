@@ -1,9 +1,9 @@
 <?php
 
-// Guest screens: menu, table, status, help and the call-waiter sheet.
-// Shared to every page as i18n.guest. Keep en and ar key-for-key;
-// tests/Feature/SharedTranslationsTest.php checks both, and that
-// resources/js/i18n/en.json matches English.
+// Guest screens: menu, table, status, cart, landing, help and the
+// call-waiter sheet. Shared to every page as i18n.guest. Keep en and ar
+// key-for-key; tests/Feature/SharedTranslationsTest.php checks both, and
+// that resources/js/i18n/en.json matches English.
 
 return [
     'nav' => [
@@ -127,5 +127,47 @@ return [
         'waiter_notified' => 'تم إبلاغ النادل.',
         'failed' => 'تعذّر إرسال الطلب',
         'try_again' => 'يرجى المحاولة مرة أخرى.',
+    ],
+
+    'cart' => [
+        'back' => 'العودة إلى المنيو',
+        'your_order' => 'طلبك',
+        'table' => 'الطاولة :table',
+        'items_one' => 'طبق واحد',
+        'items_other' => ':count أطباق',
+        'empty_body' => 'طلبك فارغ. أضف شيئاً من المنيو عندما تكون جاهزاً.',
+        'remove' => 'إزالة',
+        'add_more' => 'أضف شيئاً آخر',
+        'table_note' => 'أي طلب للطاولة؟',
+        'table_note_placeholder' => 'شمعة عيد ميلاد واحدة على الكنافة',
+        'subtotal' => 'المجموع الفرعي',
+        'service' => 'الخدمة',
+        'total' => 'الإجمالي',
+        'choose_payment' => 'اختر طريقة الدفع',
+        'restored' => 'أُعيد الطبق',
+        'undo_expired' => 'انتهت مهلة التراجع',
+        'undo_expired_body' => 'لم يعد ممكناً إعادة هذا الطبق.',
+        'restore_failed' => 'تعذّرت إعادة الطبق',
+        'removed' => 'أُزيل :name',
+        'undo_window' => 'يمكنك التراجع خلال :seconds ثانية.',
+        'undo' => 'تراجع',
+        'remove_failed' => 'تعذّرت إزالة الطبق',
+        'quantity_failed' => 'تعذّر تحديث الكمية',
+        'note_saved' => 'حُفظت ملاحظة الطاولة',
+        'note_failed' => 'تعذّر حفظ الملاحظة',
+        'try_again' => 'يرجى المحاولة مرة أخرى.',
+    ],
+
+    'landing' => [
+        'scan_title' => 'امسح رمز الطاولة',
+        'scan_body' => 'وجّه الكاميرا نحو رمز QR الموجود على طاولتك.',
+        'scan_close' => 'إغلاق الماسح',
+        'scan_invalid' => 'هذا الرمز ليس رمز طاولة صالحاً في QResto.',
+        'scan_camera_error' => 'تعذّر فتح الكاميرا. اسمح بالوصول إلى الكاميرا وحاول مرة أخرى.',
+        'book_title' => 'احجز طاولة',
+        'book_body' => 'للحجز، تواصل مع المطعم مباشرة.',
+        'book_call' => 'اتصل الآن',
+        'book_close' => 'إغلاق نافذة الحجز',
+        'book_unavailable' => 'رقم الهاتف غير متوفر حالياً.',
     ],
 ];

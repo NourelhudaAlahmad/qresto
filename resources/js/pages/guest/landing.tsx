@@ -7,6 +7,7 @@ import { Numeric } from '@/components/numeric';
 import { Button } from '@/components/qresto/button';
 import { PhoneIcon } from '@/components/qresto/phone-icon';
 import GuestLayout from '@/layouts/guest-layout';
+import { useI18n } from '@/lib/i18n';
 import type {
     LandingPageProps,
     LandingSharedProps,
@@ -176,44 +177,23 @@ export default function Landing({
     const nextLocale = locale === 'en' ? 'ar' : 'en';
     const nextLanguageLabel = nextLocale === 'ar' ? 'العربية' : 'English';
 
-    const scannerCopy =
-        locale === 'ar'
-            ? {
-                  title: 'امسح رمز الطاولة',
-                  description: 'وجّه الكاميرا نحو رمز QR الموجود على طاولتك.',
-                  close: 'إغلاق الماسح',
-                  invalid: 'هذا الرمز ليس رمز طاولة صالحًا في QResto.',
-                  cameraError:
-                      'تعذر فتح الكاميرا. اسمح بالوصول إلى الكاميرا وحاول مرة أخرى.',
-              }
-            : {
-                  title: 'Scan your table code',
-                  description:
-                      'Point your camera at the QR code on your table.',
-                  close: 'Close scanner',
-                  invalid: 'This is not a valid QResto table code.',
-                  cameraError:
-                      'The camera could not be opened. Allow camera access and try again.',
-              };
+    const { guest: g } = useI18n();
 
-    const bookingCopy =
-        locale === 'ar'
-            ? {
-                  title: 'احجز طاولة',
-                  description:
-                      'للحجز، تواصل مع المطعم مباشرة على الرقم التالي.',
-                  call: 'اتصل الآن',
-                  close: 'إغلاق نافذة الحجز',
-                  unavailable: 'رقم الهاتف غير متوفر حاليًا.',
-              }
-            : {
-                  title: 'Book a table',
-                  description:
-                      'To make a reservation, contact the restaurant directly.',
-                  call: 'Call now',
-                  close: 'Close booking dialog',
-                  unavailable: 'The phone number is currently unavailable.',
-              };
+    const scannerCopy = {
+        title: g.landing.scan_title,
+        description: g.landing.scan_body,
+        close: g.landing.scan_close,
+        invalid: g.landing.scan_invalid,
+        cameraError: g.landing.scan_camera_error,
+    };
+
+    const bookingCopy = {
+        title: g.landing.book_title,
+        description: g.landing.book_body,
+        call: g.landing.book_call,
+        close: g.landing.book_close,
+        unavailable: g.landing.book_unavailable,
+    };
 
     useEffect(() => {
         if (!scannerOpen) {

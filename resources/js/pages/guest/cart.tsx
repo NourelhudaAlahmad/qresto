@@ -15,6 +15,7 @@ import { Textarea } from '@/components/qresto/textarea';
 import { showToast } from '@/components/qresto/toast';
 import GuestLayout from '@/layouts/guest-layout';
 import { formatMoney } from '@/lib/formatMoney';
+import { fill, useI18n } from '@/lib/i18n';
 import type { Money } from '@/types/order';
 
 type Restaurant = {
@@ -188,6 +189,7 @@ export default function CartPage({
     undo_window_seconds,
     translations,
 }: Props) {
+    const { guest: g } = useI18n();
     const [tableNote, setTableNote] = useState(cart.note ?? '');
 
     const [busyLineId, setBusyLineId] = useState<number | null>(null);
@@ -225,14 +227,14 @@ export default function CartPage({
 
             showToast({
                 type: 'success',
-                title: 'Item restored',
+                title: g.cart.restored,
             });
         } catch (error: unknown) {
             if (errorStatus(error) === 410) {
                 showToast({
                     type: 'error',
-                    title: 'Undo expired',
-                    description: 'This item can no longer be restored.',
+                    title: g.cart.undo_expired,
+                    description: g.cart.undo_expired_body,
                 });
 
                 return;
@@ -240,8 +242,8 @@ export default function CartPage({
 
             showToast({
                 type: 'error',
-                title: 'Could not restore item',
-                description: 'Please try again.',
+                title: g.cart.restore_failed,
+                description: g.cart.try_again,
             });
         } finally {
             setBusyLineId(null);
@@ -269,11 +271,13 @@ export default function CartPage({
 
             showToast({
                 type: 'success',
-                title: `${line.name} removed`,
-                description: `Undo available for ${windowSeconds} seconds.`,
+                title: fill(g.cart.removed, { name: line.name }),
+                description: fill(g.cart.undo_window, {
+                    seconds: windowSeconds,
+                }),
                 duration: windowSeconds * 1000,
                 action: {
-                    label: 'Undo',
+                    label: g.cart.undo,
                     onClick: () => {
                         void restoreLine(line.id, response.undo_token);
                     },
@@ -284,8 +288,8 @@ export default function CartPage({
         } catch {
             showToast({
                 type: 'error',
-                title: 'Could not remove item',
-                description: 'Please try again.',
+                title: g.cart.remove_failed,
+                description: g.cart.try_again,
             });
         } finally {
             setBusyLineId(null);
@@ -318,8 +322,8 @@ export default function CartPage({
         } catch {
             showToast({
                 type: 'error',
-                title: 'Could not update quantity',
-                description: 'Please try again.',
+                title: g.cart.quantity_failed,
+                description: g.cart.try_again,
             });
         } finally {
             setBusyLineId(null);
@@ -348,15 +352,15 @@ export default function CartPage({
                 onSuccess: () => {
                     showToast({
                         type: 'success',
-                        title: 'Table note saved',
+                        title: g.cart.note_saved,
                     });
                 },
 
                 onError: () => {
                     showToast({
                         type: 'error',
-                        title: 'Could not save note',
-                        description: 'Please try again.',
+                        title: g.cart.note_failed,
+                        description: g.cart.try_again,
                     });
                 },
 
@@ -395,7 +399,7 @@ export default function CartPage({
                 <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-[var(--border-subtle)] bg-[var(--alpha-paper-88)] px-[var(--gutter-mobile)] backdrop-blur-xl">
                     <Link
                         href="/menu"
-                        aria-label="Back to menu"
+                        aria-label={g.cart.back}
                         className="touch-target -ms-2 grid size-9 shrink-0 place-items-center rounded-full text-[var(--text-primary)] transition-colors hover:bg-[var(--action-ghost-hover)]"
                     >
                         <svg
@@ -415,17 +419,19 @@ export default function CartPage({
 
                     <div className="min-w-0 flex-1">
                         <div className="text-[length:var(--text-title-3)] font-[var(--font-display)] font-[var(--weight-semibold)]">
-                            Your order
+                            {g.cart.your_order}
                         </div>
 
                         <div className="truncate text-[length:var(--text-micro)] font-[var(--font-mono)] text-[var(--text-tertiary)]">
-                            Table {table.number}
+                            {fill(g.cart.table, { table: table.number })}
                             {guest.first_name ? ` · ${guest.first_name}` : ''}
                         </div>
                     </div>
 
                     <span className="shrink-0 text-[length:var(--text-caption)] font-[var(--font-mono)] text-[var(--text-tertiary)]">
-                        {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                        {itemCount === 1
+                            ? g.cart.items_one
+                            : fill(g.cart.items_other, { count: itemCount })}
                     </span>
                 </header>
 
@@ -433,7 +439,7 @@ export default function CartPage({
                     <main className="flex flex-1 flex-col items-center justify-center gap-5 px-[var(--gutter-mobile)] py-10">
                         <EmptyState
                             headline={translations.empty}
-                            body="Your order is empty. Add something from the menu when you're ready."
+                            body={g.cart.empty_body}
                             className="w-full"
                         />
 
@@ -559,7 +565,7 @@ export default function CartPage({
                                                     }}
                                                     className="rounded-[var(--radius-sm)] px-2 py-2 text-[length:var(--text-caption)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--danger-fg)] disabled:cursor-not-allowed disabled:opacity-50"
                                                 >
-                                                    Remove
+                                                    {g.cart.remove}
                                                 </button>
                                             </div>
                                         </div>
@@ -571,12 +577,12 @@ export default function CartPage({
                                 href="/menu"
                                 className="flex h-11 items-center justify-center rounded-[var(--radius-pill)] border border-dashed border-[var(--border-strong)] bg-transparent px-4 text-[length:var(--text-body)] font-[var(--weight-medium)] text-[var(--text-secondary)] transition-colors hover:border-[var(--clay-400)] hover:text-[var(--clay-600)]"
                             >
-                                Add something else
+                                {g.cart.add_more}
                             </Link>
 
                             <label className="mt-2 flex flex-col gap-1.5">
                                 <span className="text-[length:var(--text-label)] font-[var(--weight-semibold)]">
-                                    Anything for the table?
+                                    {g.cart.table_note}
                                 </span>
 
                                 <Textarea
@@ -584,7 +590,7 @@ export default function CartPage({
                                     maxLength={500}
                                     value={tableNote}
                                     disabled={savingNote}
-                                    placeholder="One birthday candle for the knafeh"
+                                    placeholder={g.cart.table_note_placeholder}
                                     className="resize-none"
                                     onChange={(event) => {
                                         setTableNote(event.target.value);
@@ -599,6 +605,9 @@ export default function CartPage({
                                     cart.service_pct,
                                 )}% · ${formatMoney(cart.service_amount)}`}
                                 total={formatMoney(cart.total)}
+                                subtotalLabel={g.cart.subtotal}
+                                serviceLabel={g.cart.service}
+                                totalLabel={g.cart.total}
                             />
                         </main>
 
@@ -609,7 +618,7 @@ export default function CartPage({
                                 fullWidth
                                 onClick={goToPayment}
                             >
-                                Choose how to pay
+                                {g.cart.choose_payment}
                             </Button>
                         </StickyDock>
                     </>
@@ -618,12 +627,12 @@ export default function CartPage({
                 <TabBar
                     items={[
                         {
-                            label: 'Menu',
+                            label: g.nav.menu,
                             icon: <MenuIcon className="size-5" />,
                             onClick: goToMenu,
                         },
                         {
-                            label: 'Order',
+                            label: g.nav.order,
                             icon: <ClipboardList className="size-5" />,
                             active: true,
                             badge: itemCount > 0 ? itemCount : undefined,
@@ -632,7 +641,7 @@ export default function CartPage({
                             },
                         },
                         {
-                            label: 'Status',
+                            label: g.nav.status,
                             icon: (
                                 <span className="font-mono text-base leading-none">
                                     02
@@ -643,7 +652,7 @@ export default function CartPage({
                             onClick: goToStatus,
                         },
                         {
-                            label: 'Help',
+                            label: g.nav.help,
                             icon: <CircleHelp className="size-5" />,
                             disabled: !session.active,
                             onClick: () => {
