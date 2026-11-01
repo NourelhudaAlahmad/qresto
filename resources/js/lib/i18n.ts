@@ -4,7 +4,7 @@ import en from '@/i18n/en.json';
 
 export { fill } from '@/types/checkout';
 
-/** Shared copy: lang/{locale}/guest.php and orders.php, as i18n. */
+/** Shared copy: lang/{locale}/guest, orders, tables and staff, as i18n. */
 export type SharedTranslations = typeof en;
 
 /**
@@ -28,5 +28,7 @@ export function useI18n(): SharedTranslations {
     return {
         guest: shared?.guest ?? en.guest,
         orders: shared?.orders ?? en.orders,
+        tables: shared?.tables ?? en.tables,
+        staff: shared?.staff ?? en.staff,
     };
 }

@@ -23,6 +23,7 @@ import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { TabBar } from '@/components/qresto/tab-bar';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { useLiveData } from '@/hooks/useLiveData';
+import { useI18n } from '@/lib/i18n';
 
 type StaffNavItem = {
     id: string;
@@ -157,6 +158,8 @@ function Sidebar({
     restaurantName: string;
     userName: string;
 }) {
+    const { staff: t } = useI18n();
+
     return (
         <aside className="fixed inset-y-0 start-0 hidden w-[var(--sidebar-w)] flex-col bg-[var(--ink-900)] px-3 pb-4 pt-5 min-[900px]:flex">
             <div className="flex items-center gap-2 px-3 pb-5">
@@ -171,7 +174,7 @@ function Sidebar({
             </div>
 
             <nav
-                aria-label="Staff navigation"
+                aria-label={t.shell.staff_nav}
                 className="flex flex-1 flex-col gap-0.5 overflow-y-auto"
             >
                 {nav.map((item) => (
@@ -200,8 +203,8 @@ function Sidebar({
                     href="/logout"
                     method="post"
                     as="button"
-                    aria-label="Log out"
-                    title="Log out"
+                    aria-label={t.shell.log_out}
+                    title={t.shell.log_out}
                     className="grid size-11 shrink-0 place-items-center rounded-full text-[var(--ink-500)] transition-colors hover:text-[var(--ink-25)]"
                 >
                     <LogOut className="size-4" aria-hidden="true" />
@@ -226,6 +229,8 @@ function Topbar({
     userName: string;
     userEmail: string;
 }) {
+    const { staff: t } = useI18n();
+
     const [menuOpen, setMenuOpen] = useState(false);
 
     return (
@@ -251,7 +256,7 @@ function Topbar({
             <div className="relative shrink-0">
                 <button
                     type="button"
-                    aria-label="User menu"
+                    aria-label={t.shell.user_menu}
                     aria-expanded={menuOpen}
                     aria-controls="staff-user-menu"
                     onClick={() => setMenuOpen((open) => !open)}
@@ -281,7 +286,7 @@ function Topbar({
                             className="text-body mt-1 flex min-h-11 w-full items-center gap-2 rounded-[var(--radius-sm)] px-3 text-start text-[var(--text-link)] hover:bg-[var(--action-ghost-hover)]"
                         >
                             <LogOut className="size-4" aria-hidden="true" />
-                            Log out
+                            {t.shell.log_out}
                         </Link>
                     </div>
                 )}
@@ -313,7 +318,8 @@ export default function StaffLayout({
     const nav = data.nav ?? [];
     const user = data.auth?.user;
     const shell = data.staffLayout;
-    const userName = user?.name ?? 'Staff';
+    const { staff: t } = useI18n();
+    const userName = user?.name ?? t.roles.staff;
 
     const [moreOpen, setMoreOpen] = useState(false);
 
@@ -373,7 +379,7 @@ export default function StaffLayout({
         ...(overflowNav.length > 0
             ? [
                   {
-                      label: 'More',
+                      label: t.shell.more,
                       icon: (
                           <MoreHorizontal
                               className="size-5"
@@ -381,7 +387,7 @@ export default function StaffLayout({
                           />
                       ),
                       active: overflowActive,
-                      ariaLabel: 'More navigation',
+                      ariaLabel: t.shell.more_nav,
                       onClick: () => setMoreOpen(true),
                   },
               ]
@@ -399,7 +405,7 @@ export default function StaffLayout({
                 nav={nav}
                 isActive={isActive}
                 badgeFor={badgeFor}
-                roleLabel={shell?.roleLabel ?? 'Staff'}
+                roleLabel={shell?.roleLabel ?? t.roles.staff}
                 restaurantName={shell?.restaurantName ?? ''}
                 userName={userName}
             />
@@ -407,7 +413,7 @@ export default function StaffLayout({
             <div className="flex min-h-[100dvh] flex-col min-[900px]:ps-[var(--sidebar-w)]">
                 <Topbar
                     liveStatus={liveStatus}
-                    title={shell?.pageTitle ?? 'Staff'}
+                    title={shell?.pageTitle ?? t.pages.staff}
                     subtitle={subtitle}
                     unreadNotifications={unreadNotifications}
                     userName={userName}
@@ -432,10 +438,10 @@ export default function StaffLayout({
             <ResponsiveOverlay
                 open={moreOpen && overflowNav.length > 0}
                 onOpenChange={setMoreOpen}
-                title="More"
+                title={t.shell.more}
             >
                 <nav
-                    aria-label="More navigation"
+                    aria-label={t.shell.more_nav}
                     className="flex flex-col gap-1"
                 >
                     {overflowNav.map((item) => {

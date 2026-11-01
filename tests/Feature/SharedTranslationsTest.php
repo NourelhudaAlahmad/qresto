@@ -8,13 +8,13 @@ use Inertia\Testing\AssertableInertia as Assert;
 uses(RefreshDatabase::class);
 
 /*
- * Shared copy (lang/{en,ar}/guest.php and orders.php) reaches every page as
+ * Shared copy (lang/{en,ar}/guest.php, orders.php, tables.php and staff.php) reaches every page as
  * `i18n`, for components such as StatusPill, HelpPanel and the guest tab bar.
  * resources/js/i18n/en.json is the English fallback the browser bundles for
  * component tests, so it must match lang/en exactly.
  */
 
-$groups = ['guest', 'orders'];
+$groups = ['guest', 'orders', 'tables', 'staff'];
 
 it('keeps resources/js/i18n/en.json identical to lang/en', function () use ($groups) {
     $json = json_decode(
@@ -67,6 +67,8 @@ it('shares the copy with every page in the active language', function (string $l
         ->assertInertia(
             fn (Assert $page) => $page
                 ->where('i18n.guest', trans('guest', [], $locale))
-                ->where('i18n.orders', trans('orders', [], $locale)),
+                ->where('i18n.orders', trans('orders', [], $locale))
+                ->where('i18n.tables', trans('tables', [], $locale))
+                ->where('i18n.staff', trans('staff', [], $locale)),
         );
 })->with(['en', 'ar']);

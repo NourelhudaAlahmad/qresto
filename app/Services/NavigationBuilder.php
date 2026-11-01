@@ -59,14 +59,14 @@ class NavigationBuilder
             Role::WAITER->value => [
                 [
                     'id' => 'waiter',
-                    'title' => 'My orders',
+                    'title' => __('staff.nav.my_orders'),
                     'href' => '/app/my-orders',
                     'badge' => null,
                     'capability' => Capability::SEE_OWN_TABLES,
                 ],
                 [
                     'id' => 'floor',
-                    'title' => 'My tables',
+                    'title' => __('staff.nav.my_tables'),
                     'href' => '/app/floor',
                     'badge' => null,
                     'capability' => Capability::SEE_OWN_TABLES,
@@ -76,28 +76,28 @@ class NavigationBuilder
             Role::MANAGER->value => [
                 [
                     'id' => 'manager',
-                    'title' => 'Overview',
+                    'title' => __('staff.nav.overview'),
                     'href' => '/manager/overview',
                     'badge' => null,
                     'capability' => Capability::SEE_ALL_ORDERS,
                 ],
                 [
                     'id' => 'waiter',
-                    'title' => 'Live orders',
+                    'title' => __('staff.nav.live_orders'),
                     'href' => '/app/orders',
                     'badge' => null,
                     'capability' => Capability::SEE_ALL_ORDERS,
                 ],
                 [
                     'id' => 'floor',
-                    'title' => 'Floor',
+                    'title' => __('staff.nav.floor'),
                     'href' => '/app/floor',
                     'badge' => null,
                     'capability' => Capability::SEE_OWN_TABLES,
                 ],
                 [
                     'id' => 'reports',
-                    'title' => 'Reports',
+                    'title' => __('staff.nav.reports'),
                     'href' => '/app/reports',
                     'badge' => null,
                     'capability' => Capability::FINANCIAL_REPORTS,
@@ -107,28 +107,28 @@ class NavigationBuilder
             Role::ADMIN->value => [
                 [
                     'id' => 'admin',
-                    'title' => 'System',
+                    'title' => __('staff.nav.system'),
                     'href' => '/app/system',
                     'badge' => null,
                     'capability' => Capability::MANAGE_RESTAURANT_CONFIG,
                 ],
                 [
                     'id' => 'menu',
-                    'title' => 'Menu',
+                    'title' => __('staff.nav.menu'),
                     'href' => '/app/menu',
                     'badge' => null,
                     'capability' => Capability::EDIT_MENU_PRICES,
                 ],
                 [
                     'id' => 'reports',
-                    'title' => 'Reports',
+                    'title' => __('staff.nav.reports'),
                     'href' => '/app/reports',
                     'badge' => null,
                     'capability' => Capability::FINANCIAL_REPORTS,
                 ],
                 [
                     'id' => 'manager',
-                    'title' => 'Orders & team',
+                    'title' => __('staff.nav.orders_team'),
                     'href' => '/manager/overview',
                     'badge' => null,
                     'capability' => Capability::MANAGE_WAITER_ACCOUNTS,
@@ -138,14 +138,14 @@ class NavigationBuilder
             Role::KITCHEN->value => [
                 [
                     'id' => 'kds',
-                    'title' => 'Pass',
+                    'title' => __('staff.nav.pass'),
                     'href' => '/app/pass',
                     'badge' => null,
                     'capability' => Capability::SEE_ALL_ORDERS,
                 ],
                 [
                     'id' => 'waiter',
-                    'title' => 'Order feed',
+                    'title' => __('staff.nav.order_feed'),
                     'href' => '/app/orders',
                     'badge' => null,
                     'capability' => Capability::SEE_ALL_ORDERS,
@@ -156,7 +156,7 @@ class NavigationBuilder
             Role::RUNNER->value => [
                 [
                     'id' => 'kds',
-                    'title' => 'Ready to collect',
+                    'title' => __('staff.nav.ready_to_collect'),
                     'href' => '/app/pass',
                     'badge' => null,
                     'capability' => Capability::CHANGE_ORDER_STATUS,
@@ -166,7 +166,7 @@ class NavigationBuilder
             Role::CASHIER->value => [
                 [
                     'id' => 'waiter',
-                    'title' => 'Unpaid bills',
+                    'title' => __('staff.nav.unpaid_bills'),
                     'href' => '/app/orders',
                     'badge' => null,
                     'capability' => Capability::TAKE_PAYMENT,
@@ -190,28 +190,28 @@ class NavigationBuilder
         $extras = [
             [
                 'id' => 'manager',
-                'title' => 'Overview',
+                'title' => __('staff.nav.overview'),
                 'href' => '/manager/overview',
                 'badge' => null,
                 'capability' => Capability::MANAGE_WAITER_ACCOUNTS,
             ],
             [
                 'id' => 'menu',
-                'title' => 'Menu',
+                'title' => __('staff.nav.menu'),
                 'href' => '/app/menu',
                 'badge' => null,
                 'capability' => Capability::EDIT_MENU_PRICES,
             ],
             [
                 'id' => 'reports',
-                'title' => 'Reports',
+                'title' => __('staff.nav.reports'),
                 'href' => '/app/reports',
                 'badge' => null,
                 'capability' => Capability::FINANCIAL_REPORTS,
             ],
             [
                 'id' => 'admin',
-                'title' => 'System',
+                'title' => __('staff.nav.system'),
                 'href' => '/app/system',
                 'badge' => null,
                 'capability' => Capability::MANAGE_RESTAURANT_CONFIG,

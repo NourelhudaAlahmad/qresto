@@ -13,14 +13,7 @@ enum Role: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::WAITER => 'Waiter',
-            self::MANAGER => 'Manager',
-            self::ADMIN => 'Super admin',
-            self::KITCHEN => 'Kitchen',
-            self::RUNNER => 'Runner',
-            self::CASHIER => 'Cashier',
-        };
+        return __('staff.roles.'.$this->value);
     }
 
     public function color(): string

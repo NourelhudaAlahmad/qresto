@@ -22,11 +22,12 @@ import { PriceSummary } from '@/components/qresto/price-summary';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { Skeleton } from '@/components/qresto/skeleton';
 import { StatusPill } from '@/components/qresto/status-pill';
-import { TableTile, tableStateLabels } from '@/components/qresto/table-tile';
+import { TableTile } from '@/components/qresto/table-tile';
 import { showToast } from '@/components/qresto/toast';
 import { Tooltip } from '@/components/qresto/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useLiveData } from '@/hooks/useLiveData';
+import { fill, useI18n } from '@/lib/i18n';
 import type { OrderStatus, TableState } from '@/types';
 
 type PaymentMethod = 'cash' | 'pos';
@@ -114,13 +115,6 @@ const STATE_DOT: Record<TableState, string> = {
     seated: 'var(--table-seated-fg)',
     ordered: 'var(--table-ordered-fg)',
     bill: 'var(--table-bill-fg)',
-};
-
-const REQUEST_LABELS: Record<string, string> = {
-    water: 'Water',
-    bread: 'Bread',
-    bill: 'Bill',
-    waiter: 'Waiter',
 };
 
 function money(minor: number, currency: string): string {
@@ -213,6 +207,9 @@ function EmailReceiptForm({
     tableId: number;
     orderId: number;
 }) {
+    const {
+        staff: { floor: t },
+    } = useI18n();
     const [email, setEmail] = useState('');
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -237,14 +234,13 @@ function EmailReceiptForm({
                     setEmail('');
                     showToast({
                         type: 'success',
-                        title: 'Receipt emailed',
-                        description: 'It is on its way to the guest.',
+                        title: t.receipt_emailed,
+                        description: t.receipt_emailed_body,
                     });
                 },
                 onError: (errors) =>
                     setError(
-                        errors.email ??
-                            firstError(errors, 'Unable to email receipt.'),
+                        errors.email ?? firstError(errors, t.receipt_failed),
                     ),
                 onFinish: () => setSending(false),
             },
@@ -253,7 +249,9 @@ function EmailReceiptForm({
 
     return (
         <form onSubmit={send} className="flex flex-col gap-1.5">
-            <Label htmlFor={`receipt-email-${orderId}`}>Email receipt</Label>
+            <Label htmlFor={`receipt-email-${orderId}`}>
+                {t.email_receipt}
+            </Label>
 
             <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
@@ -279,7 +277,7 @@ function EmailReceiptForm({
                     disabled={!email.trim()}
                 >
                     <Mail className="size-4" aria-hidden />
-                    Send
+                    {t.send}
                 </Button>
             </div>
 
@@ -313,6 +311,9 @@ function OrderBill({
         splitWays: number,
     ) => void;
 }) {
+    const {
+        staff: { floor: t },
+    } = useI18n();
     const [splitOpen, setSplitOpen] = useState(false);
     const [splitWays, setSplitWays] = useState(1);
     const [amount, setAmount] = useState(() =>
@@ -412,18 +413,21 @@ function OrderBill({
                         : undefined
                 }
                 total={money(totalMinor, order.currency)}
+                subtotalLabel={t.subtotal}
+                serviceLabel={t.service}
+                totalLabel={t.total}
                 afterTotal={[
                     ...(paidMinor > 0
                         ? [
                               {
-                                  label: 'Paid',
+                                  label: t.paid,
                                   value: money(paidMinor, order.currency),
                                   tone: 'positive' as const,
                               },
                           ]
                         : []),
                     {
-                        label: 'Due',
+                        label: t.due,
                         value: money(order.balance_minor, order.currency),
                         tone: 'warning' as const,
                     },
@@ -432,14 +436,13 @@ function OrderBill({
 
             {!served && (
                 <p className="text-caption rounded-[var(--radius-md)] bg-[var(--warning-bg)] px-3 py-2 text-[var(--warning-fg)]">
-                    Payment opens once the order is served.
+                    {t.serve_first}
                 </p>
             )}
 
             {pendingOnline && (
                 <p className="text-caption rounded-[var(--radius-md)] bg-[var(--warning-bg)] px-3 py-2 text-[var(--warning-fg)]">
-                    An online payment is still pending on this order. Resolve it
-                    before collecting at the table.
+                    {t.pending_online}
                 </p>
             )}
 
@@ -448,7 +451,7 @@ function OrderBill({
                     <div className="flex flex-col gap-1.5">
                         <div className="flex items-center justify-between gap-2">
                             <Label htmlFor={`amount-${order.id}`}>
-                                Amount to collect
+                                {t.amount}
                             </Label>
 
                             <button
@@ -459,7 +462,7 @@ function OrderBill({
                                     setAmount(amountInput(order.balance_minor));
                                 }}
                             >
-                                Whole balance
+                                {t.whole_balance}
                             </button>
                         </div>
 
@@ -487,8 +490,7 @@ function OrderBill({
 
                         {!validAmount && amount.trim() !== '' && (
                             <p className="text-caption text-[var(--berry-500)]">
-                                Enter more than zero and no more than the
-                                balance due.
+                                {t.amount_invalid}
                             </p>
                         )}
                     </div>
@@ -502,7 +504,7 @@ function OrderBill({
                             onClick={() => pay('pos')}
                         >
                             <CreditCard className="size-4" aria-hidden />
-                            Take card at table
+                            {t.take_card}
                         </Button>
 
                         <Button
@@ -513,7 +515,7 @@ function OrderBill({
                             onClick={() => pay('cash')}
                         >
                             <Banknote className="size-4" aria-hidden />
-                            Mark cash received
+                            {t.mark_cash}
                         </Button>
                     </div>
                 </div>
@@ -526,7 +528,7 @@ function OrderBill({
                 onClick={() => setSplitOpen((open) => !open)}
             >
                 <Split className="size-4" aria-hidden />
-                Split · print · email
+                {t.split_print_email}
             </Button>
 
             {splitOpen && (
@@ -534,7 +536,7 @@ function OrderBill({
                     {served && order.balance_minor > 0 && canPay && (
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor={`split-${order.id}`}>
-                                Split between
+                                {t.split_between}
                             </Label>
 
                             <div
@@ -562,22 +564,22 @@ function OrderBill({
                                         }}
                                     >
                                         {ways === 1
-                                            ? 'One bill'
-                                            : `${ways} ways`}
+                                            ? t.one_bill
+                                            : fill(t.ways, { count: ways })}
                                     </ChipFilter>
                                 ))}
                             </div>
 
                             {splitWays > 1 && (
                                 <p className="text-caption text-[var(--text-secondary)]">
-                                    Each share is{' '}
+                                    {t.each_share}{' '}
                                     <Numeric>
                                         {money(
                                             Math.ceil(totalMinor / splitWays),
                                             order.currency,
                                         )}
                                     </Numeric>
-                                    . Collect one share at a time above.
+                                    {t.collect_one}
                                 </p>
                             )}
                         </div>
@@ -590,7 +592,7 @@ function OrderBill({
                             rel="noopener noreferrer"
                         >
                             <Printer className="size-4" aria-hidden />
-                            Print receipt
+                            {t.print_receipt}
                         </a>
                     </Button>
 
@@ -632,6 +634,10 @@ export function TableCheckout({
         splitWays: number,
     ) => void;
 }) {
+    const {
+        staff: { floor: t },
+    } = useI18n();
+
     if (!detail) {
         return loading ? (
             <div className="flex flex-col gap-3" aria-busy="true">
@@ -655,7 +661,7 @@ export function TableCheckout({
             disabled={freeDisabled}
             onClick={onFree}
         >
-            Free the table
+            {t.free}
         </Button>
     );
 
@@ -667,11 +673,11 @@ export function TableCheckout({
                     <Numeric>
                         {detail.table.party_size} / {detail.table.seats}
                     </Numeric>{' '}
-                    guests
+                    {t.guests}
                 </span>
 
                 <span className="text-body text-[var(--text-secondary)]">
-                    Due{' '}
+                    {t.due}{' '}
                     <Numeric className="font-semibold text-[var(--text-primary)]">
                         {money(detail.open_bill_minor, detail.currency)}
                     </Numeric>
@@ -679,10 +685,10 @@ export function TableCheckout({
             </div>
 
             {canManageTable && detail.table.state === 'free' && (
-                <Section title="Seat guests">
+                <Section title={t.seat_title}>
                     <div className="flex flex-col gap-1.5">
                         <Label htmlFor="floor-party-size">
-                            Party size (max {detail.table.seats})
+                            {fill(t.party_size, { max: detail.table.seats })}
                         </Label>
                         <Input
                             id="floor-party-size"
@@ -708,20 +714,22 @@ export function TableCheckout({
                         onClick={onSeat}
                     >
                         <Users className="size-4" aria-hidden />
-                        Seat guests
+                        {t.seat}
                     </Button>
                 </Section>
             )}
 
             {canManageTable && detail.service_requests.length > 0 && (
-                <Section title="Waiting on you">
+                <Section title={t.waiting}>
                     {detail.service_requests.map((request) => (
                         <div
                             key={request.id}
                             className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--clay-200)] bg-[var(--surface-brand-soft)] p-3"
                         >
                             <span className="text-body font-semibold text-[var(--text-brand)]">
-                                {REQUEST_LABELS[request.kind] ?? request.kind}
+                                {t[
+                                    `request_${request.kind}` as keyof typeof t
+                                ] ?? request.kind}
                             </span>
 
                             <Button
@@ -733,14 +741,14 @@ export function TableCheckout({
                                 onClick={() => onAcknowledge(request.id)}
                             >
                                 <Check className="size-4" aria-hidden />
-                                Acknowledge
+                                {t.acknowledge}
                             </Button>
                         </div>
                     ))}
                 </Section>
             )}
 
-            <Section title="Open bill">
+            <Section title={t.open_bill}>
                 {unpaid ? (
                     detail.orders.map((order) => (
                         <OrderBill
@@ -754,7 +762,7 @@ export function TableCheckout({
                     ))
                 ) : (
                     <p className="text-body text-[var(--text-tertiary)]">
-                        Nothing left to pay at this table.
+                        {t.nothing_due}
                     </p>
                 )}
             </Section>
@@ -762,7 +770,7 @@ export function TableCheckout({
             {canManageTable && (
                 <div className="border-t border-[var(--border-subtle)] pt-4">
                     {unpaid ? (
-                        <Tooltip content="Settle every order before freeing the table.">
+                        <Tooltip content={t.free_tooltip}>
                             {/* A disabled button swallows hover, so wrap it. */}
                             <span tabIndex={0} className="block">
                                 {freeButton}
@@ -774,7 +782,7 @@ export function TableCheckout({
 
                     {unpaid && (
                         <p className="text-caption mt-2 text-center text-[var(--text-tertiary)]">
-                            A table cannot be freed while a bill is unpaid.
+                            {t.free_blocked}
                         </p>
                     )}
                 </div>
@@ -802,6 +810,9 @@ export function useTableCheckout({
     isPaused: boolean;
     onChanged: () => void;
 }) {
+    const {
+        staff: { floor: t },
+    } = useI18n();
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [detail, setDetail] = useState<TableDetail | null>(null);
     const [loading, setLoading] = useState(false);
@@ -811,46 +822,51 @@ export function useTableCheckout({
     const selectedIdRef = useRef<number | null>(null);
     const requestRef = useRef(0);
 
-    const loadDetail = useCallback(async (id: number, showLoader = true) => {
-        const requestId = ++requestRef.current;
+    const loadDetail = useCallback(
+        async (id: number, showLoader = true) => {
+            const requestId = ++requestRef.current;
 
-        if (showLoader) {
-            setLoading(true);
-        }
-
-        try {
-            const response = await fetch(`/app/tables/${id}`, {
-                headers: { Accept: 'application/json' },
-                credentials: 'same-origin',
-            });
-
-            if (!response.ok) {
-                throw new Error(`Unable to load table (${response.status}).`);
+            if (showLoader) {
+                setLoading(true);
             }
 
-            const data: TableDetail = await response.json();
-
-            if (
-                selectedIdRef.current === id &&
-                requestRef.current === requestId
-            ) {
-                setDetail(data);
-            }
-        } catch (cause) {
-            if (showLoader && selectedIdRef.current === id) {
-                showToast({
-                    type: 'error',
-                    title: 'Could not open the table',
-                    description:
-                        cause instanceof Error ? cause.message : undefined,
+            try {
+                const response = await fetch(`/app/tables/${id}`, {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin',
                 });
+
+                if (!response.ok) {
+                    throw new Error(
+                        `Unable to load table (${response.status}).`,
+                    );
+                }
+
+                const data: TableDetail = await response.json();
+
+                if (
+                    selectedIdRef.current === id &&
+                    requestRef.current === requestId
+                ) {
+                    setDetail(data);
+                }
+            } catch (cause) {
+                if (showLoader && selectedIdRef.current === id) {
+                    showToast({
+                        type: 'error',
+                        title: t.open_failed,
+                        description:
+                            cause instanceof Error ? cause.message : undefined,
+                    });
+                }
+            } finally {
+                if (showLoader && requestRef.current === requestId) {
+                    setLoading(false);
+                }
             }
-        } finally {
-            if (showLoader && requestRef.current === requestId) {
-                setLoading(false);
-            }
-        }
-    }, []);
+        },
+        [t.open_failed],
+    );
 
     const selectTable = (id: number) => {
         selectedIdRef.current = id;
@@ -908,11 +924,8 @@ export function useTableCheckout({
             onError: (errors) =>
                 showToast({
                     type: 'error',
-                    title: 'That did not go through',
-                    description: firstError(
-                        errors,
-                        'Unable to complete action.',
-                    ),
+                    title: t.action_failed,
+                    description: firstError(errors, t.action_failed_body),
                 }),
             onFinish: () => setBusy(null),
         });
@@ -932,7 +945,7 @@ export function useTableCheckout({
         ) {
             showToast({
                 type: 'error',
-                title: `Enter a party size between 1 and ${detail.table.seats}`,
+                title: fill(t.party_invalid, { max: detail.table.seats }),
             });
 
             return;
@@ -942,7 +955,7 @@ export function useTableCheckout({
             `/app/tables/${selectedId}/seat`,
             { party_size: count },
             'seat',
-            `Table ${tableNumber(detail.table.number)} seated`,
+            fill(t.seated, { table: tableNumber(detail.table.number) }),
         );
     };
 
@@ -956,7 +969,7 @@ export function useTableCheckout({
             `/app/tables/${selectedId}/free`,
             {},
             'free',
-            `Table ${tableNumber(detail.table.number)} is free`,
+            fill(t.freed, { table: tableNumber(detail.table.number) }),
         );
     };
 
@@ -977,8 +990,8 @@ export function useTableCheckout({
                 onError: (errors) =>
                     showToast({
                         type: 'error',
-                        title: 'Could not acknowledge',
-                        description: firstError(errors, 'Please try again.'),
+                        title: t.ack_failed,
+                        description: firstError(errors, t.try_again),
                     }),
                 onFinish: () => setBusy(null),
             },
@@ -1004,9 +1017,9 @@ export function useTableCheckout({
                 split_ways: splitWays,
             },
             `pay-${order.id}`,
-            `${money(amountMinor, order.currency)} ${
-                method === 'cash' ? 'cash received' : 'taken by card'
-            }`,
+            fill(method === 'cash' ? t.cash_received : t.card_taken, {
+                amount: money(amountMinor, order.currency),
+            }),
         );
     };
 
@@ -1036,6 +1049,10 @@ export function useTableCheckout({
 }
 
 export default function Floor({ tables = [] }: Props) {
+    const {
+        staff: { floor: t },
+        tables: stateLabels,
+    } = useI18n();
     const { qresto, capabilities } = usePage().props as unknown as {
         qresto?: { live?: { floor_interval?: number } };
         capabilities?: string[];
@@ -1092,26 +1109,26 @@ export default function Floor({ tables = [] }: Props) {
     }, []);
 
     const selectedTitle = selectedTable
-        ? `Table ${tableNumber(selectedTable.number)}`
-        : 'Table';
+        ? fill(t.table, { table: tableNumber(selectedTable.number) })
+        : t.table_generic;
 
     return (
         <>
-            <Head title="Floor" />
+            <Head title={t.head} />
 
             <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div
                         className="flex flex-wrap gap-2"
                         role="group"
-                        aria-label="Filter tables by state"
+                        aria-label={t.filter}
                     >
                         <ChipFilter
                             type="segment"
                             active={filter === 'all'}
                             onClick={() => setFilter('all')}
                         >
-                            {`All (${tables.length})`}
+                            {fill(t.all, { count: tables.length })}
                         </ChipFilter>
 
                         {STATES.map((state) => (
@@ -1128,14 +1145,14 @@ export default function Floor({ tables = [] }: Props) {
                                         backgroundColor: STATE_DOT[state],
                                     }}
                                 />
-                                {`${tableStateLabels[state]} (${counts[state]})`}
+                                {`${stateLabels[state]} (${counts[state]})`}
                             </ChipFilter>
                         ))}
                     </div>
 
                     <div className="flex items-center gap-3">
                         <span className="text-caption text-[var(--text-tertiary)]">
-                            Tap a table to open its bill
+                            {t.tap_hint}
                         </span>
                     </div>
                 </div>
@@ -1146,19 +1163,19 @@ export default function Floor({ tables = [] }: Props) {
                         <EmptyState
                             headline={
                                 seesWholeFloor
-                                    ? 'No tables yet'
-                                    : 'No tables assigned to you tonight'
+                                    ? t.no_tables
+                                    : t.no_tables_assigned
                             }
                             body={
                                 seesWholeFloor
-                                    ? 'Tables appear here once they are set up for this restaurant.'
-                                    : 'Your manager assigns tables when they add you to the shift.'
+                                    ? t.no_tables_body
+                                    : t.no_tables_assigned_body
                             }
                         />
                     </Card>
                 ) : (
                     <section
-                        aria-label="Restaurant tables"
+                        aria-label={t.tables_label}
                         className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4"
                     >
                         {visibleTables.map((table) => {
@@ -1170,7 +1187,9 @@ export default function Floor({ tables = [] }: Props) {
                                           table.currency,
                                       )
                                     : null,
-                                minutes !== null ? `${minutes} min` : null,
+                                minutes !== null
+                                    ? fill(t.minutes, { minutes })
+                                    : null,
                             ]
                                 .filter(Boolean)
                                 .join(' · ');
@@ -1180,7 +1199,9 @@ export default function Floor({ tables = [] }: Props) {
                                     key={table.id}
                                     table={tableNumber(table.number)}
                                     state={table.state}
-                                    seats={`${table.seats} seats`}
+                                    seats={fill(t.seats, {
+                                        count: table.seats,
+                                    })}
                                     assignee={
                                         table.waiter
                                             ? shortName(table.waiter.name)
@@ -1209,7 +1230,10 @@ export default function Floor({ tables = [] }: Props) {
                                         table.has_bill_request
                                     }
                                     selected={selectedId === table.id}
-                                    ariaLabel={`Open table ${tableNumber(table.number)}, ${tableStateLabels[table.state]}${
+                                    ariaLabel={`${fill(t.open_table, {
+                                        table: tableNumber(table.number),
+                                        state: stateLabels[table.state],
+                                    })}${
                                         table.waiter
                                             ? `, ${table.waiter.name}`
                                             : ''
@@ -1223,7 +1247,9 @@ export default function Floor({ tables = [] }: Props) {
 
                 {/* Desktop and tablet: the checkout card sits below the grid. */}
                 {selectedId !== null && !isMobile && (
-                    <Card aria-label={`${selectedTitle} checkout`}>
+                    <Card
+                        aria-label={fill(t.checkout, { title: selectedTitle })}
+                    >
                         <div className="mb-4 flex items-center gap-3">
                             <h2 className="font-display text-title-2 flex-1 font-semibold">
                                 <Numeric>{selectedTitle}</Numeric>
@@ -1234,7 +1260,7 @@ export default function Floor({ tables = [] }: Props) {
                                 size="sm"
                                 onClick={closeDetail}
                             >
-                                Close
+                                {t.close}
                             </Button>
                         </div>
 

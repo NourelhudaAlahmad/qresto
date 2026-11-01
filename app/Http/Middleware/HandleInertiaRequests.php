@@ -60,6 +60,8 @@ class HandleInertiaRequests extends Middleware
             'i18n' => fn (): array => [
                 'guest' => trans('guest'),
                 'orders' => trans('orders'),
+                'tables' => trans('tables'),
+                'staff' => trans('staff'),
             ],
 
             'qresto' => [
@@ -121,72 +123,72 @@ class HandleInertiaRequests extends Middleware
 
         $role = $user->getRoleNames()->first();
 
-        $roleLabel = Role::tryFrom($role ?? '')?->label() ?? 'Staff';
+        $roleLabel = Role::tryFrom($role ?? '')?->label() ?? __('staff.roles.staff');
 
         $pageMeta = match ($request->route()?->getName()) {
             'app.overview',
             'manager.overview' => [
-                'Overview',
-                'Restaurant operations at a glance',
+                'staff.pages.overview',
+                'staff.pages.overview_sub',
             ],
 
             'app.orders' => [
-                'Live Orders',
-                'Current restaurant orders',
+                'staff.pages.live_orders',
+                'staff.pages.live_orders_sub',
             ],
 
             'app.floor' => [
-                'Floor',
-                'Restaurant tables and seating',
+                'staff.pages.floor',
+                'staff.pages.floor_sub',
             ],
 
             'app.reports' => [
-                'Reports',
-                'Restaurant reports and analytics',
+                'staff.pages.reports',
+                'staff.pages.reports_sub',
             ],
 
             'app.my-orders',
             'waiter.orders' => [
-                'My Orders',
-                'Your assigned orders and tables',
+                'staff.pages.my_orders',
+                'staff.pages.my_orders_sub',
             ],
 
             'app.pass' => [
-                'Kitchen display',
-                'Pass screen',
+                'staff.pages.kitchen_display',
+                'staff.pages.pass_screen',
             ],
             'app.menu' => [
-                'Menu management',
-                'Categories, dishes and the editor',
+                'staff.pages.menu',
+                'staff.pages.menu_sub',
             ],
             'app.settings.restaurant' => [
-                'Restaurant',
-                'Details, opening hours, tables and QR codes',
+                'staff.pages.restaurant',
+                'staff.pages.restaurant_sub',
             ],
             'app.system',
             'admin.system' => [
-                'System',
-                'Restaurant administration',
+                'staff.pages.system',
+                'staff.pages.system_sub',
             ],
 
             'app.pass',
             'kitchen.pass' => [
-                'Kitchen Pass',
-                'Live kitchen order feed',
+                'staff.pages.kitchen_pass',
+                'staff.pages.kitchen_pass_sub',
             ],
 
             'manager.shift-qr.index' => [
-                'Shift QR',
-                'Issue staff sign-in codes',
+                'staff.pages.shift_qr',
+                'staff.pages.shift_qr_sub',
             ],
 
             'dashboard' => [
-                'Dashboard',
-                'Restaurant overview',
+                'staff.pages.dashboard',
+                'staff.pages.dashboard_sub',
             ],
 
             default => [
-                'Staff',
+                'staff.pages.staff',
                 '',
             ],
         };

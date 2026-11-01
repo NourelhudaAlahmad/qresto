@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { Numeric } from '@/components/numeric';
+import { useI18n } from '@/lib/i18n';
 import type { TableState } from '@/types';
 
 type TableTileProps = {
@@ -27,13 +28,6 @@ const stateStyles: Record<TableState, string> = {
     bill: 'bg-[var(--table-bill-bg)] text-[var(--table-bill-fg)] border-[var(--clay-200)]',
 };
 
-export const tableStateLabels: Record<TableState, string> = {
-    free: 'Free',
-    seated: 'Seated',
-    ordered: 'Ordered',
-    bill: 'Bill requested',
-};
-
 export function TableTile({
     table,
     state,
@@ -45,6 +39,7 @@ export function TableTile({
     onClick,
     ariaLabel,
 }: TableTileProps) {
+    const { tables } = useI18n();
     const className = `flex min-h-24 w-full flex-col items-start gap-1 rounded-[var(--radius-lg)] border p-3 text-start ${stateStyles[state]} ${
         selected
             ? 'ring-[3px] ring-[var(--border-focus-color)] ring-offset-0'
@@ -62,7 +57,7 @@ export function TableTile({
             </div>
 
             <div className="text-micro flex w-full min-w-0 items-baseline gap-1">
-                <span className="font-semibold">{tableStateLabels[state]}</span>
+                <span className="font-semibold">{tables[state]}</span>
 
                 {assignee !== undefined && (
                     <span className="min-w-0 truncate opacity-80">
