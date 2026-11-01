@@ -13,6 +13,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 
 import InputError from '@/components/input-error';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import PasskeyVerify from '@/components/passkey-verify';
 import { Button } from '@/components/qresto/button';
 import { Checkbox } from '@/components/qresto/checkbox';
@@ -20,6 +21,7 @@ import { Divider } from '@/components/qresto/divider';
 import { Input } from '@/components/qresto/input';
 import { Label } from '@/components/qresto/label';
 import { ShiftQrScanner } from '@/components/qresto/shift-qr-scanner';
+import { fill, useI18n } from '@/lib/i18n';
 import { store } from '@/routes/login';
 
 type Props = {
@@ -33,6 +35,10 @@ export default function StaffLogin({
     canResetPassword,
     restaurantName,
 }: Props) {
+    const {
+        guest: g,
+        staff: { login: t },
+    } = useI18n();
     const [mode, setMode] = useState<'login' | 'forgot'>('login');
     const [remember, setRemember] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -42,7 +48,7 @@ export default function StaffLogin({
 
     return (
         <>
-            <Head title={isForgot ? 'Reset password' : 'Staff sign in'} />
+            <Head title={isForgot ? t.head_reset : t.head_sign_in} />
 
             <main className="bg-surface-page font-ui flex min-h-screen w-full items-center justify-center px-4 py-6 sm:px-6 sm:py-8 min-[900px]:px-8">
                 <div className="bg-surface-card shadow-card grid w-full min-w-0 max-w-[1180px] overflow-hidden rounded-2xl min-[900px]:min-h-[700px] min-[900px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -64,8 +70,12 @@ export default function StaffLogin({
                                 </div>
 
                                 <p className="text-caption text-text-tertiary">
-                                    Staff workspace
+                                    {t.workspace}
                                 </p>
+                            </div>
+
+                            <div className="ms-auto">
+                                <LanguageSwitcher label={g.help.language} />
                             </div>
                         </header>
 
@@ -80,7 +90,7 @@ export default function StaffLogin({
                                         onClick={() => setMode('login')}
                                     >
                                         <ArrowLeft className="size-4 rtl:rotate-180" />
-                                        Back to sign in
+                                        {t.back}
                                     </Button>
 
                                     <div className="bg-clay-100 text-clay-700 mb-6 flex size-12 items-center justify-center rounded-xl">
@@ -91,12 +101,11 @@ export default function StaffLogin({
                                     </div>
 
                                     <h1 className="font-display text-title-1 text-text-primary font-bold">
-                                        Reset password
+                                        {t.reset_title}
                                     </h1>
 
                                     <p className="text-body text-text-secondary mt-3 leading-relaxed">
-                                        Enter your work email and we'll send you
-                                        a reset link valid for 30 minutes.
+                                        {t.reset_body}
                                     </p>
 
                                     <Form
@@ -108,7 +117,7 @@ export default function StaffLogin({
                                             <>
                                                 <div className="grid gap-2">
                                                     <Label htmlFor="reset-email">
-                                                        Work email
+                                                        {t.email}
                                                     </Label>
 
                                                     <Input
@@ -134,7 +143,7 @@ export default function StaffLogin({
                                                     loading={processing}
                                                     className="h-12 gap-2"
                                                 >
-                                                    Send reset link
+                                                    {t.send_link}
                                                     <ArrowRight
                                                         className="size-4 rtl:rotate-180"
                                                         aria-hidden="true"
@@ -149,13 +158,16 @@ export default function StaffLogin({
                                     {/* Heading */}
                                     <div className="mb-8">
                                         <h1 className="font-display text-title-1 text-text-primary font-bold">
-                                            Staff sign in
+                                            {t.title}
                                         </h1>
 
                                         <p className="text-body text-text-secondary mt-3 leading-relaxed">
                                             {restaurantName
-                                                ? `${restaurantName} · Your shift starts when you sign in.`
-                                                : 'Your shift starts when you sign in.'}
+                                                ? fill(t.shift_starts_at, {
+                                                      restaurant:
+                                                          restaurantName,
+                                                  })
+                                                : t.shift_starts}
                                         </p>
                                     </div>
 
@@ -169,7 +181,7 @@ export default function StaffLogin({
                                             <>
                                                 <div className="grid gap-2">
                                                     <Label htmlFor="email">
-                                                        Work email
+                                                        {t.email}
                                                     </Label>
 
                                                     <Input
@@ -191,7 +203,7 @@ export default function StaffLogin({
                                                 <div className="grid gap-2">
                                                     <div className="flex items-center justify-between gap-3">
                                                         <Label htmlFor="password">
-                                                            Password
+                                                            {t.password}
                                                         </Label>
 
                                                         {canResetPassword && (
@@ -207,7 +219,7 @@ export default function StaffLogin({
                                                                     );
                                                                 }}
                                                             >
-                                                                Forgot it?
+                                                                {t.forgot}
                                                             </button>
                                                         )}
                                                     </div>
@@ -222,7 +234,9 @@ export default function StaffLogin({
                                                                     : 'password'
                                                             }
                                                             autoComplete="current-password"
-                                                            placeholder="Enter your password"
+                                                            placeholder={
+                                                                t.password_placeholder
+                                                            }
                                                             className="h-12 pe-12"
                                                             required
                                                         />
@@ -231,8 +245,8 @@ export default function StaffLogin({
                                                             type="button"
                                                             aria-label={
                                                                 showPassword
-                                                                    ? 'Hide password'
-                                                                    : 'Show password'
+                                                                    ? t.hide_password
+                                                                    : t.show_password
                                                             }
                                                             aria-pressed={
                                                                 showPassword
@@ -281,8 +295,7 @@ export default function StaffLogin({
                                                     />
 
                                                     <Label htmlFor="remember">
-                                                        Keep me signed in on
-                                                        this device
+                                                        {t.remember}
                                                     </Label>
 
                                                     <input
@@ -302,7 +315,7 @@ export default function StaffLogin({
                                                     data-test="login-button"
                                                     className="h-12 gap-2"
                                                 >
-                                                    Sign in
+                                                    {t.sign_in}
                                                     <ArrowRight
                                                         className="size-4 rtl:rotate-180"
                                                         aria-hidden="true"
@@ -341,8 +354,8 @@ export default function StaffLogin({
 
                                             <span>
                                                 {scannerOpen
-                                                    ? 'Close shift QR scanner'
-                                                    : 'Sign in with shift QR'}
+                                                    ? t.close_scanner
+                                                    : t.with_qr}
                                             </span>
                                         </Button>
 
@@ -359,7 +372,7 @@ export default function StaffLogin({
 
                                     <details className="border-border-subtle mt-6 border-t pt-4">
                                         <summary className="text-label text-text-secondary cursor-pointer text-center">
-                                            Other sign-in options
+                                            {t.other_options}
                                         </summary>
 
                                         <div className="mt-4">
@@ -375,10 +388,7 @@ export default function StaffLogin({
                                         />
 
                                         <p className="text-caption text-text-tertiary leading-relaxed">
-                                            Three wrong attempts lock your
-                                            account for 10 minutes and notify
-                                            the manager on shift. Password reset
-                                            links expire after 30 minutes.
+                                            {t.lockout_note}
                                         </p>
                                     </div>
                                 </>
@@ -395,7 +405,7 @@ export default function StaffLogin({
                         </div>
 
                         <footer className="text-caption text-text-tertiary mt-10 text-center">
-                            QRestO · Secure staff access
+                            {t.secure_access}
                         </footer>
                     </section>
 
@@ -413,7 +423,7 @@ export default function StaffLogin({
                             />
 
                             <span className="text-label text-text-inverse font-medium">
-                                QRestO for teams
+                                {t.for_teams}
                             </span>
                         </div>
 
@@ -426,34 +436,32 @@ export default function StaffLogin({
                             </div>
 
                             <p className="text-label text-text-inverse mb-4 uppercase tracking-wide">
-                                Your team. One workspace.
+                                {t.tagline}
                             </p>
 
                             <h2 className="font-display text-display-3 text-text-inverse leading-tight">
-                                Every shift.
-                                <span className="block">Every order.</span>
-                                One QRestO.
+                                {t.every_shift}
+                                <span className="block">{t.every_order}</span>
+                                {t.one_qresto}
                             </h2>
 
                             <p className="text-body text-text-inverse mt-6 max-w-sm leading-relaxed">
-                                Keep your restaurant team connected and your
-                                service running smoothly, from the first order
-                                to the last table.
+                                {t.pitch}
                             </p>
 
                             <div className="mt-8 flex flex-wrap gap-3">
                                 <span className="text-caption rounded-full border border-white/20 bg-white/10 px-4 py-2">
-                                    Staff workspace
+                                    {t.workspace}
                                 </span>
 
                                 <span className="text-caption rounded-full border border-white/20 bg-white/10 px-4 py-2">
-                                    QR shift access
+                                    {t.qr_access}
                                 </span>
                             </div>
                         </div>
 
                         <p className="text-caption text-text-inverse relative z-10 border-t border-white/20 pt-5">
-                            Made for better service.
+                            {t.made_for}
                         </p>
                     </aside>
                 </div>

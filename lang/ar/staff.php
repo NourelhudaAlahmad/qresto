@@ -1,7 +1,7 @@
 <?php
 
-// Staff screens: navigation, page titles, roles, the staff shell and
-// the floor. Shared to every page as i18n.staff. Keep en and ar
+// Staff screens: navigation, page titles, roles, the staff shell, sign-in
+// and the floor. Shared to every page as i18n.staff. Keep en and ar
 // key-for-key; tests/Feature/SharedTranslationsTest.php checks both.
 
 return [
@@ -133,5 +133,50 @@ return [
         'try_again' => 'يرجى المحاولة مرة أخرى.',
         'cash_received' => 'استُلم :amount نقداً',
         'card_taken' => 'دُفع :amount بالبطاقة',
+    ],
+
+    'login' => [
+        'head_sign_in' => 'دخول الموظفين',
+        'head_reset' => 'إعادة تعيين كلمة المرور',
+        'workspace' => 'مساحة عمل الموظفين',
+        'back' => 'العودة لتسجيل الدخول',
+        'reset_title' => 'إعادة تعيين كلمة المرور',
+        'reset_body' => 'أدخل بريد العمل وسنرسل لك رابط إعادة تعيين صالحاً لمدة 30 دقيقة.',
+        'email' => 'بريد العمل',
+        'send_link' => 'أرسل رابط إعادة التعيين',
+        'title' => 'دخول الموظفين',
+        'shift_starts' => 'تبدأ ورديتك عند تسجيل الدخول.',
+        'shift_starts_at' => ':restaurant · تبدأ ورديتك عند تسجيل الدخول.',
+        'password' => 'كلمة المرور',
+        'forgot' => 'نسيتها؟',
+        'password_placeholder' => 'أدخل كلمة المرور',
+        'hide_password' => 'إخفاء كلمة المرور',
+        'show_password' => 'إظهار كلمة المرور',
+        'remember' => 'ابقَ مسجلاً على هذا الجهاز',
+        'sign_in' => 'تسجيل الدخول',
+        'close_scanner' => 'إغلاق ماسح رمز الوردية',
+        'with_qr' => 'الدخول برمز QR للوردية',
+        'other_options' => 'طرق دخول أخرى',
+        'lockout_note' => 'ثلاث محاولات خاطئة تقفل حسابك 10 دقائق وتنبّه مدير الوردية. وروابط إعادة تعيين كلمة المرور تنتهي بعد 30 دقيقة.',
+        'secure_access' => 'QRestO · دخول آمن للموظفين',
+        'for_teams' => 'QRestO للفرق',
+        'tagline' => 'فريقك. مساحة عمل واحدة.',
+        'every_shift' => 'كل وردية.',
+        'every_order' => 'كل طلب.',
+        'one_qresto' => 'QRestO واحد.',
+        'pitch' => 'أبقِ فريق مطعمك متصلاً وخدمتك سلسة، من أول طلب حتى آخر طاولة.',
+        'qr_access' => 'دخول الوردية برمز QR',
+        'made_for' => 'صُمم لخدمة أفضل.',
+    ],
+
+    'shift_qr' => [
+        'title' => 'امسح رمز الوردية',
+        'body' => 'وجّه الكاميرا نحو رمز الوردية الذي أعطاك إياه المدير.',
+        'close' => 'إغلاق الماسح',
+        'camera' => 'كاميرا مسح رمز الوردية',
+        'verifying' => 'جارٍ التحقق من رمز الوردية...',
+        'expiry' => 'رموز الوردية تنتهي بعد 5 دقائق ولا تُستخدم إلا مرة واحدة.',
+        'failed' => 'فشل الدخول برمز الوردية. يرجى المحاولة مرة أخرى.',
+        'camera_error' => 'تعذّر فتح الكاميرا. اسمح بالوصول إلى الكاميرا وحاول مرة أخرى.',
     ],
 ];

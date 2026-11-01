@@ -4,6 +4,7 @@ import { Camera, QrCode, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 
 import { Button } from '@/components/qresto/button';
+import { useI18n } from '@/lib/i18n';
 
 type ShiftQrPayload = {
     type: 'qresto.shift-sign-in';
@@ -67,6 +68,9 @@ async function stopScanner(scanner: Html5Qrcode): Promise<void> {
 }
 
 export function ShiftQrScanner({ onClose }: Props) {
+    const {
+        staff: { shift_qr: t },
+    } = useI18n();
     const generatedId = useId();
     const scannerId = `shift-qr-reader-${generatedId.replace(/:/g, '')}`;
 
@@ -137,10 +141,7 @@ export function ShiftQrScanner({ onClose }: Props) {
                                 {
                                     preserveScroll: true,
                                     onError: (errors) => {
-                                        setError(
-                                            errors.token ??
-                                                'Shift QR sign-in failed. Please try again.',
-                                        );
+                                        setError(errors.token ?? t.failed);
                                         submittedRef.current = false;
                                     },
                                     onFinish: () => {
@@ -161,9 +162,7 @@ export function ShiftQrScanner({ onClose }: Props) {
                 }
             } catch {
                 if (!disposed) {
-                    setError(
-                        'The camera could not be opened. Allow camera access and try again.',
-                    );
+                    setError(t.camera_error);
                 }
 
                 if (startingScanner) {
@@ -184,7 +183,7 @@ export function ShiftQrScanner({ onClose }: Props) {
                 void stopScanner(scanner);
             }
         };
-    }, [scannerId]);
+    }, [scannerId, t.failed, t.camera_error]);
 
     return (
         <div className="border-border-subtle bg-surface-card mt-4 rounded-xl border p-4">
@@ -194,12 +193,11 @@ export function ShiftQrScanner({ onClose }: Props) {
 
                     <div>
                         <h2 className="text-label text-text-primary font-semibold">
-                            Scan shift QR
+                            {t.title}
                         </h2>
 
                         <p className="text-caption text-text-secondary mt-1">
-                            Point your camera at the shift code provided by your
-                            manager.
+                            {t.body}
                         </p>
                     </div>
                 </div>
@@ -210,7 +208,7 @@ export function ShiftQrScanner({ onClose }: Props) {
                     size="sm"
                     onClick={onClose}
                     disabled={submitting}
-                    aria-label="Close QR scanner"
+                    aria-label={t.close}
                 >
                     <X className="size-4" />
                 </Button>
@@ -219,7 +217,7 @@ export function ShiftQrScanner({ onClose }: Props) {
             <div
                 id={scannerId}
                 className="bg-surface-page w-full overflow-hidden rounded-lg"
-                aria-label="Shift QR camera scanner"
+                aria-label={t.camera}
             />
 
             {error && (
@@ -234,13 +232,11 @@ export function ShiftQrScanner({ onClose }: Props) {
                     className="text-caption text-text-secondary mt-3 flex items-center gap-2"
                 >
                     <Camera className="size-4" />
-                    Verifying your shift QR...
+                    {t.verifying}
                 </p>
             )}
 
-            <p className="text-caption text-text-tertiary mt-3">
-                Shift codes expire after 5 minutes and can only be used once.
-            </p>
+            <p className="text-caption text-text-tertiary mt-3">{t.expiry}</p>
         </div>
     );
 }
