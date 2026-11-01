@@ -8,6 +8,7 @@ import { Input } from '@/components/qresto/input';
 import { StickyDock } from '@/components/qresto/sticky-dock';
 import { Icon } from '@/components/ui/icon';
 import GuestLayout from '@/layouts/guest-layout';
+import { fill, useI18n } from '@/lib/i18n';
 
 type TableProps = {
     restaurant: {
@@ -36,35 +37,13 @@ function getSavedFirstName(): string {
     return window.localStorage.getItem(FIRST_NAME_STORAGE_KEY) ?? '';
 }
 
-function getCoverText(seats: number): string {
-    const words: Record<number, string> = {
-        1: 'One',
-        2: 'Two',
-        3: 'Three',
-        4: 'Four',
-        5: 'Five',
-        6: 'Six',
-        7: 'Seven',
-        8: 'Eight',
-        9: 'Nine',
-        10: 'Ten',
-        11: 'Eleven',
-        12: 'Twelve',
-    };
-
-    if (seats === 1) {
-        return 'One cover';
-    }
-
-    return `${words[seats] ?? seats} covers`;
-}
-
 export default function Table({
     restaurant,
     table,
     assigned_waiter,
     qr_token,
 }: TableProps) {
+    const { guest: g } = useI18n();
     const [isReading, setIsReading] = useState(true);
     const [firstName, setFirstName] = useState(getSavedFirstName);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,7 +60,18 @@ export default function Table({
         ? assigned_waiter.name.split(' ')[0]
         : null;
 
-    const coverText = getCoverText(table.seats);
+    // Arabic counts take different forms for 1, 2, 3–10 and 11+.
+    const coverText =
+        table.seats === 1
+            ? g.table.covers_one
+            : table.seats === 2
+              ? g.table.covers_two
+              : fill(
+                    table.seats <= 10
+                        ? g.table.covers_few
+                        : g.table.covers_many,
+                    { count: table.seats },
+                );
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -114,19 +104,16 @@ export default function Table({
     if (isReading) {
         return (
             <GuestLayout>
-                <Head title="Reading table" />
+                <Head title={g.table.reading_head} />
 
-                <main
-                    dir="ltr"
-                    className="flex min-h-[100dvh] items-center justify-center px-[var(--gutter-mobile)]"
-                >
+                <main className="flex min-h-[100dvh] items-center justify-center px-[var(--gutter-mobile)]">
                     <div
                         className="text-herb-700 text-body flex items-center gap-2 font-semibold"
                         role="status"
                         aria-live="polite"
                     >
                         <Icon iconNode={CircleCheck} className="size-4" />
-                        <span>Reading QR code…</span>
+                        <span>{g.table.reading}</span>
                     </div>
                 </main>
             </GuestLayout>
@@ -135,17 +122,16 @@ export default function Table({
 
     return (
         <GuestLayout>
-            <Head title={`Table ${table.number}`} />
+            <Head title={fill(g.table.head, { table: table.number })} />
 
             <form
-                dir="ltr"
                 onSubmit={handleSubmit}
                 className="flex min-h-[100dvh] flex-col"
             >
                 <main className="flex flex-1 flex-col px-[var(--gutter-mobile)] pb-6 pt-8">
                     <div className="text-herb-700 text-body flex items-center gap-2 font-semibold">
                         <Icon iconNode={CircleCheck} className="size-4" />
-                        <span>QR code read</span>
+                        <span>{g.table.read}</span>
                     </div>
 
                     <section className="mt-8">
@@ -158,20 +144,20 @@ export default function Table({
                         </div>
 
                         <h1 className="font-display text-display-3 tracking-display font-semibold">
-                            You're at Table {table.number}
+                            {fill(g.table.you_are_at, { table: table.number })}
                         </h1>
 
                         <p className="text-body-lg text-text-secondary mt-3 leading-relaxed">
                             {coverText}
                             {waiterFirstName
-                                ? `. ${waiterFirstName} is looking after this table tonight.`
+                                ? `. ${fill(g.table.waiter_tonight, { name: waiterFirstName })}`
                                 : '.'}
                         </p>
                     </section>
 
                     <label className="mt-8 flex flex-col gap-1.5">
                         <span className="text-label text-text-secondary font-semibold">
-                            First name, so we can call the order
+                            {g.table.first_name_label}
                         </span>
 
                         <Input
@@ -184,12 +170,11 @@ export default function Table({
                             maxLength={50}
                             required
                             className="text-body-lg h-[54px]"
-                            aria-label="First name"
+                            aria-label={g.table.first_name}
                         />
 
                         <span className="text-caption text-text-tertiary">
-                            No account, no phone number. The table is the
-                            session.
+                            {g.table.first_name_hint}
                         </span>
                     </label>
                 </main>
@@ -201,7 +186,7 @@ export default function Table({
                         className="w-full"
                         disabled={isSubmitting || !firstName.trim()}
                     >
-                        {isSubmitting ? 'Opening…' : 'Open the menu'}
+                        {isSubmitting ? g.table.opening : g.table.open_menu}
                     </Button>
 
                     <Button
@@ -211,7 +196,7 @@ export default function Table({
                         onClick={openTablePicker}
                         disabled={isSubmitting}
                     >
-                        Wrong table?
+                        {g.table.wrong_table}
                     </Button>
                 </StickyDock>
             </form>

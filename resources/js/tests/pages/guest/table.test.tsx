@@ -75,7 +75,7 @@ describe('Guest table page', () => {
 
         expect(
             screen.getByText(
-                'Four covers. Nadia is looking after this table tonight.',
+                '4 covers. Nadia is looking after this table tonight.',
             ),
         ).toBeInTheDocument();
 

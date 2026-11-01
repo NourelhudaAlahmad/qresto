@@ -20,6 +20,7 @@ import { SectionHead } from '@/components/qresto/section-head';
 import { StickyDock } from '@/components/qresto/sticky-dock';
 import { TabBar } from '@/components/qresto/tab-bar';
 import GuestLayout from '@/layouts/guest-layout';
+import { fill, useI18n } from '@/lib/i18n';
 
 type Money = {
     amount: number;
@@ -110,6 +111,7 @@ export default function Menu({
     latest_order_id,
     restore_guest_tab,
 }: MenuPageProps) {
+    const { guest: g } = useI18n();
     const [search, setSearch] = useState('');
 
     const [helpOpen, setHelpOpen] = useState(false);
@@ -197,7 +199,7 @@ export default function Menu({
 
     return (
         <GuestLayout>
-            <Head title={`${restaurant.name} · Menu`} />
+            <Head title={fill(g.menu.head, { restaurant: restaurant.name })} />
 
             <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[var(--surface-page)]">
                 {/* =========================
@@ -214,7 +216,7 @@ export default function Menu({
 
                                 {restaurant.closes_today_at && (
                                     <p className="text-caption mt-1 font-mono tracking-[0.02em] text-[var(--text-tertiary)]">
-                                        Kitchen closes{' '}
+                                        {g.menu.kitchen_closes}{' '}
                                         <span dir="ltr">
                                             {restaurant.closes_today_at}
                                         </span>
@@ -232,8 +234,8 @@ export default function Menu({
                         <SearchField
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
-                            placeholder="Search the menu"
-                            aria-label="Search the menu"
+                            placeholder={g.menu.search}
+                            aria-label={g.menu.search}
                         />
 
                         {/* Category chips */}
@@ -246,7 +248,7 @@ export default function Menu({
                                         setActiveCategory(ALL_CATEGORIES)
                                     }
                                 >
-                                    All
+                                    {g.menu.all}
                                 </ChipFilter>
 
                                 {categories.map((category) => (
@@ -274,7 +276,7 @@ export default function Menu({
                                             setActiveDietary(ALL_DIETARY)
                                         }
                                     >
-                                        All diets
+                                        {g.menu.all_diets}
                                     </ChipFilter>
 
                                     {dietaryTags.map((tag) => (
@@ -301,8 +303,8 @@ export default function Menu({
                     {visibleItemCount === 0 ? (
                         <EmptyState
                             icon={<SearchX className="size-7" />}
-                            headline="Nothing found"
-                            body="Try another search or clear one of your filters."
+                            headline={g.menu.nothing_found}
+                            body={g.menu.nothing_found_body}
                             className="min-h-[320px]"
                         />
                     ) : (
@@ -341,8 +343,13 @@ export default function Menu({
                                                         <Timer className="size-3" />
 
                                                         <span>
-                                                            {item.prep_minutes}{' '}
-                                                            min
+                                                            {fill(
+                                                                g.menu.minutes,
+                                                                {
+                                                                    minutes:
+                                                                        item.prep_minutes,
+                                                                },
+                                                            )}
                                                         </span>
                                                     </div>
                                                 )}
@@ -355,9 +362,7 @@ export default function Menu({
                             {/* Allergy note */}
                             {allergenNames.length > 0 && (
                                 <p className="text-caption border-border-subtle border-t pb-4 pt-4 text-[var(--text-tertiary)]">
-                                    Allergens are listed on every dish. Tell
-                                    your waiter about anything severe — the
-                                    kitchen shares equipment.
+                                    {g.menu.allergy_note}
                                 </p>
                             )}
                         </div>
@@ -375,8 +380,11 @@ export default function Menu({
                             onClick={() => router.visit('/cart')}
                             className="h-14 rounded-full text-base font-semibold shadow-sm"
                         >
-                            View order · {cart.count}{' '}
-                            {cart.count === 1 ? 'item' : 'items'} ·{' '}
+                            {cart.count === 1
+                                ? g.menu.view_order_one
+                                : fill(g.menu.view_order_other, {
+                                      count: cart.count,
+                                  })}{' '}
                             <Numeric>{cart.subtotal.formatted}</Numeric>
                         </Button>
                     </StickyDock>
@@ -389,12 +397,12 @@ export default function Menu({
                     <TabBar
                         items={[
                             {
-                                label: 'Menu',
+                                label: g.nav.menu,
                                 icon: <MenuIcon className="size-5" />,
                                 active: true,
                             },
                             {
-                                label: 'Order',
+                                label: g.nav.order,
                                 icon: <ClipboardList className="size-5" />,
                                 badge: cart.count > 0 ? cart.count : undefined,
                                 onClick: () => {
@@ -403,7 +411,7 @@ export default function Menu({
                                 },
                             },
                             {
-                                label: 'Status',
+                                label: g.nav.status,
                                 icon: (
                                     <span className="font-mono text-base leading-none">
                                         02
@@ -425,7 +433,7 @@ export default function Menu({
                                 },
                             },
                             {
-                                label: 'Help',
+                                label: g.nav.help,
                                 icon: <CircleHelp className="size-5" />,
                                 disabled: !session.active,
                                 onClick: () => setHelpOpen(true),

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/qresto/button';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { showToast } from '@/components/qresto/toast';
+import { useI18n } from '@/lib/i18n';
 
 type RequestKind = 'water' | 'bread' | 'bill' | 'waiter';
 
@@ -13,20 +14,21 @@ type Props = {
     openRequests?: RequestKind[];
 };
 
-const options: { kind: RequestKind; label: string; description: string }[] = [
-    { kind: 'water', label: 'Water', description: 'Ask for water' },
-    { kind: 'bread', label: 'Bread', description: 'Ask for more bread' },
-    { kind: 'bill', label: 'The bill', description: 'Request your bill' },
-    { kind: 'waiter', label: 'Waiter', description: 'Ask for assistance' },
-];
+const kinds: RequestKind[] = ['water', 'bread', 'bill', 'waiter'];
 
 export function CallWaiterSheet({
     open,
     onOpenChange,
     openRequests = [],
 }: Props) {
+    const { guest: g } = useI18n();
     const [submitting, setSubmitting] = useState<RequestKind | null>(null);
     const pendingKinds = new Set(openRequests);
+    const options = kinds.map((kind) => ({
+        kind,
+        label: g.call[kind],
+        description: g.call[`${kind}_hint` as const],
+    }));
 
     function submitRequest(kind: RequestKind) {
         if (submitting || pendingKinds.has(kind)) {
@@ -43,18 +45,18 @@ export function CallWaiterSheet({
                     onOpenChange(false);
                     showToast({
                         type: 'success',
-                        title: 'Request sent',
+                        title: g.call.sent,
                         description:
                             kind === 'bill'
-                                ? 'Your bill has been requested.'
-                                : 'Your waiter has been notified.',
+                                ? g.call.bill_requested
+                                : g.call.waiter_notified,
                     });
                 },
                 onError: () => {
                     showToast({
                         type: 'error',
-                        title: 'Could not send request',
-                        description: 'Please try again.',
+                        title: g.call.failed,
+                        description: g.call.try_again,
                     });
                 },
                 onFinish: () => setSubmitting(null),
@@ -66,11 +68,11 @@ export function CallWaiterSheet({
         <ResponsiveOverlay
             open={open}
             onOpenChange={onOpenChange}
-            title="How can we help?"
+            title={g.call.title}
         >
             <div className="space-y-3">
                 <p className="text-body text-[var(--text-secondary)]">
-                    Choose what you need and we’ll notify your waiter.
+                    {g.call.body}
                 </p>
                 {options.map((option) => {
                     const pending = pendingKinds.has(option.kind);
@@ -91,7 +93,7 @@ export function CallWaiterSheet({
                                 </span>
                                 <span className="text-caption font-normal">
                                     {pending
-                                        ? 'Request pending'
+                                        ? g.call.pending
                                         : option.description}
                                 </span>
                             </span>

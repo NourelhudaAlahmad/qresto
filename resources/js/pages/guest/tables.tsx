@@ -4,6 +4,7 @@ import { Check } from 'lucide-react';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { Icon } from '@/components/ui/icon';
 import GuestLayout from '@/layouts/guest-layout';
+import { fill, useI18n } from '@/lib/i18n';
 
 type Table = {
     id: number;
@@ -19,6 +20,8 @@ type TablesProps = {
 };
 
 export default function Tables({ current_table_id, tables }: TablesProps) {
+    const { guest: g } = useI18n();
+
     const closePicker = () => {
         window.history.back();
     };
@@ -33,13 +36,12 @@ export default function Tables({ current_table_id, tables }: TablesProps) {
 
     return (
         <GuestLayout>
-            <Head title="Choose your table" />
+            <Head title={g.tables.title} />
 
             <main className="min-h-[100dvh]" />
 
             <ResponsiveOverlay
                 open
-                dir="ltr"
                 onOpenChange={(open) => {
                     if (!open) {
                         closePicker();
@@ -47,18 +49,18 @@ export default function Tables({ current_table_id, tables }: TablesProps) {
                 }}
                 title={
                     <span className="font-display text-display-3 tracking-display text-text-primary font-semibold">
-                        Choose your table
+                        {g.tables.title}
                     </span>
                 }
             >
                 <div className="max-h-[70dvh] overflow-y-auto">
                     <div className="mb-5">
                         <p className="text-micro tracking-eyebrow text-clay-600 font-semibold uppercase">
-                            Wrong table?
+                            {g.tables.wrong_table}
                         </p>
 
                         <p className="text-body-lg text-text-secondary mt-2">
-                            Pick the number printed on your table.
+                            {g.tables.hint}
                         </p>
                     </div>
 
@@ -82,7 +84,7 @@ export default function Tables({ current_table_id, tables }: TablesProps) {
                                         {isCurrent && (
                                             <span
                                                 className="text-herb-700"
-                                                aria-label="Current table"
+                                                aria-label={g.tables.current}
                                             >
                                                 <Icon
                                                     iconNode={Check}
@@ -94,16 +96,19 @@ export default function Tables({ current_table_id, tables }: TablesProps) {
 
                                     <div className="mt-4">
                                         <p className="text-text-primary text-body font-semibold">
-                                            Table {table.number}
+                                            {fill(g.tables.table, {
+                                                table: table.number,
+                                            })}
                                         </p>
 
                                         <p className="text-caption text-text-secondary mt-0.5">
-                                            {table.seats}{' '}
                                             {table.seats === 1
-                                                ? 'seat'
-                                                : 'seats'}
+                                                ? g.tables.seats_one
+                                                : fill(g.tables.seats_other, {
+                                                      count: table.seats,
+                                                  })}
                                             {isCurrent
-                                                ? ' · Current table'
+                                                ? ` · ${g.tables.current}`
                                                 : ''}
                                         </p>
                                     </div>

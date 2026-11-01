@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/qresto/button';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { showToast } from '@/components/qresto/toast';
+import { useI18n } from '@/lib/i18n';
 
 type Props = {
     open: boolean;
@@ -18,6 +19,7 @@ export function HelpPanel({
     restaurantPhone,
     onCallWaiter,
 }: Props) {
+    const { guest: g } = useI18n();
     const [changingLanguage, setChangingLanguage] = useState(false);
 
     function changeLanguage(locale: 'en' | 'ar') {
@@ -36,8 +38,8 @@ export function HelpPanel({
                 onError: () =>
                     showToast({
                         type: 'error',
-                        title: 'Could not change language',
-                        description: 'Please try again.',
+                        title: g.help.language_failed,
+                        description: g.help.try_again,
                     }),
                 onFinish: () => setChangingLanguage(false),
             },
@@ -45,19 +47,21 @@ export function HelpPanel({
     }
 
     return (
-        <ResponsiveOverlay open={open} onOpenChange={onOpenChange} title="Help">
+        <ResponsiveOverlay
+            open={open}
+            onOpenChange={onOpenChange}
+            title={g.help.title}
+        >
             <div className="space-y-5">
                 <section className="space-y-2">
-                    <h3 className="font-semibold">Allergen information</h3>
+                    <h3 className="font-semibold">{g.help.allergens_title}</h3>
                     <p className="text-body text-[var(--text-secondary)]">
-                        Allergens are listed on each dish. Please tell your
-                        waiter about any food allergies before ordering. Kitchen
-                        equipment may be shared.
+                        {g.help.allergens_body}
                     </p>
                 </section>
 
                 <section className="space-y-2">
-                    <h3 className="font-semibold">Contact the restaurant</h3>
+                    <h3 className="font-semibold">{g.help.contact_title}</h3>
 
                     {restaurantPhone ? (
                         <a
@@ -68,13 +72,13 @@ export function HelpPanel({
                         </a>
                     ) : (
                         <p className="text-body text-[var(--text-secondary)]">
-                            Phone number unavailable.
+                            {g.help.no_phone}
                         </p>
                     )}
                 </section>
 
                 <section className="space-y-2">
-                    <h3 className="font-semibold">Language</h3>
+                    <h3 className="font-semibold">{g.help.language}</h3>
 
                     <div className="grid grid-cols-2 gap-2">
                         <Button
@@ -106,7 +110,7 @@ export function HelpPanel({
                             onCallWaiter();
                         }}
                     >
-                        Call waiter
+                        {g.help.call_waiter}
                     </Button>
                 </section>
             </div>

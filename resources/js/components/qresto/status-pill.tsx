@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n';
 import type { OrderStatus } from '@/types';
 
 type StatusPillProps = {
@@ -16,17 +17,9 @@ const statusStyles: Record<OrderStatus, string> = {
         'bg-[var(--status-cancelled-bg)] text-[var(--status-cancelled-fg)]',
 };
 
-const labels: Record<OrderStatus, string> = {
-    placed: 'Placed',
-    pending: 'Pending',
-    preparing: 'Preparing',
-    ready: 'Ready',
-    served: 'Served',
-    paid: 'Paid',
-    cancelled: 'Cancelled',
-};
-
 export function StatusPill({ status }: StatusPillProps) {
+    const { orders } = useI18n();
+
     return (
         <span
             className={`text-caption inline-flex h-7 items-center gap-1.5 rounded-full px-3 font-semibold ${statusStyles[status]}`}
@@ -36,7 +29,7 @@ export function StatusPill({ status }: StatusPillProps) {
                 aria-hidden="true"
                 className="h-1.5 w-1.5 rounded-full bg-current"
             />
-            {labels[status]}
+            {orders[status]}
         </span>
     );
 }

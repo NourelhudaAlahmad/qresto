@@ -15,6 +15,7 @@ import { TabBar } from '@/components/qresto/tab-bar';
 import { useLiveData } from '@/hooks/useLiveData';
 import GuestLayout from '@/layouts/guest-layout';
 import { formatMoney } from '@/lib/formatMoney';
+import { fill, useI18n } from '@/lib/i18n';
 import type { Money, OrderStatus } from '@/types';
 
 type GuestStage = 'placed' | 'preparing' | 'ready' | 'served' | 'cancelled';
@@ -100,48 +101,6 @@ const LIVE_ONLY = ['live'];
 
 const stages = ['placed', 'preparing', 'ready', 'served'] as const;
 
-const stageLabels = {
-    placed: 'Order placed',
-    preparing: 'In the kitchen',
-    ready: 'Ready at the pass',
-    served: 'At your table',
-} as const;
-
-const stageCopy: Record<
-    GuestStage,
-    {
-        title: string;
-        description: string;
-    }
-> = {
-    placed: {
-        title: 'Order received',
-        description: 'Your order has been sent to the kitchen.',
-    },
-
-    preparing: {
-        title: 'Cooking now',
-        description:
-            'Your food is being prepared. We’ll bring it over as soon as it is ready.',
-    },
-
-    ready: {
-        title: 'Ready at the pass',
-        description:
-            'Your order is ready and will be brought to your table shortly.',
-    },
-
-    served: {
-        title: 'At your table',
-        description: 'Enjoy — ask for anything you need.',
-    },
-
-    cancelled: {
-        title: 'Order cancelled',
-        description: 'Please speak with a member of staff.',
-    },
-};
-
 function formatTime(value: string | null): string | undefined {
     if (!value) {
         return undefined;
@@ -151,14 +110,6 @@ function formatTime(value: string | null): string | undefined {
         hour: '2-digit',
         minute: '2-digit',
     }).format(new Date(value));
-}
-
-function paymentMethodLabel(method: string | null): string {
-    if (!method) {
-        return '—';
-    }
-
-    return method.toLowerCase();
 }
 
 export default function Status({
@@ -171,6 +122,7 @@ export default function Status({
     session,
     cart_count = 0,
 }: Props) {
+    const { guest: g } = useI18n();
     const [helpOpen, setHelpOpen] = useState(false);
     const [callSheetOpen, setCallSheetOpen] = useState(false);
 
@@ -200,6 +152,49 @@ export default function Status({
         router.visit('/cart');
     };
 
+    const stageLabels = {
+        placed: g.status.stage_placed,
+        preparing: g.status.stage_preparing,
+        ready: g.status.stage_ready,
+        served: g.status.stage_served,
+    } as const;
+
+    const stageCopy: Record<
+        GuestStage,
+        { title: string; description: string }
+    > = {
+        placed: {
+            title: g.status.placed_title,
+            description: g.status.placed_body,
+        },
+        preparing: {
+            title: g.status.preparing_title,
+            description: g.status.preparing_body,
+        },
+        ready: {
+            title: g.status.ready_title,
+            description: g.status.ready_body,
+        },
+        served: {
+            title: g.status.served_title,
+            description: g.status.served_body,
+        },
+        cancelled: {
+            title: g.status.cancelled_title,
+            description: g.status.cancelled_body,
+        },
+    };
+
+    const paymentMethodLabel = (method: string | null): string => {
+        if (!method) {
+            return '—';
+        }
+
+        const key = `method_${method.toLowerCase()}` as keyof typeof g.status;
+
+        return g.status[key] ?? method.toLowerCase();
+    };
+
     const copy = stageCopy[live.stage];
 
     const currentIndex = stages.indexOf(live.stage as (typeof stages)[number]);
@@ -219,7 +214,10 @@ export default function Status({
 
         const eta =
             stage === 'preparing' && state === 'current' && live.eta_minutes
-                ? `~${live.eta_minutes.min}–${live.eta_minutes.max} min`
+                ? fill(g.status.eta, {
+                      min: live.eta_minutes.min,
+                      max: live.eta_minutes.max,
+                  })
                 : undefined;
 
         const actor =
@@ -229,10 +227,10 @@ export default function Status({
 
         if (stage === 'placed') {
             detail = live.payment_method
-                ? `Sent to the kitchen · ${
-                      live.paid ? 'paid' : 'unpaid'
-                  } by ${paymentMethodLabel(live.payment_method)}`
-                : 'Sent to the kitchen';
+                ? fill(live.paid ? g.status.sent_paid : g.status.sent_unpaid, {
+                      method: paymentMethodLabel(live.payment_method),
+                  })
+                : g.status.sent;
         }
 
         if (stage === 'preparing' && state === 'current') {
@@ -240,11 +238,14 @@ export default function Status({
         }
 
         if (stage === 'ready' && state === 'upcoming' && live.eta_minutes) {
-            detail = `Estimated in ~${live.eta_minutes.min}–${live.eta_minutes.max} min`;
+            detail = fill(g.status.estimated, {
+                min: live.eta_minutes.min,
+                max: live.eta_minutes.max,
+            });
         }
 
         if (stage === 'served') {
-            detail = 'Enjoy — ask for anything you need';
+            detail = g.status.enjoy;
         }
 
         return {
@@ -257,25 +258,25 @@ export default function Status({
 
     const paymentLabel = paymentMethodLabel(live.payment_method);
 
-    const receiptStateLabel = live.paid ? 'Paid' : 'Unpaid';
+    const receiptStateLabel = live.paid ? g.status.paid : g.status.unpaid;
 
     return (
         <GuestLayout>
-            <Head title={`Order ${order.code}`} />
+            <Head title={fill(g.status.head, { code: order.code })} />
 
             <div className="flex h-[100dvh] min-h-0 flex-col bg-[var(--surface-page)] sm:h-[calc(100dvh-48px)]">
                 <header className="shrink-0 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-5 pb-4 pt-4">
                     <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
                             <p className="font-display text-body font-semibold text-[var(--text-primary)]">
-                                Your order
+                                {g.status.your_order}
                             </p>
 
                             <p className="text-caption mt-1 font-mono text-[var(--text-tertiary)]">
                                 <span dir="ltr">{order.code}</span>
 
                                 {order.table_number
-                                    ? ` · Table ${order.table_number}`
+                                    ? ` · ${fill(g.status.table, { table: order.table_number })}`
                                     : ''}
                             </p>
                         </div>
@@ -318,12 +319,15 @@ export default function Status({
                                 <div className="min-w-0 flex-1">
                                     <p className="font-display text-body truncate font-semibold text-[var(--text-primary)]">
                                         {live.assigned_waiter
-                                            ? `${live.assigned_waiter.name} is on your table`
-                                            : 'Need anything?'}
+                                            ? fill(g.status.waiter_on_table, {
+                                                  name: live.assigned_waiter
+                                                      .name,
+                                              })
+                                            : g.status.need_anything}
                                     </p>
 
                                     <p className="text-caption mt-1 leading-5 text-[var(--text-tertiary)]">
-                                        Tap to ask for water, bread, or the bill
+                                        {g.status.call_hint}
                                     </p>
                                 </div>
 
@@ -334,7 +338,7 @@ export default function Status({
                                     onClick={() => setCallSheetOpen(true)}
                                     className="h-11 min-w-16 rounded-full"
                                 >
-                                    Call
+                                    {g.status.call}
                                 </Button>
                             </div>
                         </Card>
@@ -342,7 +346,7 @@ export default function Status({
                         <Card>
                             <div className="flex items-center justify-between gap-3">
                                 <p className="font-display text-body font-semibold text-[var(--text-primary)]">
-                                    Receipt
+                                    {g.status.receipt}
                                 </p>
 
                                 <span
@@ -390,7 +394,7 @@ export default function Status({
                             {Number(receipt.service_amount.amount) > 0 && (
                                 <div className="mb-2 flex justify-between gap-4">
                                     <span className="text-caption text-[var(--text-tertiary)]">
-                                        Service
+                                        {g.status.service}
                                     </span>
 
                                     <span
@@ -405,7 +409,7 @@ export default function Status({
                             {Number(receipt.tip_amount.amount) > 0 && (
                                 <div className="mb-2 flex justify-between gap-4">
                                     <span className="text-caption text-[var(--text-tertiary)]">
-                                        Tip
+                                        {g.status.tip}
                                     </span>
 
                                     <span
@@ -420,7 +424,7 @@ export default function Status({
                             {Number(receipt.discount_amount.amount) > 0 && (
                                 <div className="mb-2 flex justify-between gap-4">
                                     <span className="text-caption text-[var(--text-tertiary)]">
-                                        Discount
+                                        {g.status.discount}
                                     </span>
 
                                     <span
@@ -458,25 +462,25 @@ export default function Status({
                         fullWidth
                         className="rounded-full"
                     >
-                        <Link href="/menu">Order more</Link>
+                        <Link href="/menu">{g.status.order_more}</Link>
                     </Button>
                 </StickyDock>
 
                 <TabBar
                     items={[
                         {
-                            label: 'Menu',
+                            label: g.nav.menu,
                             icon: <MenuIcon className="size-5" />,
                             onClick: goToMenu,
                         },
                         {
-                            label: 'Order',
+                            label: g.nav.order,
                             icon: <ClipboardList className="size-5" />,
                             badge: cart_count > 0 ? cart_count : undefined,
                             onClick: goToCart,
                         },
                         {
-                            label: 'Status',
+                            label: g.nav.status,
                             icon: (
                                 <span className="font-mono text-base leading-none">
                                     02
@@ -488,7 +492,7 @@ export default function Status({
                             },
                         },
                         {
-                            label: 'Help',
+                            label: g.nav.help,
                             icon: <CircleHelp className="size-5" />,
                             onClick: () => setHelpOpen(true),
                         },

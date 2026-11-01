@@ -1,4 +1,5 @@
 import { Tag } from '@/components/qresto/tag';
+import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 type MenuItemCardProps = {
@@ -38,6 +39,8 @@ export function MenuItemCard({
     available = true,
     onClick,
 }: MenuItemCardProps) {
+    const { guest: g } = useI18n();
+
     return (
         <button
             type="button"
@@ -79,7 +82,7 @@ export function MenuItemCard({
 
                     {!available && (
                         <span className="text-micro text-text-tertiary font-semibold">
-                            Sold out
+                            {g.menu.sold_out}
                         </span>
                     )}
                 </div>

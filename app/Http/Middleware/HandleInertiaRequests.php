@@ -54,6 +54,14 @@ class HandleInertiaRequests extends Middleware
 
             'available_locales' => $availableLocales,
 
+            // Copy for shared components (status pills, the guest tab bar,
+            // help and call-waiter sheets), in the active language. Lazy, so
+            // partial reloads that ask for one prop do not resend it.
+            'i18n' => fn (): array => [
+                'guest' => trans('guest'),
+                'orders' => trans('orders'),
+            ],
+
             'qresto' => [
                 'sla' => [
                     'warn_minutes' => (int) config(
