@@ -16,6 +16,9 @@ import {
     useState,
 } from 'react';
 
+import { fill } from '@/types/checkout';
+import type { CheckoutTranslations } from '@/types/checkout';
+
 /*
  * #35: Stripe in the guest checkout. Card details are typed into Stripe's
  * own iframes and turned into a PaymentMethod in the browser, so only a
@@ -121,10 +124,21 @@ export type StripeCardFieldsHandle = {
     tokenise: () => Promise<TokeniseResult>;
 };
 
+type CardLabels = Pick<
+    CheckoutTranslations,
+    | 'card_number'
+    | 'card_expiry'
+    | 'card_cvc'
+    | 'card_safe'
+    | 'card_loading'
+    | 'check_card'
+>;
+
 type Props = {
     stripe: Stripe | null;
     errors: Partial<Record<CardField, string>>;
     restaurantName: string;
+    labels: CardLabels;
 };
 
 /**
@@ -132,7 +146,7 @@ type Props = {
  * labels, layout and error lines as the fields they replace.
  */
 export const StripeCardFields = forwardRef<StripeCardFieldsHandle, Props>(
-    function StripeCardFields({ stripe, errors, restaurantName }, ref) {
+    function StripeCardFields({ stripe, errors, restaurantName, labels }, ref) {
         const numberHost = useRef<HTMLDivElement>(null);
         const expiryHost = useRef<HTMLDivElement>(null);
         const cvcHost = useRef<HTMLDivElement>(null);
@@ -215,8 +229,7 @@ export const StripeCardFields = forwardRef<StripeCardFieldsHandle, Props>(
                     if (!stripe || !elements.current) {
                         return {
                             field: null,
-                            message:
-                                'Card payments are still loading. Try again in a moment.',
+                            message: labels.card_loading,
                         };
                     }
 
@@ -235,15 +248,14 @@ export const StripeCardFields = forwardRef<StripeCardFieldsHandle, Props>(
                                 : code.includes('cvc')
                                   ? 'card_cvc'
                                   : 'card_number',
-                            message:
-                                error?.message ?? 'Check your card details.',
+                            message: error?.message ?? labels.check_card,
                         };
                     }
 
                     return { paymentMethodId: paymentMethod.id };
                 },
             }),
-            [stripe],
+            [stripe, labels],
         );
 
         const message = (field: CardField) => live[field] ?? errors[field];
@@ -259,7 +271,7 @@ export const StripeCardFields = forwardRef<StripeCardFieldsHandle, Props>(
             <div className="flex flex-col gap-3" data-gateway="stripe">
                 <div className="flex flex-col gap-1.5">
                     <span className="text-caption text-text-secondary">
-                        Card number
+                        {labels.card_number}
                     </span>
                     <div
                         ref={numberHost}
@@ -272,7 +284,7 @@ export const StripeCardFields = forwardRef<StripeCardFieldsHandle, Props>(
                 <div className="grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1.5">
                         <span className="text-caption text-text-secondary">
-                            Expiry
+                            {labels.card_expiry}
                         </span>
                         <div
                             ref={expiryHost}
@@ -284,7 +296,7 @@ export const StripeCardFields = forwardRef<StripeCardFieldsHandle, Props>(
 
                     <div className="flex flex-col gap-1.5">
                         <span className="text-caption text-text-secondary">
-                            CVC
+                            {labels.card_cvc}
                         </span>
                         <div
                             ref={cvcHost}
@@ -296,7 +308,7 @@ export const StripeCardFields = forwardRef<StripeCardFieldsHandle, Props>(
                 </div>
 
                 <p className="text-caption text-text-tertiary pt-1">
-                    Card details never touch {restaurantName}’s servers.
+                    {fill(labels.card_safe, { restaurant: restaurantName })}
                 </p>
             </div>
         );

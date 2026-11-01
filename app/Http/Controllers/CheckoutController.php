@@ -143,6 +143,8 @@ class CheckoutController extends Controller
                     : null,
                 'country' => (string) config('qresto.payments.stripe.country', 'US'),
             ],
+
+            'translations' => trans('checkout'),
         ]);
     }
 

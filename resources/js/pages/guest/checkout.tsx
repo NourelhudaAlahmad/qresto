@@ -19,6 +19,8 @@ import {
 import type { StripeCardFieldsHandle } from '@/components/qresto/stripe-payment';
 import GuestLayout from '@/layouts/guest-layout';
 import { formatMoney } from '@/lib/formatMoney';
+import { fill } from '@/types/checkout';
+import type { CheckoutTranslations } from '@/types/checkout';
 import type { Money } from '@/types/order';
 
 type PaymentMethod = 'card' | 'cash' | 'pos';
@@ -69,6 +71,7 @@ type Props = {
     tip_presets: number[];
     promo: Promo;
     gateway: Gateway;
+    translations: CheckoutTranslations;
 };
 
 type PageProps = {
@@ -310,6 +313,7 @@ export default function CheckoutPage({
     tip_presets,
     promo,
     gateway,
+    translations: t,
 }: Props) {
     const page = usePage<PageProps>();
     const serverErrors = page.props.errors ?? {};
@@ -416,7 +420,7 @@ export default function CheckoutPage({
             if (!result || !('paymentMethodId' in result)) {
                 setCardErrors({
                     [result?.field ?? 'card_number']:
-                        result?.message ?? 'Check your card details.',
+                        result?.message ?? t.check_card,
                 });
                 setSubmitting(false);
 
@@ -533,9 +537,7 @@ export default function CheckoutPage({
         });
 
         if (error) {
-            setAuthError(
-                error.message ?? 'Your bank could not verify this payment.',
-            );
+            setAuthError(error.message ?? t.verify_failed);
 
             return;
         }
@@ -593,25 +595,20 @@ export default function CheckoutPage({
     };
 
     const ctaLabel = isDeferred
-        ? `Send to the kitchen · ${formatMoney(totalMoney)}`
-        : `Pay ${formatMoney(totalMoney)}`;
+        ? fill(t.send_to_kitchen, { amount: formatMoney(totalMoney) })
+        : fill(t.pay, { amount: formatMoney(totalMoney) });
 
-    const footnote = isDeferred
-        ? 'You settle up with Nadia at the end of the meal.'
-        : 'Charged once. 3-D Secure may ask for your bank’s check.';
+    const footnote = isDeferred ? t.footnote_deferred : t.footnote_card;
 
-    const serviceLabel = `Service ${Number(cart.service_pct)}%`;
+    const serviceLabel = fill(t.service, { pct: Number(cart.service_pct) });
 
-    const tipLabel = tipPct === 0 ? 'Tip' : `Tip ${tipPct}%`;
+    const tipLabel = tipPct === 0 ? t.tip : fill(t.tip_pct, { pct: tipPct });
 
     return (
         <GuestLayout>
-            <Head title="Payment" />
+            <Head title={t.title} />
 
-            <div
-                dir="ltr"
-                className="flex min-h-dvh flex-col bg-[var(--surface-page)]"
-            >
+            <div className="flex min-h-dvh flex-col bg-[var(--surface-page)]">
                 <form
                     onSubmit={submitCheckout}
                     className="flex min-h-dvh flex-col"
@@ -621,7 +618,7 @@ export default function CheckoutPage({
                             <div className="mx-auto flex w-full max-w-md items-center gap-3 px-5 py-4">
                                 <button
                                     type="button"
-                                    aria-label="Go back"
+                                    aria-label={t.back}
                                     onClick={() => router.visit('/cart')}
                                     className="text-text-primary hover:bg-action-ghost-hover -ms-2 flex size-11 shrink-0 items-center justify-center rounded-full transition-colors"
                                 >
@@ -630,11 +627,11 @@ export default function CheckoutPage({
 
                                 <div className="min-w-0 flex-1">
                                     <h1 className="text-title-2 text-text-primary font-semibold">
-                                        Payment
+                                        {t.title}
                                     </h1>
 
                                     <p className="text-caption text-text-secondary mt-0.5">
-                                        Secured by Stripe · 3-D Secure
+                                        {t.secured}
                                     </p>
                                 </div>
 
@@ -657,13 +654,11 @@ export default function CheckoutPage({
 
                                         <div>
                                             <h2 className="text-label text-text-primary font-semibold">
-                                                Verify your payment
+                                                {t.verify_title}
                                             </h2>
 
                                             <p className="text-body text-text-secondary mt-1">
-                                                Your bank requires an additional
-                                                authentication step before the
-                                                payment can be completed.
+                                                {t.verify_body}
                                             </p>
                                         </div>
                                     </div>
@@ -688,7 +683,7 @@ export default function CheckoutPage({
                                                 : confirm3ds
                                         }
                                     >
-                                        Complete authentication
+                                        {t.verify_cta}
                                     </Button>
                                 </Card>
                             ) : (
@@ -735,7 +730,7 @@ export default function CheckoutPage({
                                                     <span className="bg-border-subtle h-px flex-1" />
 
                                                     <span className="text-caption text-text-tertiary whitespace-nowrap">
-                                                        or choose a method
+                                                        {t.or_choose}
                                                     </span>
 
                                                     <span className="bg-border-subtle h-px flex-1" />
@@ -750,7 +745,9 @@ export default function CheckoutPage({
                                                     type="button"
                                                     disabled
                                                     fullWidth
-                                                    title="Apple Pay will be available in K3."
+                                                    title={fill(t.wallet_soon, {
+                                                        wallet: 'Apple Pay',
+                                                    })}
                                                     className="h-12 bg-black text-white opacity-100 disabled:bg-black disabled:text-white disabled:opacity-100"
                                                 >
                                                     <span className="text-body-lg font-semibold">
@@ -763,7 +760,9 @@ export default function CheckoutPage({
                                                     variant="outline"
                                                     disabled
                                                     fullWidth
-                                                    title="Google Pay will be available in K3."
+                                                    title={fill(t.wallet_soon, {
+                                                        wallet: 'Google Pay',
+                                                    })}
                                                     className="h-12 opacity-100 disabled:opacity-100"
                                                 >
                                                     <span className="text-body font-semibold">
@@ -776,7 +775,7 @@ export default function CheckoutPage({
                                                 <span className="bg-border-subtle h-px flex-1" />
 
                                                 <span className="text-caption text-text-tertiary whitespace-nowrap">
-                                                    or choose a method
+                                                    {t.or_choose}
                                                 </span>
 
                                                 <span className="bg-border-subtle h-px flex-1" />
@@ -794,8 +793,10 @@ export default function CheckoutPage({
                                                 <div className="relative">
                                                     <RadioCard
                                                         value="card"
-                                                        title="Pay now by card"
-                                                        description="Order goes to the kitchen the moment it clears"
+                                                        title={t.card_title}
+                                                        description={
+                                                            t.card_description
+                                                        }
                                                         className="min-h-[72px] pe-14"
                                                     />
 
@@ -819,12 +820,15 @@ export default function CheckoutPage({
                                                             restaurantName={
                                                                 restaurant.name
                                                             }
+                                                            labels={t}
                                                         />
                                                     ) : (
                                                         <div className="flex flex-col gap-3">
                                                             <label className="flex flex-col gap-1.5">
                                                                 <span className="text-caption text-text-secondary">
-                                                                    Card number
+                                                                    {
+                                                                        t.card_number
+                                                                    }
                                                                 </span>
 
                                                                 <div className="relative">
@@ -845,6 +849,7 @@ export default function CheckoutPage({
                                                                         }
                                                                         inputMode="numeric"
                                                                         autoComplete="cc-number"
+                                                                        dir="ltr"
                                                                         placeholder="4242 4242 4242 4242"
                                                                         className="pe-16"
                                                                         aria-invalid={
@@ -874,7 +879,9 @@ export default function CheckoutPage({
                                                             <div className="grid grid-cols-2 gap-3">
                                                                 <label className="flex flex-col gap-1.5">
                                                                     <span className="text-caption text-text-secondary">
-                                                                        Expiry
+                                                                        {
+                                                                            t.card_expiry
+                                                                        }
                                                                     </span>
 
                                                                     <Input
@@ -894,6 +901,7 @@ export default function CheckoutPage({
                                                                         }
                                                                         inputMode="numeric"
                                                                         autoComplete="cc-exp"
+                                                                        dir="ltr"
                                                                         placeholder="09 / 28"
                                                                         aria-invalid={
                                                                             errors.card_expiry
@@ -916,7 +924,9 @@ export default function CheckoutPage({
 
                                                                 <label className="flex flex-col gap-1.5">
                                                                     <span className="text-caption text-text-secondary">
-                                                                        CVC
+                                                                        {
+                                                                            t.card_cvc
+                                                                        }
                                                                     </span>
 
                                                                     <Input
@@ -943,6 +953,7 @@ export default function CheckoutPage({
                                                                         }
                                                                         inputMode="numeric"
                                                                         autoComplete="cc-csc"
+                                                                        dir="ltr"
                                                                         placeholder="123"
                                                                         aria-invalid={
                                                                             errors.card_cvc
@@ -968,12 +979,13 @@ export default function CheckoutPage({
                                                                 <LockIcon />
 
                                                                 <span>
-                                                                    Card details
-                                                                    never touch{' '}
-                                                                    {
-                                                                        restaurant.name
-                                                                    }
-                                                                    's servers.
+                                                                    {fill(
+                                                                        t.card_safe,
+                                                                        {
+                                                                            restaurant:
+                                                                                restaurant.name,
+                                                                        },
+                                                                    )}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -985,8 +997,10 @@ export default function CheckoutPage({
                                                 <div className="relative">
                                                     <RadioCard
                                                         value="cash"
-                                                        title="Cash to the waiter"
-                                                        description="Nadia brings the bill when you ask"
+                                                        title={t.cash_title}
+                                                        description={
+                                                            t.cash_description
+                                                        }
                                                         className="min-h-[72px] pe-14"
                                                     />
 
@@ -1003,8 +1017,10 @@ export default function CheckoutPage({
                                                 <div className="relative">
                                                     <RadioCard
                                                         value="pos"
-                                                        title="Card at the table"
-                                                        description="Waiter brings the terminal to you"
+                                                        title={t.pos_title}
+                                                        description={
+                                                            t.pos_description
+                                                        }
                                                         className="min-h-[72px] pe-14"
                                                     />
 
@@ -1022,14 +1038,11 @@ export default function CheckoutPage({
                                     {isDeferred ? (
                                         <div className="rounded-md border border-[var(--saffron-300)] bg-[var(--saffron-50)] px-4 py-3">
                                             <p className="text-label text-text-primary font-semibold">
-                                                Pay after ordering
+                                                {t.deferred_title}
                                             </p>
 
                                             <p className="text-caption text-text-secondary mt-1 leading-relaxed">
-                                                The kitchen starts cooking
-                                                straight away. You settle up at
-                                                the end — the waiter sees this
-                                                order as unpaid until then.
+                                                {t.deferred_body}
                                             </p>
                                         </div>
                                     ) : null}
@@ -1039,11 +1052,11 @@ export default function CheckoutPage({
                                     <section className="flex flex-col gap-3">
                                         <div className="flex items-baseline justify-between gap-3">
                                             <h2 className="text-label text-text-primary font-semibold">
-                                                Tip the floor team
+                                                {t.tip_title}
                                             </h2>
 
                                             <span className="text-caption text-text-tertiary">
-                                                shared equally
+                                                {t.tip_shared}
                                             </span>
                                         </div>
 
@@ -1057,7 +1070,7 @@ export default function CheckoutPage({
                                                     }
                                                 >
                                                     {preset === 0
-                                                        ? 'None'
+                                                        ? t.tip_none
                                                         : `${preset}%`}
                                                 </ChipFilter>
                                             ))}
@@ -1080,7 +1093,7 @@ export default function CheckoutPage({
                                             <span>
                                                 {promo.code
                                                     ? promo.code
-                                                    : 'Promo code'}
+                                                    : t.promo}
                                             </span>
                                         </button>
 
@@ -1098,7 +1111,7 @@ export default function CheckoutPage({
                                                     : 'border-border-default bg-surface-card text-text-primary hover:bg-action-ghost-hover'
                                             }`}
                                         >
-                                            Split the bill
+                                            {t.split_toggle}
                                         </button>
                                     </section>
 
@@ -1112,7 +1125,7 @@ export default function CheckoutPage({
                                                         </p>
 
                                                         <p className="text-caption text-text-secondary mt-0.5">
-                                                            Discount applied
+                                                            {t.promo_applied}
                                                         </p>
                                                     </div>
 
@@ -1123,7 +1136,7 @@ export default function CheckoutPage({
                                                         loading={promoBusy}
                                                         onClick={removePromo}
                                                     >
-                                                        Remove
+                                                        {t.promo_remove}
                                                     </Button>
                                                 </div>
                                             ) : (
@@ -1136,8 +1149,10 @@ export default function CheckoutPage({
                                                                     .value,
                                                             )
                                                         }
-                                                        placeholder="Enter code"
-                                                        aria-label="Promo code"
+                                                        placeholder={
+                                                            t.promo_placeholder
+                                                        }
+                                                        aria-label={t.promo}
                                                         aria-invalid={
                                                             errors.promo_code
                                                                 ? true
@@ -1154,7 +1169,7 @@ export default function CheckoutPage({
                                                         }
                                                         onClick={applyPromo}
                                                     >
-                                                        Apply
+                                                        {t.promo_apply}
                                                     </Button>
                                                 </div>
                                             )}
@@ -1175,12 +1190,11 @@ export default function CheckoutPage({
                                             <div className="flex items-center justify-between gap-4">
                                                 <div>
                                                     <h2 className="text-label text-text-primary font-semibold">
-                                                        Split evenly
+                                                        {t.split_title}
                                                     </h2>
 
                                                     <p className="text-caption text-text-secondary mt-1">
-                                                        Split evenly between 2–8
-                                                        people.
+                                                        {t.split_body}
                                                     </p>
                                                 </div>
 
@@ -1195,7 +1209,7 @@ export default function CheckoutPage({
 
                                             <div className="border-border-subtle flex items-center justify-between border-t pt-3">
                                                 <span className="text-body text-text-secondary">
-                                                    Your share
+                                                    {t.split_share}
                                                 </span>
 
                                                 <strong className="text-title-3 text-text-primary">
@@ -1208,9 +1222,9 @@ export default function CheckoutPage({
                                             </div>
 
                                             <p className="text-caption text-text-tertiary leading-relaxed">
-                                                Everyone at Table {table.number}{' '}
-                                                gets a link. Unpaid shares stay
-                                                on the waiter's checkout screen.
+                                                {fill(t.split_note, {
+                                                    table: table.number,
+                                                })}
                                             </p>
                                         </Card>
                                     ) : null}
@@ -1223,7 +1237,11 @@ export default function CheckoutPage({
                                             service={formatMoney(
                                                 cart.service_amount,
                                             )}
+                                            subtotalLabel={t.subtotal}
                                             serviceLabel={serviceLabel}
+                                            discountLabel={t.discount}
+                                            splitLabel={t.split}
+                                            totalLabel={t.total}
                                             discount={
                                                 discountMinor > 0
                                                     ? formatMoney(
@@ -1235,9 +1253,12 @@ export default function CheckoutPage({
                                             tipLabel={tipLabel}
                                             split={
                                                 splitEnabled
-                                                    ? `${splitWays} ways · ${formatMoney(
-                                                          shareMoney,
-                                                      )} each`
+                                                    ? fill(t.split_summary, {
+                                                          ways: splitWays,
+                                                          share: formatMoney(
+                                                              shareMoney,
+                                                          ),
+                                                      })
                                                     : undefined
                                             }
                                             total={formatMoney(totalMoney)}

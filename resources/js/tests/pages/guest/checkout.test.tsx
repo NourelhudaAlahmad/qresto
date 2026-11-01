@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import CheckoutPage from '@/pages/guest/checkout';
 import { expectNoCriticalA11y } from '@/tests/a11y';
+import { checkoutTranslations } from '@/tests/fixtures/checkout-translations';
 
 class ResizeObserverMock {
     observe() {}
@@ -78,6 +79,8 @@ const checkoutProps = {
     },
 
     payment_methods: ['card', 'cash', 'pos'],
+
+    translations: checkoutTranslations,
 
     tip_presets: [0, 10, 12.5, 15],
 
@@ -160,7 +163,7 @@ describe('Guest checkout page', () => {
         expect(screen.getByText('CVC')).toBeInTheDocument();
 
         expect(
-            screen.getByText("Card details never touch Al Bustan's servers."),
+            screen.getByText('Card details never touch Al Bustan’s servers.'),
         ).toBeInTheDocument();
     });
 
@@ -235,7 +238,7 @@ describe('Guest checkout page', () => {
 
         expect(
             screen.getByText(
-                'You settle up with Nadia at the end of the meal.',
+                'You settle up with your waiter at the end of the meal.',
             ),
         ).toBeInTheDocument();
     });

@@ -8,6 +8,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import CheckoutPage from '@/pages/guest/checkout';
+import { checkoutTranslations } from '@/tests/fixtures/checkout-translations';
 
 vi.stubGlobal(
     'ResizeObserver',
@@ -95,6 +96,8 @@ const props = {
         total: money(5625),
     },
     payment_methods: ['card', 'wallet', 'cash', 'pos'],
+
+    translations: checkoutTranslations,
     tip_presets: [0, 10, 12.5, 15],
     promo: { code: null, discount: money(0) },
     gateway: {

@@ -10,6 +10,7 @@ use App\Models\Restaurant;
 use App\Models\RestaurantTable;
 use App\Models\TableSession;
 use App\Support\Money;
+use Illuminate\Support\Arr;
 use Inertia\Testing\AssertableInertia as Assert;
 
 function createCheckoutTestContext(
@@ -1385,5 +1386,41 @@ it('never writes card data into the session when checkout fails validation', fun
             ->and($old)->not->toHaveKey('card_cvc')
             ->and($old)->not->toHaveKey('card_expiry')
             ->and(json_encode(session()->all()))->not->toContain($number);
+    }
+});
+
+it('sends the checkout copy in the guest\'s language', function (string $locale): void {
+    $context = createCheckoutTestContext('12.50');
+
+    createCheckoutTestLine(context: $context, qty: 1, unitPrice: 5435);
+
+    $this
+        ->withCookie('qresto_table_session', $context['session']->token)
+        ->withSession(['locale' => $locale])
+        ->get(route('checkout'))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->component('guest/checkout')
+                ->where('translations', trans('checkout', [], $locale)),
+        );
+})->with(['en', 'ar']);
+
+it('keeps checkout.php key-for-key and placeholder-for-placeholder between en and ar', function (): void {
+    $en = Arr::dot(require lang_path('en/checkout.php'));
+    $ar = Arr::dot(require lang_path('ar/checkout.php'));
+
+    expect(array_keys($ar))->toBe(array_keys($en));
+
+    $placeholders = function (string $text): array {
+        preg_match_all('/:[a-z_]+/', $text, $matches);
+        sort($matches[0]);
+
+        return $matches[0];
+    };
+
+    foreach ($en as $key => $text) {
+        expect($ar[$key])->not->toBe($text, "checkout.{$key} is still English in ar")
+            ->and($placeholders($ar[$key]))->toBe($placeholders($text), "Placeholders differ for checkout.{$key}");
     }
 });
