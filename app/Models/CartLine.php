@@ -57,7 +57,7 @@ class CartLine extends Model
 
             return Cart::query()
                 ->whereKey($this->getAttribute('cart_id'))
-                ->value('currency') ?? 'TRY';
+                ->value('currency') ?? (string) config('qresto.currency');
         });
     }
 

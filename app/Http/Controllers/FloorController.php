@@ -134,7 +134,7 @@ final class FloorController extends Controller
 
             'currency' => $orders->first()?->getAttribute('currency')
                 ?? $table->restaurant?->getAttribute('currency')
-                ?? 'TRY',
+                ?? config('qresto.currency'),
 
             'service_requests' => $requests->map(
                 fn (ServiceRequest $serviceRequest): array => [

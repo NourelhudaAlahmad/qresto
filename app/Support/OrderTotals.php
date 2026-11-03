@@ -22,7 +22,7 @@ final class OrderTotals
         if ($lines === []) {
             $currency = $tipAmount?->currency()
                 ?? $discountAmount?->currency()
-                ?? 'TRY';
+                ?? (string) config('qresto.currency');
 
             $subtotal = Money::fromMinor(0, $currency);
         } else {

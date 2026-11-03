@@ -21,6 +21,7 @@ class OrderLineFactory extends Factory
 
         $unitPrice = Money::fromMinor(
             fake()->numberBetween(500, 5000),
+            (string) config('qresto.currency'),
         );
 
         $lineTotal = $unitPrice->multiply($qty);
@@ -55,7 +56,7 @@ class OrderLineFactory extends Factory
 
             $unitPrice = $menuItem->price instanceof Money
                 ? $menuItem->price
-                : Money::fromDecimal((string) $menuItem->price);
+                : Money::fromDecimal((string) $menuItem->price, (string) config('qresto.currency'));
 
             return [
                 'order_id' => $attributes['order_id'] ?? Order::factory(),
@@ -71,12 +72,12 @@ class OrderLineFactory extends Factory
     public function quantity(int $qty): static
     {
         return $this->state(function (array $attributes) use ($qty) {
-            $unitPrice = $attributes['unit_price'] ?? Money::fromMinor(0);
+            $unitPrice = $attributes['unit_price'] ?? Money::zero((string) config('qresto.currency'));
 
             if (! $unitPrice instanceof Money) {
                 $unitPrice = is_int($unitPrice)
-                    ? Money::fromMinor($unitPrice)
-                    : Money::fromDecimal((string) $unitPrice);
+                    ? Money::fromMinor($unitPrice, (string) config('qresto.currency'))
+                    : Money::fromDecimal((string) $unitPrice, (string) config('qresto.currency'));
             }
 
             return [

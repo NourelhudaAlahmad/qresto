@@ -49,7 +49,7 @@ class OrderLine extends Model
 
             return Order::query()
                 ->whereKey($this->getAttribute('order_id'))
-                ->value('currency') ?? 'TRY';
+                ->value('currency') ?? (string) config('qresto.currency');
         });
     }
 

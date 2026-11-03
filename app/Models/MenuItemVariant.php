@@ -44,10 +44,10 @@ class MenuItemVariant extends Model
                 : $this->menuItem()->with('restaurant')->first();
 
             if ($menuItem === null) {
-                return 'TRY';
+                return (string) config('qresto.currency');
             }
 
-            return $menuItem->restaurant->currency ?? 'TRY';
+            return $menuItem->restaurant->currency ?? (string) config('qresto.currency');
         });
     }
 

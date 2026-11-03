@@ -95,4 +95,27 @@ class MoneyTest extends TestCase
             $money->jsonSerialize(),
         );
     }
+
+    public function test_zero_is_nothing_in_the_given_currency(): void
+    {
+        $zero = Money::zero('usd');
+
+        $this->assertSame(0, $zero->amount());
+        $this->assertSame('USD', $zero->currency());
+    }
+
+    /**
+     * #49: Money has no default currency, so a bare call cannot quietly
+     * pick one and hide a mismatch.
+     */
+    public function test_every_constructor_requires_a_currency(): void
+    {
+        foreach (['fromMinor', 'fromDecimal', 'zero'] as $method) {
+            $currency = collect((new \ReflectionMethod(Money::class, $method))->getParameters())
+                ->firstWhere('name', 'currency');
+
+            $this->assertNotNull($currency, "{$method} has no currency parameter");
+            $this->assertFalse($currency->isOptional(), "{$method} gives currency a default");
+        }
+    }
 }

@@ -1,6 +1,13 @@
 <?php
 
 return [
+    /*
+     * The currency a restaurant row falls back to when none is set, and the
+     * default for restaurants.currency and orders.currency in the database.
+     * Money itself has no default: every Money names its currency (#49).
+     */
+    'currency' => env('QRESTO_CURRENCY', 'USD'),
+
     'service_charge_pct' => 0,
 
     'tip_presets' => [

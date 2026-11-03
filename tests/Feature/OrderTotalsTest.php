@@ -12,11 +12,11 @@ class OrderTotalsTest extends TestCase
     {
         $totals = OrderTotals::calculate([
             [
-                'unit_price' => Money::fromDecimal('19.50'),
+                'unit_price' => Money::fromDecimal('19.50', 'USD'),
                 'qty' => 2,
             ],
             [
-                'unit_price' => Money::fromDecimal('12.50'),
+                'unit_price' => Money::fromDecimal('12.50', 'USD'),
                 'qty' => 1,
             ],
         ]);
@@ -36,15 +36,15 @@ class OrderTotalsTest extends TestCase
     {
         $totals = OrderTotals::calculate([
             [
-                'unit_price' => Money::fromDecimal('19.50'),
+                'unit_price' => Money::fromDecimal('19.50', 'USD'),
                 'qty' => 2,
             ],
             [
-                'unit_price' => Money::fromDecimal('12.50'),
+                'unit_price' => Money::fromDecimal('12.50', 'USD'),
                 'qty' => 1,
             ],
             [
-                'unit_price' => Money::fromDecimal('5.00'),
+                'unit_price' => Money::fromDecimal('5.00', 'USD'),
                 'qty' => 2,
             ],
         ], '12.5');
@@ -80,13 +80,13 @@ class OrderTotalsTest extends TestCase
         $totals = OrderTotals::calculate(
             [
                 [
-                    'unit_price' => Money::fromDecimal('20.00'),
+                    'unit_price' => Money::fromDecimal('20.00', 'USD'),
                     'qty' => 2,
                 ],
             ],
             '10',
-            Money::fromDecimal('5.00'),
-            Money::fromDecimal('3.00'),
+            Money::fromDecimal('5.00', 'USD'),
+            Money::fromDecimal('3.00', 'USD'),
         );
 
         $this->assertSame(
@@ -130,13 +130,13 @@ class OrderTotalsTest extends TestCase
         $totals = OrderTotals::calculate(
             [
                 [
-                    'unit_price' => Money::fromDecimal('50.00'),
+                    'unit_price' => Money::fromDecimal('50.00', 'USD'),
                     'qty' => 1,
                 ],
             ],
             '0',
-            Money::fromDecimal('0.00'),
-            Money::fromDecimal('10.00'),
+            Money::fromDecimal('0.00', 'USD'),
+            Money::fromDecimal('10.00', 'USD'),
         );
 
         $this->assertSame(

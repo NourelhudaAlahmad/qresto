@@ -65,8 +65,8 @@ class MoneyCast implements CastsAttributes
     }
 
     /**
-     * Resolve currency from the model itself first,
-     * then from its restaurant relationship.
+     * Resolve currency from the model itself first, then from its
+     * restaurant relationship, then from config('qresto.currency').
      *
      * @param  array<string, mixed>  $attributes
      */
@@ -102,6 +102,9 @@ class MoneyCast implements CastsAttributes
             }
         }
 
-        return 'TRY';
+        // Reached only by a model with no currency and no restaurant, such as
+        // a line built before its parent. The configured currency is also the
+        // database default for restaurants and orders, so the two agree.
+        return strtoupper((string) config('qresto.currency'));
     }
 }

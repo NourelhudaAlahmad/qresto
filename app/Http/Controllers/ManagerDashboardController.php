@@ -247,7 +247,7 @@ class ManagerDashboardController extends Controller
                     )
                     : 0,
                 'total_minor' => $order->total->amount(),
-                'currency' => $restaurant->currency ?: 'TRY',
+                'currency' => $restaurant->currency ?: config('qresto.currency'),
                 'paid' => (bool) $order->is_paid,
                 'assigned_waiter' => $order->assignedUser === null
                     ? null
@@ -414,7 +414,7 @@ class ManagerDashboardController extends Controller
             // Roles the add/edit drawer offers (#27).
             'staffRoles' => StaffMemberRequest::manageableRoles(),
             'now' => $now->valueOf(),
-            'currency' => $restaurant->currency ?: 'TRY',
+            'currency' => $restaurant->currency ?: config('qresto.currency'),
             'warnMinutes' => $warnMinutes,
             'lateMinutes' => $lateMinutes,
             'pollIntervalMs' => max(

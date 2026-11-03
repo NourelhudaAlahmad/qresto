@@ -30,7 +30,7 @@ class OrderFactory extends Factory
             'status' => OrderStatus::PLACED,
             'placed_at' => now(),
             'service_date' => now()->toDateString(),
-            'currency' => 'TRY',
+            'currency' => config('qresto.currency'),
             'subtotal' => 0,
             'service_pct' => 0,
             'service_amount' => 0,

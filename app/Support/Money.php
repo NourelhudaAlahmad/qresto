@@ -12,9 +12,13 @@ final class Money implements JsonSerializable
         private readonly string $currency,
     ) {}
 
+    /**
+     * Every Money names its currency. There is no default, so a bare call
+     * cannot quietly pick one and hide a mismatch (#49).
+     */
     public static function fromMinor(
         int $amount,
-        string $currency = 'TRY',
+        string $currency,
     ): self {
         return new self(
             $amount,
@@ -24,7 +28,7 @@ final class Money implements JsonSerializable
 
     public static function fromDecimal(
         string $amount,
-        string $currency = 'TRY',
+        string $currency,
     ): self {
         if (! preg_match('/^-?\d+(?:\.\d{1,2})?$/', $amount)) {
             throw new InvalidArgumentException(
@@ -49,6 +53,14 @@ final class Money implements JsonSerializable
             $negative ? -$minor : $minor,
             strtoupper($currency),
         );
+    }
+
+    /**
+     * Nothing, in the given currency: the start of a running total.
+     */
+    public static function zero(string $currency): self
+    {
+        return self::fromMinor(0, $currency);
     }
 
     public function amount(): int

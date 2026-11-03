@@ -40,14 +40,14 @@ class CartLineAddon extends Model
             }
 
             if ($cartLine === null) {
-                return 'TRY';
+                return (string) config('qresto.currency');
             }
 
             if (! $cartLine->relationLoaded('cart')) {
                 $cartLine->load('cart');
             }
 
-            return $cartLine->cart->currency ?? 'TRY';
+            return $cartLine->cart->currency ?? (string) config('qresto.currency');
         });
     }
 

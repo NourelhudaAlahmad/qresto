@@ -118,7 +118,6 @@ class LandingController extends Controller
         return match ($currency) {
             'USD' => '$'.number_format($amount, 2),
             'EUR' => '€'.number_format($amount, 2),
-            'TRY' => '₺'.number_format($amount, 2),
             default => $currency.' '.number_format($amount, 2),
         };
     }

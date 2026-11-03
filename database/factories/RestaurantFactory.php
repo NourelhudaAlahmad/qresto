@@ -32,7 +32,7 @@ class RestaurantFactory extends Factory
             'phone' => fake()->phoneNumber(),
             'lat' => fake()->latitude(),
             'lng' => fake()->longitude(),
-            'currency' => 'TRY',
+            'currency' => config('qresto.currency'),
             'service_charge_pct' => 10.00,
             'default_locale' => 'en',
             'supported_locales' => ['en', 'tr', 'ar'],
