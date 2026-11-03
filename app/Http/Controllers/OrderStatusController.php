@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Models\Cart;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\ServiceRequest;
 use App\Models\TableSession;
 use App\Services\KitchenEta;
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -179,9 +183,57 @@ final class OrderStatusController extends Controller
                                 $order->assignedUser->name,
                             ),
                         ],
+
+                    'sitting' => $this->sitting($session, $order),
                 ];
             },
         ]);
+    }
+
+    /**
+     * Every round this table session has ordered, and what the table still
+     * owes across all of them (#50). Each round is its own order and kitchen
+     * ticket; the bill is the sum.
+     *
+     * @return array{rounds: array<int, array<string, mixed>>, due: array<string, mixed>}
+     */
+    private function sitting(TableSession $session, Order $current): array
+    {
+        $orders = Order::query()
+            ->where('restaurant_id', $session->restaurant_id)
+            ->where('table_session_id', $session->id)
+            ->where('status', '!=', OrderStatus::CANCELLED->value)
+            ->with('payments')
+            ->orderBy('id')
+            ->get();
+
+        $dueMinor = $orders
+            ->reject(fn (Order $order): bool => (bool) $order->is_paid)
+            ->sum(function (Order $order): int {
+                $paid = $order->payments
+                    ->filter(fn (Payment $payment): bool => $payment->status === PaymentStatus::PAID->value)
+                    ->sum(fn (Payment $payment): int => $payment->amount->amount());
+
+                return max(0, $order->total->amount() - (int) $paid);
+            });
+
+        return [
+            'rounds' => $orders
+                ->map(fn (Order $order): array => [
+                    'id' => $order->id,
+                    'code' => $order->code,
+                    'status' => $order->status->value,
+                    'stage' => $this->guestStage($order->status->value),
+                    'total' => $order->total->jsonSerialize(),
+                    'paid' => (bool) $order->is_paid,
+                    'current' => $order->id === $current->id,
+                ])
+                ->values()
+                ->all(),
+
+            'due' => Money::fromMinor((int) $dueMinor, $current->currency)
+                ->jsonSerialize(),
+        ];
     }
 
     private function tableSession(

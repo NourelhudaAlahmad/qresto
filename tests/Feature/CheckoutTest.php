@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\OrderStatus;
 use App\Models\Cart;
 use App\Models\CartLine;
 use App\Models\MenuCategory;
@@ -1227,131 +1228,86 @@ it('applies a percentage promo code to the order total', function (): void {
         ->toBe(1);
 });
 
-it('adds order more lines to the same unpaid order for the table session', function (): void {
-
+it('makes each round its own order, even after the first was served, and the sitting owes both (#50)', function (): void {
     $context = createCheckoutTestContext();
+    $cookie = ['qresto_table_session', $context['session']->token];
 
-    createCheckoutTestLine(
-
-        context: $context,
-
-        qty: 1,
-
-        unitPrice: 5570,
-
-    );
+    createCheckoutTestLine(context: $context, qty: 1, unitPrice: 5570);
 
     $this
-
-        ->withCookie(
-
-            'qresto_table_session',
-
-            $context['session']->token,
-
-        )
-
+        ->withCookie(...$cookie)
         ->post(route('checkout.store'), [
-
             'method' => 'cash',
-
             'tip_pct' => 0,
-
             'split_ways' => 1,
-
             'idempotency_key' => 'checkout-order-more-first',
-
         ])
-
         ->assertRedirect();
 
-    $order = Order::query()
-
-        ->where(
-
-            'table_session_id',
-
-            $context['session']->id,
-
-        )
-
+    $first = Order::query()
+        ->where('table_session_id', $context['session']->id)
         ->firstOrFail();
 
+    // The main course has been served before the guest orders dessert.
+    foreach ([OrderStatus::PENDING, OrderStatus::PREPARING, OrderStatus::READY, OrderStatus::SERVED] as $status) {
+        $first->transitionTo($status);
+    }
+
     CartLine::query()
-
         ->where('cart_id', $context['cart']->id)
-
         ->delete();
 
-    createCheckoutTestLine(
+    createCheckoutTestLine(context: $context, qty: 1, unitPrice: 900);
 
-        context: $context,
-
-        qty: 1,
-
-        unitPrice: 900,
-
-    );
-
+    // A later round can be paid by card.
     $response = $this
-
-        ->withCookie(
-
-            'qresto_table_session',
-
-            $context['session']->token,
-
-        )
-
+        ->withCookie(...$cookie)
         ->post(route('checkout.store'), [
-
-            'method' => 'cash',
-
+            'method' => 'card',
             'tip_pct' => 0,
-
             'split_ways' => 1,
-
             'idempotency_key' => 'checkout-order-more-second',
-
+            'card_number' => '4242424242424242',
+            'card_expiry' => '12/30',
+            'card_cvc' => '123',
         ]);
 
-    $order->refresh();
+    $orders = Order::query()
+        ->where('table_session_id', $context['session']->id)
+        ->orderBy('id')
+        ->get();
 
-    $response->assertRedirect(
+    $second = $orders->last();
 
-        route('guest.orders.status', $order),
+    $response->assertRedirect(route('guest.orders.status', $second));
 
-    );
+    expect($orders)->toHaveCount(2)
+        // The served round is untouched.
+        ->and($orders->first()->id)->toBe($first->id)
+        ->and($orders->first()->status)->toBe(OrderStatus::SERVED)
+        ->and($orders->first()->lines()->count())->toBe(1)
+        ->and($orders->first()->total->amount())->toBe(5570)
+        // The dessert is a new ticket the pass can see.
+        ->and($second->code)->not->toBe($first->code)
+        ->and($second->status)->toBe(OrderStatus::PLACED)
+        ->and($second->lines()->count())->toBe(1)
+        ->and($second->total->amount())->toBe(900)
+        ->and($second->is_paid)->toBeTrue();
 
-    expect(
-
-        Order::query()
-
-            ->where(
-
-                'table_session_id',
-
-                $context['session']->id,
-
-            )
-
-            ->count(),
-
-    )
-
-        ->toBe(1)
-
-        ->and($order->lines()->count())
-
-        ->toBe(2)
-
-        ->and($order->subtotal->amount())
-
-        ->toBe(6470)
-
-        ->and($order->total->amount())
-
-        ->toBe(6470);
+    // The guest sees both rounds, and owes only the unpaid one.
+    $this
+        ->withCookie(...$cookie)
+        ->get(route('guest.orders.status', $second))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->has('live.sitting.rounds', 2)
+                ->where('live.sitting.rounds.0.id', $first->id)
+                ->where('live.sitting.rounds.0.paid', false)
+                ->where('live.sitting.rounds.1.id', $second->id)
+                ->where('live.sitting.rounds.1.current', true)
+                ->where('live.sitting.due.amount', 5570),
+        );
 });
 
 it('never writes card data into the session when checkout fails validation', function (): void {

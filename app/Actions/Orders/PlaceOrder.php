@@ -170,139 +170,14 @@ final class PlaceOrder
             $session = $cart->tableSession;
 
             /*
-             * ORDER MORE
+             * ORDER MORE (#50)
              *
-             * If this table session already has an active unpaid order,
-             * append the new cart lines to the same order/bill instead
-             * of creating another order number.
-             */
-            $openOrder = Order::query()
-                ->where(
-                    'restaurant_id',
-                    $cart->restaurant_id,
-                )
-                ->where(
-                    'table_session_id',
-                    $cart->table_session_id,
-                )
-                ->where('is_paid', false)
-                ->whereNotIn('status', [
-                    OrderStatus::PAID->value,
-                    OrderStatus::CANCELLED->value,
-                ])
-                ->latest('id')
-                ->lockForUpdate()
-                ->first();
-
-            if ($openOrder !== null) {
-                $payment = $openOrder
-                    ->payments()
-                    ->latest('id')
-                    ->lockForUpdate()
-                    ->first();
-
-                if ($payment === null) {
-                    throw ValidationException::withMessages([
-                        'checkout' => __('messages.checkout.current_order_no_payment'),
-                    ]);
-                }
-
-                if (
-                    $payment->status
-                    !== PaymentStatus::PENDING->value
-                ) {
-                    throw ValidationException::withMessages([
-                        'checkout' => __('messages.checkout.bill_closed'),
-                    ]);
-                }
-
-                /*
-                 * Cash/POS stay pending until settlement, so the amount
-                 * may safely grow while the guest keeps ordering.
-                 */
-                if (! $this->isOfflineMethod($method)) {
-                    throw ValidationException::withMessages([
-                        'checkout' => __('messages.checkout.order_more_method'),
-                    ]);
-                }
-
-                $openOrderServicePct = (string) (
-                    $openOrder->service_pct
-                    ?? $servicePct
-                );
-
-                $combinedSubtotal = $openOrder
-                    ->subtotal
-                    ->add($subtotal);
-
-                $combinedDiscountAmount = $openOrder
-                    ->discount_amount
-                    ->add($discountAmount);
-
-                $combinedTipAmount = $openOrder
-                    ->tip_amount
-                    ->add($tipAmount);
-
-                $combinedTotals = OrderTotals::calculate(
-                    lines: [
-                        [
-                            'unit_price' => $combinedSubtotal,
-                            'qty' => 1,
-                        ],
-                    ],
-                    servicePct: $openOrderServicePct,
-                    tipAmount: $combinedTipAmount,
-                    discountAmount: $combinedDiscountAmount,
-                );
-
-                $combinedShareAmount = $this->calculateShareAmount(
-                    total: $combinedTotals->total,
-                    splitWays: $splitWays,
-                );
-
-                $this->copyCartLinesToOrder(
-                    order: $openOrder,
-                    lines: $lines,
-                    currency: $cart->currency,
-                );
-
-                $openOrder->update([
-                    'subtotal' => $combinedTotals->subtotal,
-                    'service_pct' => $openOrderServicePct,
-                    'service_amount' => $combinedTotals->serviceAmount,
-                    'tip_amount' => $combinedTipAmount,
-                    'discount_amount' => $combinedDiscountAmount,
-                    'split_ways' => $splitWays,
-                    'share_amount' => $combinedShareAmount,
-                    'idempotency_key' => $idempotencyKey
-                        ?? $openOrder->idempotency_key,
-                    'total' => $combinedTotals->total,
-                    'table_note' => $cart->note
-                        ?? $openOrder->table_note,
-                ]);
-
-                $payment->update([
-                    'method' => $method->value,
-                    'amount' => $combinedTotals->total,
-                    'tip_amount' => $combinedTipAmount,
-                ]);
-
-                $this->promotions->consume(
-                    restaurantId: $cart->restaurant_id,
-                    code: $promoCode,
-                );
-
-                return [
-                    'order' => $openOrder->fresh(),
-                    'payment' => $payment->fresh(),
-                    'failure' => null,
-                    'requires_action' => false,
-                    'client_secret' => null,
-                ];
-            }
-
-            /*
-             * First order for this table session.
+             * Every round is its own order: its own code, its own kitchen
+             * ticket and its own payment. A later round never joins an
+             * earlier one, so a dessert ordered after the main course was
+             * served still reaches the pass, and it can be paid by card.
+             * The table's bill is the sum of its session's unpaid orders,
+             * which the floor and the guest status screen both show.
              */
             $serviceTimestamp = now();
             $serviceDate = $serviceTimestamp->toDateString();

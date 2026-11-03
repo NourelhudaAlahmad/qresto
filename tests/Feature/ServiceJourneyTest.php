@@ -307,6 +307,65 @@ it('runs a full service with cash, settled by the waiter', function (string $met
     'card at the table' => ['pos'],
 ]);
 
+it('runs a two-round sitting as one bill, even after the first round is served (#50)', function () {
+    [$guest, $first] = orderAsGuest($this, 'cash');
+    serviceThroughToServed($this, $guest, $first);
+
+    // Dessert, ordered after the main course reached the table.
+    Carbon::setTestNow(now()->addMinutes(10));
+    $guest->request()->post('/cart/lines', [
+        'menu_item_id' => $this->kofta->id,
+        'menu_item_variant_id' => $this->large->id,
+        'qty' => 1,
+    ])->assertSessionHasNoErrors();
+
+    $guest->request()->post('/checkout', [
+        'method' => 'cash',
+        'tip_pct' => 0,
+        'split_ways' => 1,
+        'idempotency_key' => 'journey-round-two',
+    ])->assertSessionHasNoErrors();
+
+    $second = Order::query()->where('idempotency_key', 'journey-round-two')->firstOrFail();
+
+    // A new round: its own code and ticket, in the same sitting.
+    expect($second->id)->not->toBe($first->id)
+        ->and($second->code)->not->toBe($first->code)
+        ->and($second->table_session_id)->toBe($first->table_session_id)
+        ->and($first->fresh()->lines()->count())->toBe(1);
+
+    $owed = $first->fresh()->total->amount() + $second->fresh()->total->amount();
+
+    // The floor shows one table owing both rounds.
+    $tables = $this->actingAs($this->waiter)->get('/app/floor')->assertOk()->viewData('page')['props']['tables'];
+    $table = collect($tables)->firstWhere('id', $this->table->id);
+    expect($table['open_bill_minor'])->toBe($owed)
+        ->and($table['open_order_count'])->toBe(2);
+
+    // The guest sees the whole sitting and the whole amount, from either round.
+    foreach ([$first, $second] as $round) {
+        $sitting = $guest->status($round)['sitting'];
+
+        expect($sitting['rounds'])->toHaveCount(2)
+            ->and($sitting['due']['amount'])->toBe($owed);
+    }
+
+    // The dessert goes through the kitchen on its own ticket, like any order.
+    serviceThroughToServed($this, $guest, $second);
+
+    // Settled round by round, then the table frees.
+    foreach ([$first, $second] as $round) {
+        $this->actingAs($this->waiter)
+            ->post("/app/tables/{$this->table->id}/payments", ['order_id' => $round->id, 'method' => 'cash'])
+            ->assertSessionHasNoErrors();
+    }
+
+    expect($guest->status($second)['sitting']['due']['amount'])->toBe(0);
+
+    $this->actingAs($this->waiter)->post("/app/tables/{$this->table->id}/free")->assertSessionHasNoErrors();
+    expect($this->table->fresh()->state->value)->toBe('free');
+});
+
 it('attributes every step of the trail to the right person', function () {
     [$guest, $order] = orderAsGuest($this, 'cash');
 
