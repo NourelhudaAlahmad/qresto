@@ -53,4 +53,5 @@ export const checkoutTranslations = {
     discount: 'Discount',
     split: 'Split',
     total: 'Total',
+    new_round: 'A new round for your table. It joins the same bill.',
 };

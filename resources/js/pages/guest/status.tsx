@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { CircleHelp, ClipboardList, Menu as MenuIcon } from 'lucide-react';
 import { useState } from 'react';
 
+import { Numeric } from '@/components/numeric';
 import { Avatar } from '@/components/qresto/avatar';
 import { Button } from '@/components/qresto/button';
 import { CallWaiterSheet } from '@/components/qresto/call-waiter-sheet';
@@ -62,6 +63,21 @@ type EtaRange = {
 
 type ServiceRequestKind = 'water' | 'bread' | 'bill' | 'waiter';
 
+type SittingRound = {
+    id: number;
+    code: string;
+    status: OrderStatus;
+    total: Money;
+    paid: boolean;
+    current: boolean;
+};
+
+// Every round this table has ordered, and what it still owes (#50).
+type Sitting = {
+    rounds: SittingRound[];
+    due: Money;
+};
+
 type LiveStatus = {
     open_requests: ServiceRequestKind[];
     status: OrderStatus;
@@ -71,6 +87,7 @@ type LiveStatus = {
     paid: boolean;
     payment_method: string | null;
     assigned_waiter: Waiter | null;
+    sitting?: Sitting;
 };
 
 type Session = {
@@ -259,6 +276,7 @@ export default function Status({
     const paymentLabel = paymentMethodLabel(live.payment_method);
 
     const receiptStateLabel = live.paid ? g.status.paid : g.status.unpaid;
+    const sitting = live.sitting;
 
     return (
         <GuestLayout>
@@ -449,6 +467,78 @@ export default function Status({
                                 </span>
                             </div>
                         </Card>
+
+                        {sitting && sitting.rounds.length > 1 && (
+                            <Card className="space-y-3">
+                                <div className="flex items-baseline justify-between gap-3">
+                                    <h2 className="font-display text-title-2 font-semibold text-[var(--text-primary)]">
+                                        {g.status.sitting_title}
+                                    </h2>
+                                    <span className="text-caption text-[var(--text-secondary)]">
+                                        {fill(g.status.sitting_rounds, {
+                                            count: sitting.rounds.length,
+                                        })}
+                                    </span>
+                                </div>
+
+                                <ul className="divide-y divide-[var(--border-subtle)]">
+                                    {sitting.rounds.map((round) => (
+                                        <li
+                                            key={round.id}
+                                            className="flex min-h-11 items-center justify-between gap-3 py-2"
+                                        >
+                                            <span className="flex min-w-0 items-center gap-2">
+                                                {round.current ? (
+                                                    <span className="font-medium text-[var(--text-primary)]">
+                                                        <Numeric>
+                                                            {round.code}
+                                                        </Numeric>
+                                                        {' · '}
+                                                        {g.status.this_round}
+                                                    </span>
+                                                ) : (
+                                                    <Link
+                                                        href={`/orders/${round.id}/status`}
+                                                        className="font-medium text-[var(--text-link)] underline-offset-2 hover:underline"
+                                                    >
+                                                        <Numeric>
+                                                            {round.code}
+                                                        </Numeric>
+                                                    </Link>
+                                                )}
+                                                <StatusPill
+                                                    status={round.status}
+                                                />
+                                            </span>
+
+                                            <span className="text-body text-[var(--text-secondary)]">
+                                                <Numeric>
+                                                    {formatMoney(round.total)}
+                                                </Numeric>
+                                                {round.paid
+                                                    ? ` · ${g.status.round_paid}`
+                                                    : ''}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+
+                                <div className="flex items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-3">
+                                    <span className="font-semibold text-[var(--text-primary)]">
+                                        {Number(sitting.due.amount) > 0
+                                            ? g.status.still_owes
+                                            : g.status.all_paid}
+                                    </span>
+                                    {Number(sitting.due.amount) > 0 && (
+                                        <span className="font-display text-title-2 font-semibold text-[var(--text-primary)]">
+                                            <Numeric>
+                                                {formatMoney(sitting.due)}
+                                            </Numeric>
+                                        </span>
+                                    )}
+                                </div>
+                            </Card>
+                        )}
                     </div>
                 </main>
 

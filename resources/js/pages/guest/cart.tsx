@@ -599,6 +599,15 @@ export default function CartPage({
                                 />
                             </label>
 
+                            {latest_order_id != null && (
+                                <p
+                                    role="note"
+                                    className="text-body rounded-[var(--radius-md)] bg-[var(--surface-sunken)] px-4 py-3 text-[var(--text-secondary)]"
+                                >
+                                    {g.cart.new_round}
+                                </p>
+                            )}
+
                             <PriceSummary
                                 subtotal={formatMoney(cart.subtotal)}
                                 service={`${servicePercentage(

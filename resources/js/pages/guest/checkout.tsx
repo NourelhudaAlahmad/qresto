@@ -72,6 +72,7 @@ type Props = {
     promo: Promo;
     gateway: Gateway;
     translations: CheckoutTranslations;
+    earlier_rounds?: number;
 };
 
 type PageProps = {
@@ -314,6 +315,7 @@ export default function CheckoutPage({
     promo,
     gateway,
     translations: t,
+    earlier_rounds = 0,
 }: Props) {
     const page = usePage<PageProps>();
     const serverErrors = page.props.errors ?? {};
@@ -645,6 +647,15 @@ export default function CheckoutPage({
                         </header>
 
                         <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-5 py-5 pb-8">
+                            {earlier_rounds > 0 && (
+                                <p
+                                    role="note"
+                                    className="text-body rounded-[var(--radius-md)] bg-[var(--surface-sunken)] px-4 py-3 text-[var(--text-secondary)]"
+                                >
+                                    {t.new_round}
+                                </p>
+                            )}
+
                             {requires3ds ? (
                                 <Card className="flex flex-col gap-4 p-5">
                                     <div className="flex items-start gap-3">

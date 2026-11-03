@@ -1380,3 +1380,32 @@ it('keeps checkout.php key-for-key and placeholder-for-placeholder between en an
             ->and($placeholders($ar[$key]))->toBe($placeholders($text), "Placeholders differ for checkout.{$key}");
     }
 });
+
+it('tells the guest a second round joins the same table bill (#50)', function (): void {
+    $context = createCheckoutTestContext();
+    $cookie = ['qresto_table_session', $context['session']->token];
+
+    createCheckoutTestLine(context: $context, qty: 1, unitPrice: 5570);
+
+    $this
+        ->withCookie(...$cookie)
+        ->get(route('checkout'))
+        ->assertInertia(fn (Assert $page) => $page->where('earlier_rounds', 0));
+
+    $this
+        ->withCookie(...$cookie)
+        ->post(route('checkout.store'), [
+            'method' => 'cash',
+            'tip_pct' => 0,
+            'split_ways' => 1,
+            'idempotency_key' => 'checkout-new-round-note',
+        ])
+        ->assertRedirect();
+
+    createCheckoutTestLine(context: $context, qty: 1, unitPrice: 900);
+
+    $this
+        ->withCookie(...$cookie)
+        ->get(route('checkout'))
+        ->assertInertia(fn (Assert $page) => $page->where('earlier_rounds', 1));
+});

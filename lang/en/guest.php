@@ -52,6 +52,12 @@ return [
         'method_wallet' => 'wallet',
         'method_cash' => 'cash',
         'method_pos' => 'pos',
+        'sitting_title' => 'Your table',
+        'sitting_rounds' => ':count rounds',
+        'round_paid' => 'Paid',
+        'still_owes' => 'Table still owes',
+        'all_paid' => 'Everything is paid',
+        'this_round' => 'This round',
     ],
 
     'table' => [
@@ -156,6 +162,7 @@ return [
         'note_saved' => 'Table note saved',
         'note_failed' => 'Could not save note',
         'try_again' => 'Please try again.',
+        'new_round' => 'This adds a new round to your table’s bill.',
     ],
 
     'landing' => [

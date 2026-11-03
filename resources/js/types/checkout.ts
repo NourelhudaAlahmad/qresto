@@ -48,6 +48,7 @@ export type CheckoutTranslations = {
     discount: string;
     split: string;
     total: string;
+    new_round: string;
 };
 
 /** Puts values into a translation's :placeholders. */

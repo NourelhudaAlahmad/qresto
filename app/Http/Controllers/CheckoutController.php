@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Orders\PlaceOrder;
 use App\Actions\Payments\PromotionValidator;
 use App\Actions\Payments\SettlePayment;
+use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\TableState;
@@ -143,6 +144,13 @@ class CheckoutController extends Controller
                     : null,
                 'country' => (string) config('qresto.payments.stripe.country', 'US'),
             ],
+
+            // Rounds this sitting already placed: a new checkout adds one more
+            // order to the same table bill (#50).
+            'earlier_rounds' => Order::query()
+                ->where('table_session_id', $session->id)
+                ->where('status', '!=', OrderStatus::CANCELLED->value)
+                ->count(),
 
             'translations' => trans('checkout'),
         ]);

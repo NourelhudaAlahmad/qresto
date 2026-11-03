@@ -52,6 +52,12 @@ return [
         'method_wallet' => 'بالمحفظة',
         'method_cash' => 'نقداً',
         'method_pos' => 'عبر نقطة البيع',
+        'sitting_title' => 'طاولتك',
+        'sitting_rounds' => ':count جولات',
+        'round_paid' => 'مدفوع',
+        'still_owes' => 'المتبقي على الطاولة',
+        'all_paid' => 'تم دفع كل شيء',
+        'this_round' => 'هذه الجولة',
     ],
 
     'table' => [
@@ -156,6 +162,7 @@ return [
         'note_saved' => 'حُفظت ملاحظة الطاولة',
         'note_failed' => 'تعذّر حفظ الملاحظة',
         'try_again' => 'يرجى المحاولة مرة أخرى.',
+        'new_round' => 'هذا الطلب جولة جديدة تُضاف إلى فاتورة طاولتك.',
     ],
 
     'landing' => [

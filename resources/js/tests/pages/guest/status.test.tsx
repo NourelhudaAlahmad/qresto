@@ -251,6 +251,64 @@ describe('Guest order status', () => {
         });
     });
 
+    it('shows every round of the sitting and what the table still owes (#50)', () => {
+        render(
+            <Status
+                {...baseProps}
+                live={{
+                    ...baseProps.live,
+                    sitting: {
+                        rounds: [
+                            {
+                                id: 1,
+                                code: '#A-1043',
+                                status: 'served',
+                                total: {
+                                    amount: 5570,
+                                    currency: 'USD',
+                                    formatted: '55.70',
+                                },
+                                paid: false,
+                                current: true,
+                            },
+                            {
+                                id: 2,
+                                code: '#A-1051',
+                                status: 'placed',
+                                total: {
+                                    amount: 900,
+                                    currency: 'USD',
+                                    formatted: '9.00',
+                                },
+                                paid: true,
+                                current: false,
+                            },
+                        ],
+                        due: {
+                            amount: 5570,
+                            currency: 'USD',
+                            formatted: '55.70',
+                        },
+                    },
+                }}
+            />,
+        );
+
+        expect(screen.getByText('Your table')).toBeInTheDocument();
+        expect(screen.getByText('2 rounds')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: '#A-1051' })).toHaveAttribute(
+            'href',
+            '/orders/2/status',
+        );
+        expect(screen.getByText('Table still owes')).toBeInTheDocument();
+    });
+
+    it('keeps the sitting card away for a single round', () => {
+        render(<Status {...baseProps} />);
+
+        expect(screen.queryByText('Your table')).not.toBeInTheDocument();
+    });
+
     it('returns to the menu when order more is selected', () => {
         render(<Status {...baseProps} />);
 
