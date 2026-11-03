@@ -169,6 +169,7 @@ return [
         'pitch' => 'Keep your restaurant team connected and your service running smoothly, from the first order to the last table.',
         'qr_access' => 'QR shift access',
         'made_for' => 'Made for better service.',
+        'remember_hint' => 'Stays signed in on this device for your whole shift. Leave it unticked on a shared device.',
     ],
 
     'shift_qr' => [

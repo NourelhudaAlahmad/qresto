@@ -4,6 +4,7 @@ namespace App\Services\Auth;
 
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class StaffAccountLockout
 {
@@ -43,6 +44,10 @@ class StaffAccountLockout
 
             if ($attempts >= 3) {
                 $account->locked_until = now()->addMinutes(10);
+
+                // A remember cookie issued before the lock must not sign the
+                // account back in silently (#51).
+                $account->setRememberToken(Str::random(60));
             } else {
                 $account->locked_until = null;
             }

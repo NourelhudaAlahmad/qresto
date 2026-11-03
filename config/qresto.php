@@ -8,6 +8,15 @@ return [
      */
     'currency' => env('QRESTO_CURRENCY', 'USD'),
 
+    'auth' => [
+        /*
+         * How long a staff session lasts when "Keep me signed in on this
+         * device" is ticked (#51): a 12-hour shift plus an hour of slack.
+         * An unticked session keeps the stock SESSION_LIFETIME.
+         */
+        'remembered_session_minutes' => (int) env('QRESTO_REMEMBERED_SESSION_MINUTES', 13 * 60),
+    ],
+
     'service_charge_pct' => 0,
 
     'tip_presets' => [

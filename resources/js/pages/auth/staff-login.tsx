@@ -306,6 +306,9 @@ export default function StaffLogin({
                                                         }
                                                     />
                                                 </div>
+                                                <p className="text-caption text-text-tertiary -mt-3 leading-relaxed">
+                                                    {t.remember_hint}
+                                                </p>
 
                                                 <Button
                                                     type="submit"

@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureStaffAccountCanAuthenticate;
 use App\Http\Middleware\EnsureTableSession;
+use App\Http\Middleware\ExtendRememberedSession;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetCurrentRestaurant;
@@ -32,6 +33,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'table.session' => EnsureTableSession::class,
             'staff.auth.check' => EnsureStaffAccountCanAuthenticate::class,
+        ]);
+
+        // Before the session starts, so a remembered login gets its longer
+        // lifetime (#51).
+        $middleware->web(prepend: [
+            ExtendRememberedSession::class,
         ]);
 
         $middleware->web(append: [
