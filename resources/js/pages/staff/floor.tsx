@@ -838,7 +838,7 @@ export function useTableCheckout({
 
                 if (!response.ok) {
                     throw new Error(
-                        `Unable to load table (${response.status}).`,
+                        fill(t.load_failed, { status: response.status }),
                     );
                 }
 
@@ -865,7 +865,7 @@ export function useTableCheckout({
                 }
             }
         },
-        [t.open_failed],
+        [t.open_failed, t.load_failed],
     );
 
     const selectTable = (id: number) => {

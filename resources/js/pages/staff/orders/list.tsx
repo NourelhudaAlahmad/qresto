@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/qresto/empty-state';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { StatusPill } from '@/components/qresto/status-pill';
 import { formatMinutes } from '@/lib/elapsed';
+import { fill, useI18n } from '@/lib/i18n';
 
 export type OrderStatus =
     'placed' | 'pending' | 'preparing' | 'ready' | 'served';
@@ -47,12 +48,12 @@ type Props = {
     onTakePayment?: (order: Ticket) => void;
 };
 
-const FILTERS: { value: StatusFilter; label: string }[] = [
-    { value: 'all', label: 'All' },
-    { value: 'new', label: 'New' },
-    { value: 'preparing', label: 'Preparing' },
-    { value: 'ready', label: 'Ready' },
-    { value: 'served', label: 'Served' },
+const FILTER_VALUES: StatusFilter[] = [
+    'all',
+    'new',
+    'preparing',
+    'ready',
+    'served',
 ];
 
 export function statusGroup(status: OrderStatus): Exclude<StatusFilter, 'all'> {
@@ -132,12 +133,21 @@ export function orderCode(code: string): string {
     return code.startsWith('#') ? code : `#${code}`;
 }
 
-export function actionLabel(status: OrderStatus): string | null {
+/** The verb that moves a ticket on; labels come from staff.board. */
+export function actionLabel(
+    status: OrderStatus,
+    labels: {
+        accept: string;
+        start: string;
+        mark_ready: string;
+        mark_served: string;
+    },
+): string | null {
     return {
-        placed: 'Accept order',
-        pending: 'Start cooking',
-        preparing: 'Mark ready',
-        ready: 'Mark served',
+        placed: labels.accept,
+        pending: labels.start,
+        preparing: labels.mark_ready,
+        ready: labels.mark_served,
         served: null,
     }[status];
 }
@@ -187,7 +197,11 @@ function TicketOverlay({
     order: Ticket;
     onClose: () => void;
 }) {
-    const action = canAdvance ? actionLabel(order.status) : null;
+    const {
+        orders: o,
+        staff: { board: t },
+    } = useI18n();
+    const action = canAdvance ? actionLabel(order.status, t) : null;
     const canVoid = canAdvance && canVoidStatus(order.status);
 
     return (
@@ -199,7 +213,7 @@ function TicketOverlay({
                 }
             }}
             title={<Numeric>{orderCode(order.code)}</Numeric>}
-            description={`Table ${order.table ?? '—'} · ${order.guest_name || 'Guest'}`}
+            description={`${fill(t.table, { table: order.table ?? '—' })} · ${order.guest_name || t.guest}`}
         >
             <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -240,7 +254,7 @@ function TicketOverlay({
                                 : 'bg-[var(--status-pending-bg)] text-[var(--status-pending-fg)]'
                         }`}
                     >
-                        {order.paid ? 'Paid' : 'Unpaid'}
+                        {order.paid ? o.paid : o.unpaid}
                     </span>
 
                     <Numeric className="text-title-3 font-semibold">
@@ -263,7 +277,7 @@ function TicketOverlay({
                                 onClose();
                             }}
                         >
-                            Take payment
+                            {t.take_payment}
                         </Button>
                     ) : action ? (
                         <Button
@@ -281,8 +295,8 @@ function TicketOverlay({
                     ) : (
                         <span className="text-caption flex min-h-11 flex-1 items-center text-[var(--text-secondary)]">
                             {order.status === 'served' && canTakePayment
-                                ? 'Take payment from the floor map'
-                                : 'No action available'}
+                                ? t.take_payment_floor
+                                : t.no_action}
                         </span>
                     )}
 
@@ -297,7 +311,7 @@ function TicketOverlay({
                                 onClose();
                             }}
                         >
-                            Void order
+                            {t.void}
                         </Button>
                     )}
                 </div>
@@ -308,6 +322,20 @@ function TicketOverlay({
 
 export default function OrderList(props: Props) {
     const { orders, userId, now, warnMinutes, lateMinutes } = props;
+    const {
+        staff: { board: t },
+    } = useI18n();
+    const filterLabels: Record<StatusFilter, string> = {
+        all: t.filter_all,
+        new: t.col_new,
+        preparing: t.col_preparing,
+        ready: t.col_ready,
+        served: t.col_served,
+    };
+    const FILTERS = FILTER_VALUES.map((value) => ({
+        value,
+        label: filterLabels[value],
+    }));
     const filterKey = `qresto:waiter:${userId}:list-filter`;
     const sortKey = `qresto:waiter:${userId}:list-sort`;
     const [filter, setFilter] = useState<StatusFilter>(() => {
@@ -364,13 +392,13 @@ export default function OrderList(props: Props) {
     return (
         <section
             className="flex min-w-0 flex-col gap-4"
-            aria-label="Order list"
+            aria-label={t.order_list}
         >
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div
                     className="flex max-w-full flex-wrap gap-2"
                     role="group"
-                    aria-label="Filter order status"
+                    aria-label={t.filter_status}
                 >
                     {FILTERS.map((item) => (
                         <ChipFilter
@@ -385,19 +413,19 @@ export default function OrderList(props: Props) {
                 </div>
 
                 <label className="text-label flex min-h-11 items-center gap-2 text-[var(--text-secondary)]">
-                    Sort by
+                    {t.sort_by}
                     <span className="relative">
                         <select
-                            aria-label="Sort orders"
+                            aria-label={t.sort_orders}
                             value={sort}
                             onChange={(event) =>
                                 chooseSort(event.target.value as SortKey)
                             }
                             className="text-label min-h-11 appearance-none rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-card)] py-2 pe-9 ps-3 text-[var(--text-primary)] outline-none focus-visible:border-[var(--border-focus-color)] focus-visible:shadow-[var(--ring-focus)]"
                         >
-                            <option value="age">Age (oldest first)</option>
-                            <option value="table">Table</option>
-                            <option value="total">Total (highest first)</option>
+                            <option value="age">{t.sort_age}</option>
+                            <option value="table">{t.sort_table}</option>
+                            <option value="total">{t.sort_total}</option>
                         </select>
                         <ChevronDown className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
                     </span>
@@ -406,7 +434,7 @@ export default function OrderList(props: Props) {
 
             {visible.length === 0 ? (
                 <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--border-default)] bg-[var(--surface-card)]">
-                    <EmptyState headline="Nothing here right now" />
+                    <EmptyState headline={t.nothing} />
                 </div>
             ) : (
                 <>
@@ -418,31 +446,31 @@ export default function OrderList(props: Props) {
                                         scope="col"
                                         className="w-[18%] p-3 text-start font-semibold"
                                     >
-                                        Order
+                                        {t.col_order}
                                     </th>
                                     <th
                                         scope="col"
                                         className="w-[24%] p-3 text-start font-semibold"
                                     >
-                                        Table · Guest
+                                        {t.col_table_guest}
                                     </th>
                                     <th
                                         scope="col"
                                         className="w-[18%] p-3 text-start font-semibold"
                                     >
-                                        Status
+                                        {t.col_status}
                                     </th>
                                     <th
                                         scope="col"
                                         className="w-[22%] p-3 text-end font-semibold"
                                     >
-                                        Total
+                                        {t.col_total}
                                     </th>
                                     <th
                                         scope="col"
                                         className="w-[18%] p-3 text-end font-semibold"
                                     >
-                                        Age
+                                        {t.col_age}
                                     </th>
                                 </tr>
                             </thead>
@@ -469,7 +497,7 @@ export default function OrderList(props: Props) {
                                             <Numeric>
                                                 {order.table ?? '—'}
                                             </Numeric>{' '}
-                                            · {order.guest_name || 'Guest'}
+                                            · {order.guest_name || t.guest}
                                         </td>
                                         <td className="p-3">
                                             <StatusPill status={order.status} />
@@ -512,14 +540,14 @@ export default function OrderList(props: Props) {
                                 </div>
                                 <dl className="text-body mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2">
                                     <dt className="text-[var(--text-tertiary)]">
-                                        Table · Guest
+                                        {t.col_table_guest}
                                     </dt>
                                     <dd className="min-w-0 break-words text-[var(--text-primary)]">
                                         <Numeric>{order.table ?? '—'}</Numeric>{' '}
-                                        · {order.guest_name || 'Guest'}
+                                        · {order.guest_name || t.guest}
                                     </dd>
                                     <dt className="text-[var(--text-tertiary)]">
-                                        Total
+                                        {t.col_total}
                                     </dt>
                                     <dd className="min-w-0">
                                         <Numeric className="font-mono text-[var(--text-primary)]">
@@ -530,7 +558,7 @@ export default function OrderList(props: Props) {
                                         </Numeric>
                                     </dd>
                                     <dt className="text-[var(--text-tertiary)]">
-                                        Age
+                                        {t.col_age}
                                     </dt>
                                     <dd>
                                         <Age

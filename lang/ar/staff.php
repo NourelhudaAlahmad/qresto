@@ -1,8 +1,9 @@
 <?php
 
-// Staff screens: navigation, page titles, roles, the staff shell, sign-in
-// and the floor. Shared to every page as i18n.staff. Keep en and ar
-// key-for-key; tests/Feature/SharedTranslationsTest.php checks both.
+// Staff screens: navigation, page titles, roles, the staff shell, sign-in,
+// the floor, the order board and the cashier. Shared to every page as
+// i18n.staff. Keep en and ar key-for-key; SharedTranslationsTest checks both,
+// and StaffCopyTest keeps hard-coded English out of the staff screens (#48).
 
 return [
     'nav' => [
@@ -133,6 +134,7 @@ return [
         'try_again' => 'يرجى المحاولة مرة أخرى.',
         'cash_received' => 'استُلم :amount نقداً',
         'card_taken' => 'دُفع :amount بالبطاقة',
+        'load_failed' => 'تعذّر تحميل الطاولة (:status).',
     ],
 
     'login' => [
@@ -178,5 +180,76 @@ return [
         'expiry' => 'رموز الوردية تنتهي بعد 5 دقائق ولا تُستخدم إلا مرة واحدة.',
         'failed' => 'فشل الدخول برمز الوردية. يرجى المحاولة مرة أخرى.',
         'camera_error' => 'تعذّر فتح الكاميرا. اسمح بالوصول إلى الكاميرا وحاول مرة أخرى.',
+    ],
+
+    'board' => [
+        'col_new' => 'جديد',
+        'col_preparing' => 'قيد التحضير',
+        'col_ready' => 'جاهز',
+        'col_served' => 'مُقدَّم',
+        'filter_all' => 'الكل',
+        'accept' => 'اقبل الطلب',
+        'start' => 'ابدأ التحضير',
+        'mark_ready' => 'جاهز',
+        'mark_served' => 'تم التقديم',
+        'take_payment' => 'تحصيل الدفع',
+        'take_payment_floor' => 'حصّل الدفع من خريطة الصالة',
+        'waiting_payment' => 'بانتظار الدفع',
+        'no_action' => 'لا يوجد إجراء متاح',
+        'void' => 'إلغاء الطلب',
+        'more_actions' => 'إجراءات أخرى لـ :code',
+        'more_actions_generic' => 'إجراءات أخرى',
+        'advance' => 'تقديم الحالة',
+        'advance_from' => 'نقل الطلب من حالة :status',
+        'table' => 'الطاولة :table',
+        'guest' => 'ضيف',
+        'order_list' => 'قائمة الطلبات',
+        'filter_status' => 'تصفية حالة الطلب',
+        'filter_by_status' => 'تصفية حسب حالة الطلب',
+        'sort_by' => 'ترتيب حسب',
+        'sort_orders' => 'ترتيب الطلبات',
+        'sort_age' => 'العمر (الأقدم أولاً)',
+        'sort_table' => 'الطاولة',
+        'sort_total' => 'الإجمالي (الأعلى أولاً)',
+        'nothing' => 'لا شيء هنا الآن',
+        'col_order' => 'الطلب',
+        'col_table_guest' => 'الطاولة · الضيف',
+        'col_status' => 'الحالة',
+        'col_total' => 'الإجمالي',
+        'col_age' => 'العمر',
+        'new_order' => 'طلب جديد',
+        'new_order_body' => 'وصل طلب جديد إلى لوحتك.',
+        'updated' => 'حُدِّث :code',
+        'update_failed' => 'تعذّر تحديث الطلب',
+        'board_restored' => 'أُعيدت اللوحة كما كانت.',
+        'voided' => 'أُلغي :code',
+        'kitchen_told' => 'تم إبلاغ المطبخ.',
+        'void_failed' => 'تعذّر إلغاء الطلب.',
+        'order_view' => 'عرض الطلبات',
+        'kanban' => 'لوحة',
+        'list' => 'قائمة',
+        'sound_on' => 'تشغيل صوت الطلبات الجديدة',
+        'sound_off' => 'كتم صوت الطلبات الجديدة',
+        'void_title' => 'إلغاء :code؟',
+        'void_body' => 'سيُلغى الطلب ويُبلَّغ المطبخ. لا يمكن التراجع عن هذا.',
+        'void_reason' => 'سبب الإلغاء',
+        'void_placeholder' => 'أدخل السبب (مطلوب)',
+        'keep' => 'إبقاء الطلب',
+    ],
+
+    'cashier' => [
+        'head' => 'فواتير غير مدفوعة',
+        'outstanding' => 'المستحق',
+        'unpaid_one' => 'طلب واحد غير مدفوع',
+        'unpaid_other' => ':count طلبات غير مدفوعة',
+        'ready_to_settle' => 'جاهز للتحصيل',
+        'served_waiting' => 'مُقدَّم وبانتظار الدفع',
+        'take_payment' => 'تحصيل الدفع',
+        'table_code' => 'الطاولة :table · :code',
+        'settle_hint' => 'حصّل الدفع من شاشة الدفع في الصالة.',
+    ],
+
+    'landing' => [
+        'coming_soon' => 'هذه اللوحة قادمة قريباً.',
     ],
 ];

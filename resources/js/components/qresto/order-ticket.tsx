@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { Numeric } from '@/components/numeric';
+import { fill, useI18n } from '@/lib/i18n';
 import type { OrderStatus } from '@/types';
 
 type OrderTicketItem = {
@@ -88,6 +89,10 @@ export function OrderTicket({
     accentColor,
     size = 'default',
 }: OrderTicketProps) {
+    const {
+        orders: o,
+        staff: { board: t },
+    } = useI18n();
     const styles = variantStyles[variant];
     // The runner view is the pass, bigger.
     const runner = size === 'runner';
@@ -204,7 +209,7 @@ export function OrderTicket({
                                 : 'bg-[var(--status-pending-bg)] text-[var(--status-pending-fg)]'
                         }`}
                     >
-                        {paid ? 'Paid' : 'Unpaid'}
+                        {paid ? o.paid : o.unpaid}
                     </span>
 
                     <span className="flex-1" />
@@ -226,7 +231,7 @@ export function OrderTicket({
                             advanceAriaLabel ??
                             (advanceLabel
                                 ? undefined
-                                : `Advance order status from ${status}`)
+                                : fill(t.advance_from, { status }))
                         }
                         className={
                             pass
@@ -234,7 +239,7 @@ export function OrderTicket({
                                 : 'text-body duration-fast min-h-11 flex-1 rounded-full bg-[var(--action-primary)] px-3 py-2 font-semibold leading-snug text-[var(--text-on-brand)] transition-transform hover:bg-[var(--action-primary-hover)] active:scale-[var(--press-scale)] disabled:opacity-60'
                         }
                     >
-                        {advanceLabel ?? 'Advance status'}
+                        {advanceLabel ?? t.advance}
                     </button>
                 ) : (
                     <span
@@ -249,7 +254,7 @@ export function OrderTicket({
                         <button
                             type="button"
                             onClick={onOverflow}
-                            aria-label="More actions"
+                            aria-label={t.more_actions_generic}
                             className={`h-11 w-11 shrink-0 rounded-full border ${
                                 variant === 'dark'
                                     ? 'border-[var(--alpha-paper-08)] bg-[var(--ink-950)] text-[var(--ink-25)]'

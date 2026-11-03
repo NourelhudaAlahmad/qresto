@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { Stat } from '@/components/qresto/stat';
 import { useLiveData } from '@/hooks/useLiveData';
+import { fill, useI18n } from '@/lib/i18n';
 import { useTableCheckout } from '@/pages/staff/floor';
 import OrderList, { money } from '@/pages/staff/orders/list';
 import type { Ticket } from '@/pages/staff/orders/list';
@@ -26,6 +27,9 @@ export default function Cashier({
     warnMinutes,
     lateMinutes,
 }: Props) {
+    const {
+        staff: { cashier: t },
+    } = useI18n();
     const { qresto, auth } = usePage().props as unknown as {
         qresto?: { live?: { floor_interval?: number } };
         auth?: { user?: { id: number } | null };
@@ -61,28 +65,30 @@ export default function Cashier({
 
     return (
         <>
-            <Head title="Unpaid bills" />
+            <Head title={t.head} />
 
             <div className="flex flex-col gap-4">
                 {/* The total is the point of this screen. */}
                 <section
-                    aria-label="Outstanding"
+                    aria-label={t.outstanding}
                     className="grid grid-cols-1 gap-4 min-[560px]:grid-cols-2"
                 >
                     <Stat
                         tone="inverse"
                         className="p-5"
-                        label="Outstanding"
+                        label={t.outstanding}
                         value={money(outstanding, currency)}
-                        hint={`${orders.length} unpaid ${
-                            orders.length === 1 ? 'order' : 'orders'
-                        }`}
+                        hint={
+                            orders.length === 1
+                                ? t.unpaid_one
+                                : fill(t.unpaid_other, { count: orders.length })
+                        }
                     />
                     <Stat
                         className="p-5"
-                        label="Ready to settle"
+                        label={t.ready_to_settle}
                         value={String(toSettle.length)}
-                        hint="served and waiting for payment"
+                        hint={t.served_waiting}
                     />
                 </section>
 
@@ -111,10 +117,13 @@ export default function Cashier({
                 }}
                 title={
                     paying
-                        ? `Table ${paying.table ?? ''} · ${paying.code}`
-                        : 'Take payment'
+                        ? fill(t.table_code, {
+                              table: paying.table ?? '',
+                              code: paying.code,
+                          })
+                        : t.take_payment
                 }
-                description="Settle with the floor's checkout."
+                description={t.settle_hint}
             >
                 {checkout}
             </ResponsiveOverlay>

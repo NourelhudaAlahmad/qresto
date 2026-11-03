@@ -15,6 +15,7 @@ import { useLiveAlertMute } from '@/hooks/useLiveAlertMute';
 import { useLiveData } from '@/hooks/useLiveData';
 import { useNewItemAlert } from '@/hooks/useNewItemAlert';
 import { formatMinutes } from '@/lib/elapsed';
+import { fill, useI18n } from '@/lib/i18n';
 
 import OrderList, {
     actionLabel,
@@ -41,12 +42,12 @@ type SharedProps = {
     qresto?: { live?: { waiter_interval?: number } };
 };
 
-// The design's COLUMNS: label, colour and the verb that moves a ticket on.
-const COLUMNS: { id: Column; title: string; color: string }[] = [
-    { id: 'new', title: 'New', color: 'var(--saffron-500)' },
-    { id: 'preparing', title: 'Preparing', color: 'var(--teal-500)' },
-    { id: 'ready', title: 'Ready', color: 'var(--clay-500)' },
-    { id: 'served', title: 'Served', color: 'var(--herb-500)' },
+// The design's columns and colours; their titles come from staff.board.
+const COLUMNS: { id: Column; color: string }[] = [
+    { id: 'new', color: 'var(--saffron-500)' },
+    { id: 'preparing', color: 'var(--teal-500)' },
+    { id: 'ready', color: 'var(--clay-500)' },
+    { id: 'served', color: 'var(--herb-500)' },
 ];
 
 const COLUMN_COLOR: Record<Column, string> = Object.fromEntries(
@@ -78,6 +79,9 @@ function TicketMenu({
     canVoid: boolean;
     onVoid: (order: Ticket) => void;
 }) {
+    const {
+        staff: { board: t },
+    } = useI18n();
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -109,7 +113,9 @@ function TicketMenu({
         <div ref={ref} className="relative shrink-0">
             <button
                 type="button"
-                aria-label={`More actions for ${orderCode(order.code)}`}
+                aria-label={fill(t.more_actions, {
+                    code: orderCode(order.code),
+                })}
                 aria-haspopup="menu"
                 aria-expanded={open}
                 onClick={() => setOpen((current) => !current)}
@@ -133,7 +139,7 @@ function TicketMenu({
                         }}
                         className="text-label min-h-11 w-full rounded-[var(--radius-sm)] px-3 text-start font-semibold text-[var(--berry-500)] hover:bg-[var(--action-ghost-hover)] disabled:opacity-40"
                     >
-                        Void order
+                        {t.void}
                     </button>
                 </div>
             )}
@@ -162,9 +168,12 @@ function KanbanTicket({
     onAdvance: (order: Ticket) => void;
     onVoid: (order: Ticket) => void;
 }) {
+    const {
+        staff: { board: t },
+    } = useI18n();
     // Ages between polls without a round trip, with the shared SLA config.
     const { minutes, level } = useElapsed(order.placed_at);
-    const verb = actionLabel(order.status);
+    const verb = actionLabel(order.status, t);
     const advance = canAdvance && verb !== null;
 
     return (
@@ -173,8 +182,8 @@ function KanbanTicket({
             elapsed={formatMinutes(minutes)}
             elapsedLevel={level}
             accentColor={COLUMN_COLOR[column]}
-            table={`Table ${order.table ?? '—'}`}
-            guest={order.guest_name || 'Guest'}
+            table={fill(t.table, { table: order.table ?? '—' })}
+            guest={order.guest_name || t.guest}
             status={order.status}
             items={order.lines.map((line) => ({
                 qty: `${line.qty}×`,
@@ -189,9 +198,9 @@ function KanbanTicket({
             footerNote={
                 order.status === 'served'
                     ? canTakePayment
-                        ? 'Take payment from the floor map'
-                        : 'Waiting for payment'
-                    : 'No action available'
+                        ? t.take_payment_floor
+                        : t.waiting_payment
+                    : t.no_action
             }
             overflow={
                 <TicketMenu
@@ -211,6 +220,15 @@ export default function Kanban({
     warnMinutes,
     lateMinutes,
 }: Props) {
+    const {
+        staff: { board: t },
+    } = useI18n();
+    const columnTitle: Record<Column, string> = {
+        new: t.col_new,
+        preparing: t.col_preparing,
+        ready: t.col_ready,
+        served: t.col_served,
+    };
     const { auth, qresto } = usePage().props as unknown as SharedProps;
     const userId = auth.user.id;
     const viewKey = `qresto:waiter:${userId}:view`;
@@ -239,8 +257,8 @@ export default function Kanban({
 
     // New orders arrive as a toast plus a sound, never as a modal.
     useNewItemAlert(orders, (order) => order.id, {
-        title: 'New order',
-        description: 'A new order just reached your board.',
+        title: t.new_order,
+        description: t.new_order_body,
         muted,
     });
 
@@ -306,14 +324,16 @@ export default function Kanban({
                 onSuccess: () =>
                     showToast({
                         type: 'success',
-                        title: `${orderCode(order.code)} updated`,
+                        title: fill(t.updated, {
+                            code: orderCode(order.code),
+                        }),
                     }),
                 onError: () => {
                     setTickets(previous);
                     showToast({
                         type: 'error',
-                        title: 'Could not update order',
-                        description: 'The board has been restored.',
+                        title: t.update_failed,
+                        description: t.board_restored,
                     });
                 },
                 onFinish: () => setBusy(null),
@@ -349,18 +369,16 @@ export default function Kanban({
                 onSuccess: () => {
                     showToast({
                         type: 'success',
-                        title: `${orderCode(target.code)} voided`,
-                        description: 'The kitchen has been told.',
+                        title: fill(t.voided, {
+                            code: orderCode(target.code),
+                        }),
+                        description: t.kitchen_told,
                     });
                     closeVoid();
                 },
                 onError: (errors) => {
                     setTickets(previous);
-                    setError(
-                        errors.reason ??
-                            errors.order ??
-                            'Could not void order.',
-                    );
+                    setError(errors.reason ?? errors.order ?? t.void_failed);
                 },
                 onFinish: () => setBusy(null),
             },
@@ -373,7 +391,7 @@ export default function Kanban({
                 <div
                     className="flex items-center gap-2"
                     role="group"
-                    aria-label="Order view"
+                    aria-label={t.order_view}
                 >
                     <ChipFilter
                         type="segment"
@@ -381,7 +399,7 @@ export default function Kanban({
                         onClick={() => setViewMode('kanban')}
                     >
                         <LayoutGrid className="me-1.5 size-4" aria-hidden />
-                        Kanban
+                        {t.kanban}
                     </ChipFilter>
                     <ChipFilter
                         type="segment"
@@ -389,7 +407,7 @@ export default function Kanban({
                         onClick={() => setViewMode('list')}
                     >
                         <List className="me-1.5 size-4" aria-hidden />
-                        List
+                        {t.list}
                     </ChipFilter>
                 </div>
 
@@ -404,11 +422,7 @@ export default function Kanban({
                         variant="ghost"
                         size="sm"
                         aria-pressed={muted}
-                        aria-label={
-                            muted
-                                ? 'Turn new-order sound on'
-                                : 'Mute new-order sound'
-                        }
+                        aria-label={muted ? t.sound_on : t.sound_off}
                         onClick={toggleMute}
                     >
                         {muted ? (
@@ -439,7 +453,7 @@ export default function Kanban({
                     <div
                         className="flex gap-2 overflow-x-auto pb-1 min-[900px]:hidden"
                         role="group"
-                        aria-label="Filter by order status"
+                        aria-label={t.filter_by_status}
                     >
                         {COLUMNS.map((column) => (
                             <ChipFilter
@@ -448,7 +462,7 @@ export default function Kanban({
                                 active={filter === column.id}
                                 onClick={() => setFilter(column.id)}
                             >
-                                {`${column.title} (${grouped(column.id).length})`}
+                                {`${columnTitle[column.id]} (${grouped(column.id).length})`}
                             </ChipFilter>
                         ))}
                     </div>
@@ -460,7 +474,7 @@ export default function Kanban({
                             return (
                                 <section
                                     key={column.id}
-                                    aria-label={column.title}
+                                    aria-label={columnTitle[column.id]}
                                     className={`${
                                         filter !== column.id
                                             ? 'hidden min-[900px]:flex'
@@ -476,7 +490,7 @@ export default function Kanban({
                                             }}
                                         />
                                         <h2 className="text-label font-semibold text-[var(--text-primary)]">
-                                            {column.title}
+                                            {columnTitle[column.id]}
                                         </h2>
                                         <span className="text-caption font-mono text-[var(--text-tertiary)]">
                                             {columnOrders.length}
@@ -499,7 +513,7 @@ export default function Kanban({
                                     ) : (
                                         <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--border-default)] bg-[var(--surface-card)]">
                                             <EmptyState
-                                                headline="Nothing here right now"
+                                                headline={t.nothing}
                                                 className="py-6"
                                             />
                                         </div>
@@ -519,11 +533,13 @@ export default function Kanban({
                             closeVoid();
                         }
                     }}
-                    title={`Void ${orderCode(voidOrder.code)}?`}
-                    description="This cancels the order and tells the kitchen. It cannot be undone."
+                    title={fill(t.void_title, {
+                        code: orderCode(voidOrder.code),
+                    })}
+                    description={t.void_body}
                 >
                     <div className="flex flex-col gap-2">
-                        <Label htmlFor="void-reason">Reason for voiding</Label>
+                        <Label htmlFor="void-reason">{t.void_reason}</Label>
 
                         <Textarea
                             id="void-reason"
@@ -534,7 +550,7 @@ export default function Kanban({
                             }}
                             rows={3}
                             maxLength={500}
-                            placeholder="Enter a reason (required)"
+                            placeholder={t.void_placeholder}
                             aria-invalid={error ? true : undefined}
                         />
 
@@ -554,7 +570,7 @@ export default function Kanban({
                                 className="flex-1"
                                 onClick={closeVoid}
                             >
-                                Keep order
+                                {t.keep}
                             </Button>
 
                             <Button
@@ -565,7 +581,7 @@ export default function Kanban({
                                 disabled={reason.trim().length < 3}
                                 onClick={voidTicket}
                             >
-                                Void order
+                                {t.void}
                             </Button>
                         </div>
                     </div>

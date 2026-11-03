@@ -1,8 +1,9 @@
 <?php
 
-// Staff screens: navigation, page titles, roles, the staff shell, sign-in
-// and the floor. Shared to every page as i18n.staff. Keep en and ar
-// key-for-key; tests/Feature/SharedTranslationsTest.php checks both.
+// Staff screens: navigation, page titles, roles, the staff shell, sign-in,
+// the floor, the order board and the cashier. Shared to every page as
+// i18n.staff. Keep en and ar key-for-key; SharedTranslationsTest checks both,
+// and StaffCopyTest keeps hard-coded English out of the staff screens (#48).
 
 return [
     'nav' => [
@@ -133,6 +134,7 @@ return [
         'try_again' => 'Please try again.',
         'cash_received' => ':amount cash received',
         'card_taken' => ':amount taken by card',
+        'load_failed' => 'Unable to load table (:status).',
     ],
 
     'login' => [
@@ -178,5 +180,76 @@ return [
         'expiry' => 'Shift codes expire after 5 minutes and can only be used once.',
         'failed' => 'Shift QR sign-in failed. Please try again.',
         'camera_error' => 'The camera could not be opened. Allow camera access and try again.',
+    ],
+
+    'board' => [
+        'col_new' => 'New',
+        'col_preparing' => 'Preparing',
+        'col_ready' => 'Ready',
+        'col_served' => 'Served',
+        'filter_all' => 'All',
+        'accept' => 'Accept order',
+        'start' => 'Start cooking',
+        'mark_ready' => 'Mark ready',
+        'mark_served' => 'Mark served',
+        'take_payment' => 'Take payment',
+        'take_payment_floor' => 'Take payment from the floor map',
+        'waiting_payment' => 'Waiting for payment',
+        'no_action' => 'No action available',
+        'void' => 'Void order',
+        'more_actions' => 'More actions for :code',
+        'more_actions_generic' => 'More actions',
+        'advance' => 'Advance status',
+        'advance_from' => 'Advance order status from :status',
+        'table' => 'Table :table',
+        'guest' => 'Guest',
+        'order_list' => 'Order list',
+        'filter_status' => 'Filter order status',
+        'filter_by_status' => 'Filter by order status',
+        'sort_by' => 'Sort by',
+        'sort_orders' => 'Sort orders',
+        'sort_age' => 'Age (oldest first)',
+        'sort_table' => 'Table',
+        'sort_total' => 'Total (highest first)',
+        'nothing' => 'Nothing here right now',
+        'col_order' => 'Order',
+        'col_table_guest' => 'Table · Guest',
+        'col_status' => 'Status',
+        'col_total' => 'Total',
+        'col_age' => 'Age',
+        'new_order' => 'New order',
+        'new_order_body' => 'A new order just reached your board.',
+        'updated' => ':code updated',
+        'update_failed' => 'Could not update order',
+        'board_restored' => 'The board has been restored.',
+        'voided' => ':code voided',
+        'kitchen_told' => 'The kitchen has been told.',
+        'void_failed' => 'Could not void order.',
+        'order_view' => 'Order view',
+        'kanban' => 'Kanban',
+        'list' => 'List',
+        'sound_on' => 'Turn new-order sound on',
+        'sound_off' => 'Mute new-order sound',
+        'void_title' => 'Void :code?',
+        'void_body' => 'This cancels the order and tells the kitchen. It cannot be undone.',
+        'void_reason' => 'Reason for voiding',
+        'void_placeholder' => 'Enter a reason (required)',
+        'keep' => 'Keep order',
+    ],
+
+    'cashier' => [
+        'head' => 'Unpaid bills',
+        'outstanding' => 'Outstanding',
+        'unpaid_one' => '1 unpaid order',
+        'unpaid_other' => ':count unpaid orders',
+        'ready_to_settle' => 'Ready to settle',
+        'served_waiting' => 'served and waiting for payment',
+        'take_payment' => 'Take payment',
+        'table_code' => 'Table :table · :code',
+        'settle_hint' => 'Settle with the floor’s checkout.',
+    ],
+
+    'landing' => [
+        'coming_soon' => 'This staff panel is coming soon.',
     ],
 ];
