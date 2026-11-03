@@ -247,3 +247,41 @@ describe('accessibility (#36)', () => {
         await expectNoCriticalA11y(container);
     });
 });
+
+describe('signing out of the pass (#52)', () => {
+    it('shows who is signed in', () => {
+        render(<Pass {...props} signedInAs="Kitchen Pass" />);
+
+        expect(
+            screen.getByText('Signed in as Kitchen Pass'),
+        ).toBeInTheDocument();
+    });
+
+    it('asks before signing out, and staying keeps the station', () => {
+        render(<Pass {...props} signedInAs="Kitchen Pass" />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+
+        expect(post).not.toHaveBeenCalled();
+        expect(
+            screen.getByRole('group', { name: 'Sign out of the pass?' }),
+        ).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Stay signed in' }));
+
+        expect(post).not.toHaveBeenCalled();
+        expect(
+            screen.queryByRole('group', { name: 'Sign out of the pass?' }),
+        ).not.toBeInTheDocument();
+    });
+
+    it('signs out only after the confirmation', () => {
+        render(<Pass {...props} signedInAs="Kitchen Pass" />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+
+        expect(post).toHaveBeenCalledTimes(1);
+        expect(post).toHaveBeenCalledWith('/logout');
+    });
+});

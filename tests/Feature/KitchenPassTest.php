@@ -154,3 +154,15 @@ it('sits in the staff frame as "Kitchen display · Pass screen · N stations"', 
             ->where('staffLayout.pageTitle', 'Kitchen display')
             ->where('staffLayout.pageSubtitle', 'Pass screen · 3 stations'));
 });
+
+it('names who is signed in, and signs the pass out to the sign-in screen (#52)', function () {
+    expect(pass($this->kitchen)['signedInAs'])->toBe($this->kitchen->name);
+
+    $this->actingAs($this->kitchen)
+        ->post(route('logout'))
+        ->assertRedirect(route('login'));
+
+    $this->assertGuest();
+
+    $this->get(route('login'))->assertOk();
+});

@@ -6,6 +6,7 @@ import { showToast } from '@/components/qresto/toast';
 import { useLiveData } from '@/hooks/useLiveData';
 import { useNewItemAlert } from '@/hooks/useNewItemAlert';
 import { formatMinutes } from '@/lib/elapsed';
+import { fill, useI18n } from '@/lib/i18n';
 import type { OrderStatus } from '@/types';
 
 type Line = {
@@ -34,6 +35,7 @@ type Props = {
     pollIntervalMs: number;
     heartbeatIntervalMs: number;
     now: number;
+    signedInAs?: string;
 };
 
 /** The next state, read out to screen readers; the button says "Bump". */
@@ -86,7 +88,14 @@ export default function Pass({
     sla,
     pollIntervalMs,
     heartbeatIntervalMs,
+    signedInAs,
 }: Props) {
+    const {
+        staff: { pass: t },
+    } = useI18n();
+    // Signing out drops the station mid-service, so it takes two taps (#52).
+    const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+
     // Bumped tickets leave at once; a refused bump brings them back.
     const [bumped, setBumped] = useState<Set<number>>(new Set());
     const visible = tickets.filter((ticket) => !bumped.has(ticket.id));
@@ -218,6 +227,57 @@ export default function Pass({
                     <p className="text-body rounded-[var(--radius-pill)] border border-[var(--alpha-paper-08)] px-4 py-2 font-semibold">
                         Bump with the touch bar or the keypad
                     </p>
+
+                    {/* Shared equipment: who is signed in, and a way out that a
+                        stray tap mid-service cannot take (#52). Kept to the
+                        header, away from the bump controls. */}
+                    <div className="flex flex-wrap items-center gap-3 border-s border-[var(--alpha-paper-08)] ps-4">
+                        {signedInAs && (
+                            <p className="text-body text-[var(--ink-400)]">
+                                {fill(t.signed_in_as, { name: signedInAs })}
+                            </p>
+                        )}
+
+                        {confirmingSignOut ? (
+                            <div
+                                role="group"
+                                aria-label={t.confirm}
+                                className="flex flex-wrap items-center gap-3"
+                            >
+                                <p className="text-body">
+                                    <span className="font-semibold">
+                                        {t.confirm}
+                                    </span>{' '}
+                                    <span className="text-[var(--ink-400)]">
+                                        {t.confirm_hint}
+                                    </span>
+                                </p>
+                                <button
+                                    type="button"
+                                    autoFocus
+                                    onClick={() => setConfirmingSignOut(false)}
+                                    className="text-body min-h-11 min-w-11 rounded-[var(--radius-pill)] border border-[var(--alpha-paper-08)] px-5 font-semibold"
+                                >
+                                    {t.stay}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => router.post('/logout')}
+                                    className="text-body min-h-11 min-w-11 rounded-[var(--radius-pill)] bg-[var(--danger-solid)] px-5 font-semibold text-[var(--ink-25)]"
+                                >
+                                    {t.sign_out}
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => setConfirmingSignOut(true)}
+                                className="text-body min-h-11 min-w-11 rounded-[var(--radius-pill)] border border-[var(--alpha-paper-08)] px-5 font-semibold"
+                            >
+                                {t.sign_out}
+                            </button>
+                        )}
+                    </div>
                 </header>
 
                 {/* Station filter: one station's work only. Touch-sized. */}

@@ -56,6 +56,8 @@ class KitchenDisplayController extends Controller
             'pollIntervalMs' => (int) config('qresto.live.kds_interval', 4) * 1000,
             'heartbeatIntervalMs' => 30_000,
             'now' => now()->valueOf(),
+            // Shared equipment: the next shift sees whose station this is (#52).
+            'signedInAs' => $this->user($request)->name,
         ]);
     }
 

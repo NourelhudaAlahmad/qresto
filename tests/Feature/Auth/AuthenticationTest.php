@@ -62,7 +62,8 @@ test('users can logout', function () {
 
     $response = $this->actingAs($user)->post(route('logout'));
 
-    $response->assertRedirect(route('home'));
+    // Ready for the next shift (#52).
+    $response->assertRedirect(route('login'));
 
     $this->assertGuest();
 });

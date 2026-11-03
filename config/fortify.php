@@ -76,6 +76,14 @@ return [
     'home' => '/dashboard',
 
     /*
+     * Only staff sign in, so signing out lands on the staff sign-in screen,
+     * ready for the next shift on shared devices like the pass (#52).
+     */
+    'redirects' => [
+        'logout' => '/login',
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | Fortify Routes Prefix / Subdomain
     |--------------------------------------------------------------------------
