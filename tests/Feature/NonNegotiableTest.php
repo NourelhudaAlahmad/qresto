@@ -32,10 +32,12 @@ function runGate(string $script, string ...$paths): ProcessResult
 it('01 guards the guest dock and screen at runtime', function () {
     $dock = file_get_contents(resource_path('js/components/qresto/sticky-dock.tsx'));
     $layout = file_get_contents(resource_path('js/layouts/guest-layout.tsx'));
+    $landing = file_get_contents(resource_path('js/layouts/landing-layout.tsx'));
     $rules = file_get_contents(resource_path('js/lib/non-negotiables.ts'));
 
     expect($dock)->toContain('checkDock(')->toContain('bg-[var(--alpha-paper-88)]')->toContain('backdrop-blur')
         ->and($layout)->toContain('checkScreen(')
+        ->and($landing)->toContain('checkScreen(')
         // Under test a broken rule throws, so every guest page test enforces it.
         ->and($rules)->toContain("import.meta.env.MODE === 'test'")->toContain('throw new Error');
 });

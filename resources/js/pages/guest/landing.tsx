@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Numeric } from '@/components/numeric';
 import { Button } from '@/components/qresto/button';
 import { PhoneIcon } from '@/components/qresto/phone-icon';
-import GuestLayout from '@/layouts/guest-layout';
+import LandingLayout from '@/layouts/landing-layout';
 import { useI18n } from '@/lib/i18n';
 import type {
     LandingPageProps,
@@ -302,11 +302,14 @@ export default function Landing({
     );
 
     return (
-        <GuestLayout>
+        <LandingLayout>
             <Head title={restaurant.name} />
 
             {flash?.error && (
-                <div role="alert" className="mx-auto max-w-[390px] px-3 pt-3">
+                <div
+                    role="alert"
+                    className="mx-auto w-full max-w-[var(--width-content)] px-[var(--gutter-mobile)] pt-3 md:px-[var(--gutter-desktop)]"
+                >
                     <div className="border-[var(--danger-solid)]/30 text-body rounded-[var(--radius-md)] border bg-[var(--danger-bg)] px-4 py-3 text-[var(--danger-fg)]">
                         {flash.error}
                     </div>
@@ -320,7 +323,7 @@ export default function Landing({
                     aria-labelledby="landing-scanner-title"
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
                 >
-                    <div className="bg-surface-card relative w-full max-w-[390px] rounded-[var(--radius-xl)] p-4 shadow-xl">
+                    <div className="bg-surface-card relative w-full max-w-[420px] rounded-[var(--radius-xl)] p-4 shadow-xl">
                         <button
                             type="button"
                             onClick={() => setScannerOpen(false)}
@@ -369,7 +372,7 @@ export default function Landing({
                     aria-labelledby="landing-booking-title"
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
                 >
-                    <div className="bg-surface-card relative w-full max-w-[390px] rounded-[var(--radius-xl)] p-5 shadow-xl">
+                    <div className="bg-surface-card relative w-full max-w-[420px] rounded-[var(--radius-xl)] p-5 shadow-xl">
                         <button
                             type="button"
                             onClick={() => setBookingOpen(false)}
@@ -428,105 +431,117 @@ export default function Landing({
             )}
 
             {/* Glass header: wordmark, open/closed badge, language toggle. */}
-            <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-[var(--border-subtle)] bg-[var(--alpha-paper-88)] px-[var(--gutter-mobile)] backdrop-blur-[12px]">
-                <Wordmark name={restaurant.name} size="text-[19px]" />
-
-                <span className="flex-1" />
-
-                <span
-                    className={`text-micro inline-flex h-6 items-center gap-[5px] rounded-[var(--radius-pill)] px-2.5 font-semibold ${
-                        open_now
-                            ? 'bg-[var(--success-bg)] text-[var(--success-fg)]'
-                            : 'bg-[var(--ink-100)] text-[var(--text-tertiary)]'
-                    }`}
-                >
-                    <span
-                        aria-hidden="true"
-                        className={`size-1.5 rounded-full ${
-                            open_now
-                                ? 'bg-[var(--herb-500)]'
-                                : 'bg-[var(--ink-400)]'
-                        }`}
+            <header className="sticky top-0 z-30 border-b border-[var(--border-subtle)] bg-[var(--alpha-paper-88)] backdrop-blur-[12px]">
+                <div className="mx-auto flex h-14 w-full max-w-[var(--width-content)] items-center gap-3 px-[var(--gutter-mobile)] md:h-[var(--topbar-h)] md:px-[var(--gutter-desktop)]">
+                    <Wordmark
+                        name={restaurant.name}
+                        size="text-[19px] md:text-[22px]"
                     />
-                    {open_now ? translations.open_now : translations.closed}
-                </span>
 
-                {/* A 44px target around the design's small "ع" pill. */}
-                <button
-                    type="button"
-                    onClick={switchLocale}
-                    aria-label={switchLanguageLabel}
-                    className="-me-2 grid size-11 place-items-center rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--border-focus-color)]"
-                >
-                    <span className="text-caption rounded-[var(--radius-pill)] border border-[var(--border-default)] px-2 py-[3px] font-mono text-[var(--text-tertiary)]">
-                        {nextLocale === 'ar' ? 'ع' : 'EN'}
+                    <span className="flex-1" />
+
+                    <span
+                        className={`text-micro inline-flex h-6 items-center gap-[5px] rounded-[var(--radius-pill)] px-2.5 font-semibold ${
+                            open_now
+                                ? 'bg-[var(--success-bg)] text-[var(--success-fg)]'
+                                : 'bg-[var(--ink-100)] text-[var(--text-tertiary)]'
+                        }`}
+                    >
+                        <span
+                            aria-hidden="true"
+                            className={`size-1.5 rounded-full ${
+                                open_now
+                                    ? 'bg-[var(--herb-500)]'
+                                    : 'bg-[var(--ink-400)]'
+                            }`}
+                        />
+                        {open_now ? translations.open_now : translations.closed}
                     </span>
-                </button>
+
+                    {/* A 44px target around the design's small "ع" pill. */}
+                    <button
+                        type="button"
+                        onClick={switchLocale}
+                        aria-label={switchLanguageLabel}
+                        className="-me-2 grid size-11 place-items-center rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--border-focus-color)]"
+                    >
+                        <span className="text-caption rounded-[var(--radius-pill)] border border-[var(--border-default)] px-2 py-[3px] font-mono text-[var(--text-tertiary)]">
+                            {nextLocale === 'ar' ? 'ع' : 'EN'}
+                        </span>
+                    </button>
+                </div>
             </header>
 
-            <main>
-                {/* Full-bleed hero, 420 tall, bottom scrim, display-2 statement. */}
-                <section className="relative flex h-[420px] items-end overflow-hidden bg-[linear-gradient(150deg,var(--clay-400),var(--clay-900))]">
-                    <div
-                        aria-hidden="true"
-                        className="absolute inset-0 bg-[var(--scrim-bottom)]"
-                    />
+            <main className="flex-1">
+                {/* Full-bleed on phones; wide hero band + side-by-side actions on desktop. */}
+                <div className="mx-auto w-full max-w-[var(--width-content)] md:px-[var(--gutter-desktop)] md:pt-8">
+                    <section className="relative flex h-[420px] items-end overflow-hidden bg-[linear-gradient(150deg,var(--clay-400),var(--clay-900))] md:min-h-[460px] md:rounded-[var(--radius-xl)] lg:min-h-[500px]">
+                        <div
+                            aria-hidden="true"
+                            className="absolute inset-0 bg-[var(--scrim-bottom)]"
+                        />
 
-                    <div className="relative px-[var(--gutter-mobile)] pb-8 pt-6 text-[var(--ink-0)]">
-                        {(restaurant.cuisine || areaOf(restaurant.address)) && (
-                            <p className="text-micro uppercase tracking-[var(--tracking-eyebrow)] opacity-85">
-                                {[
-                                    restaurant.cuisine,
-                                    areaOf(restaurant.address),
-                                ]
-                                    .filter(Boolean)
-                                    .join(' · ')}
-                            </p>
-                        )}
+                        <div className="relative w-full px-[var(--gutter-mobile)] pb-8 pt-6 text-[var(--ink-0)] md:p-10 lg:p-12">
+                            {(restaurant.cuisine ||
+                                areaOf(restaurant.address)) && (
+                                <p className="text-micro uppercase tracking-[var(--tracking-eyebrow)] opacity-85">
+                                    {[
+                                        restaurant.cuisine,
+                                        areaOf(restaurant.address),
+                                    ]
+                                        .filter(Boolean)
+                                        .join(' · ')}
+                                </p>
+                            )}
 
-                        <h1 className="font-display text-display-2 mb-2.5 mt-2 font-semibold">
-                            {restaurant.tagline || translations.hero_fallback}
-                        </h1>
+                            <h1 className="font-display text-display-2 lg:text-display-1 mb-2.5 mt-2 max-w-[18ch] font-semibold">
+                                {restaurant.tagline ||
+                                    translations.hero_fallback}
+                            </h1>
 
-                        {restaurant.intro && (
-                            <p className="text-body-lg max-w-[30ch] text-[var(--alpha-paper-88)]">
-                                {restaurant.intro}
-                            </p>
-                        )}
-                    </div>
-                </section>
+                            {restaurant.intro && (
+                                <p className="text-body-lg max-w-[30ch] text-[var(--alpha-paper-88)] md:max-w-[46ch]">
+                                    {restaurant.intro}
+                                </p>
+                            )}
+                        </div>
+                    </section>
 
-                {/* Two stacked 54px actions: scan (primary), book (outline). */}
-                <section className="flex flex-col gap-3 px-[var(--gutter-mobile)] py-5">
-                    <Button
-                        type="button"
-                        variant="primary"
-                        fullWidth
-                        onClick={() => setScannerOpen(true)}
-                        className="text-body-lg h-[54px] shadow-[var(--shadow-rest)]"
+                    {/* Two 54px actions: stacked on phones, side-by-side on wider viewports. */}
+                    <section
+                        data-landing-actions
+                        className="flex flex-col gap-3 px-[var(--gutter-mobile)] py-5 md:flex-row md:flex-wrap md:items-center md:gap-4 md:px-0 md:py-6"
                     >
-                        <QrCode aria-hidden="true" className="size-5" />
-                        {translations.scan}
-                    </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            fullWidth
+                            onClick={() => setScannerOpen(true)}
+                            className="text-body-lg h-[54px] shadow-[var(--shadow-rest)] md:w-auto md:px-7"
+                        >
+                            <QrCode aria-hidden="true" className="size-5" />
+                            {translations.scan}
+                        </Button>
 
-                    <Button
-                        type="button"
-                        variant="outline"
-                        fullWidth
-                        onClick={() => setBookingOpen(true)}
-                        className="text-body-lg h-[54px]"
-                    >
-                        {translations.book}
-                    </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            fullWidth
+                            onClick={() => setBookingOpen(true)}
+                            className="text-body-lg h-[54px] md:w-auto md:px-7"
+                        >
+                            {translations.book}
+                        </Button>
 
-                    <p className="text-caption text-center text-[var(--text-tertiary)]">
-                        {translations.reassurance}
-                    </p>
-                </section>
+                        <p className="text-caption text-center text-[var(--text-tertiary)] md:ms-auto md:text-start">
+                            {translations.reassurance}
+                        </p>
+                    </section>
+                </div>
 
-                {/* Tonight's kitchen: horizontal scroller of 230px cards. */}
-                <section className="pb-8 pt-6">
-                    <div className="flex items-baseline gap-3 px-[var(--gutter-mobile)] pb-3">
+                {/* Tonight's kitchen: horizontal scroller of 230px cards on phones, responsive grid on wider screens. */}
+                <section className="mx-auto w-full max-w-[var(--width-content)] pb-8 pt-6 md:px-[var(--gutter-desktop)] md:pb-12">
+                    <div className="flex items-baseline gap-3 px-[var(--gutter-mobile)] pb-3 md:px-0 md:pb-4">
                         <h2 className="font-display text-title-1 flex-1 font-semibold tracking-[var(--tracking-title)]">
                             {translations.kitchen_eyebrow}
                         </h2>
@@ -541,18 +556,21 @@ export default function Landing({
                         )}
                     </div>
 
-                    <div className="flex snap-x gap-3 overflow-x-auto px-[var(--gutter-mobile)] pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <div
+                        data-landing-dishes
+                        className="flex snap-x gap-3 overflow-x-auto px-[var(--gutter-mobile)] pb-1 [scrollbar-width:none] md:grid md:grid-cols-2 md:gap-5 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden"
+                    >
                         {featured_items.map((item, index) => (
                             <article
                                 key={item.id}
-                                className="w-[230px] shrink-0 snap-start overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-rest)]"
+                                className="w-[230px] shrink-0 snap-start overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-rest)] md:w-auto md:shrink"
                             >
                                 <div
                                     aria-hidden="true"
-                                    className={`h-32 ${ITEM_ART[index % ITEM_ART.length]}`}
+                                    className={`h-32 md:h-40 ${ITEM_ART[index % ITEM_ART.length]}`}
                                 />
 
-                                <div className="p-3">
+                                <div className="p-3 md:p-4">
                                     {item.chef_flag && (
                                         <p className="text-micro font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--clay-600)]">
                                             {translations.chef_pick}
@@ -571,104 +589,115 @@ export default function Landing({
                         ))}
 
                         {featured_items.length === 0 && (
-                            <p className="text-body w-full rounded-[var(--radius-lg)] border border-dashed border-[var(--border-default)] bg-[var(--surface-card)] p-4 text-[var(--text-secondary)]">
+                            <p className="text-body w-full rounded-[var(--radius-lg)] border border-dashed border-[var(--border-default)] bg-[var(--surface-card)] p-4 text-[var(--text-secondary)] md:col-span-full">
                                 {translations.no_featured_items}
                             </p>
                         )}
                     </div>
                 </section>
 
-                {/* The room: prose at 17px, then opening hours in mono. */}
-                <section className="px-[var(--gutter-mobile)] pb-8">
-                    <h2 className="font-display text-title-1 mb-3 font-semibold tracking-[var(--tracking-title)]">
-                        {translations.room}
-                    </h2>
+                {/* The room & Find us: stacked on phones, two-column composition on wide viewports. */}
+                <div
+                    data-landing-details
+                    className="mx-auto grid w-full max-w-[var(--width-content)] grid-cols-1 gap-8 px-[var(--gutter-mobile)] pb-8 md:px-[var(--gutter-desktop)] md:pb-16 lg:grid-cols-12 lg:items-start lg:gap-12"
+                >
+                    {/* The room: prose at 17px, then opening hours in mono. */}
+                    <section className="lg:col-span-7">
+                        <h2 className="font-display text-title-1 mb-3 font-semibold tracking-[var(--tracking-title)]">
+                            {translations.room}
+                        </h2>
 
-                    <p className="text-body-lg leading-[var(--leading-relaxed)] text-[var(--text-secondary)]">
-                        {restaurant.description || translations.room_fallback}
-                    </p>
+                        <p className="text-body-lg max-w-[var(--measure-prose)] leading-[var(--leading-relaxed)] text-[var(--text-secondary)]">
+                            {restaurant.description ||
+                                translations.room_fallback}
+                        </p>
 
-                    <div
-                        aria-hidden="true"
-                        className="my-5 h-px bg-[var(--border-subtle)]"
-                    />
-
-                    <dl className="grid gap-2">
-                        {hourGroups.map((group) => (
-                            <div
-                                key={group.label}
-                                className={`text-body flex items-baseline gap-3 ${
-                                    group.isToday ? 'font-semibold' : ''
-                                }`}
-                                aria-current={
-                                    group.isToday ? 'date' : undefined
-                                }
-                            >
-                                <dt
-                                    className={`flex-1 ${
-                                        group.isToday
-                                            ? 'text-[var(--text-primary)]'
-                                            : 'text-[var(--text-secondary)]'
-                                    }`}
-                                >
-                                    {group.label}
-                                </dt>
-                                <dd dir="ltr" className="font-mono">
-                                    {group.time ?? translations.closed}
-                                </dd>
-                            </div>
-                        ))}
-                    </dl>
-                </section>
-
-                {/* Find us: map card, address, phone. */}
-                <section className="px-[var(--gutter-mobile)] pb-8">
-                    <h2 className="font-display text-title-1 mb-3 font-semibold tracking-[var(--tracking-title)]">
-                        {translations.find_us}
-                    </h2>
-
-                    <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-rest)]">
                         <div
                             aria-hidden="true"
-                            className="h-[140px] bg-[linear-gradient(150deg,var(--ink-300),var(--ink-800))]"
+                            className="my-5 h-px bg-[var(--border-subtle)]"
                         />
 
-                        <div className="text-body flex flex-col gap-3 p-4 text-[var(--text-secondary)]">
-                            {restaurant.address && (
-                                <p className="flex items-center gap-3">
-                                    <MapPin
-                                        aria-hidden="true"
-                                        className="size-[18px] shrink-0 text-[var(--clay-500)]"
-                                    />
-                                    {restaurant.address}
-                                </p>
-                            )}
-
-                            {restaurant.phone && (
-                                <a
-                                    href={`tel:${restaurant.phone.replace(/\s+/g, '')}`}
-                                    className="-my-3 flex min-h-11 items-center gap-3"
+                        <dl className="grid gap-2">
+                            {hourGroups.map((group) => (
+                                <div
+                                    key={group.label}
+                                    className={`text-body flex items-baseline gap-3 ${
+                                        group.isToday ? 'font-semibold' : ''
+                                    }`}
+                                    aria-current={
+                                        group.isToday ? 'date' : undefined
+                                    }
                                 >
-                                    <Phone
-                                        aria-hidden="true"
-                                        className="size-[18px] shrink-0 text-[var(--clay-500)]"
-                                    />
-                                    <span dir="ltr">{restaurant.phone}</span>
-                                </a>
-                            )}
+                                    <dt
+                                        className={`flex-1 ${
+                                            group.isToday
+                                                ? 'text-[var(--text-primary)]'
+                                                : 'text-[var(--text-secondary)]'
+                                        }`}
+                                    >
+                                        {group.label}
+                                    </dt>
+                                    <dd dir="ltr" className="font-mono">
+                                        {group.time ?? translations.closed}
+                                    </dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </section>
+
+                    {/* Find us: map card, address, phone. */}
+                    <section className="lg:col-span-5">
+                        <h2 className="font-display text-title-1 mb-3 font-semibold tracking-[var(--tracking-title)]">
+                            {translations.find_us}
+                        </h2>
+
+                        <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-rest)]">
+                            <div
+                                aria-hidden="true"
+                                className="h-[140px] bg-[linear-gradient(150deg,var(--ink-300),var(--ink-800))] md:h-[180px]"
+                            />
+
+                            <div className="text-body flex flex-col gap-3 p-4 text-[var(--text-secondary)]">
+                                {restaurant.address && (
+                                    <p className="flex items-center gap-3">
+                                        <MapPin
+                                            aria-hidden="true"
+                                            className="size-[18px] shrink-0 text-[var(--clay-500)]"
+                                        />
+                                        {restaurant.address}
+                                    </p>
+                                )}
+
+                                {restaurant.phone && (
+                                    <a
+                                        href={`tel:${restaurant.phone.replace(/\s+/g, '')}`}
+                                        className="-my-3 flex min-h-11 items-center gap-3"
+                                    >
+                                        <Phone
+                                            aria-hidden="true"
+                                            className="size-[18px] shrink-0 text-[var(--clay-500)]"
+                                        />
+                                        <span dir="ltr">
+                                            {restaurant.phone}
+                                        </span>
+                                    </a>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
+                </div>
             </main>
 
             {/* Footer: wordmark, powered-by line. */}
-            <footer className="flex flex-col items-center gap-1 border-t border-[var(--border-subtle)] px-[var(--gutter-mobile)] pb-10 pt-6 text-center">
-                <Wordmark name={restaurant.name} size="text-[17px]" />
+            <footer className="border-t border-[var(--border-subtle)]">
+                <div className="mx-auto flex w-full max-w-[var(--width-content)] flex-col items-center gap-1 px-[var(--gutter-mobile)] pb-10 pt-6 text-center md:flex-row md:justify-between md:px-[var(--gutter-desktop)] md:py-8">
+                    <Wordmark name={restaurant.name} size="text-[17px]" />
 
-                <p className="text-caption text-[var(--text-tertiary)]">
-                    {translations.powered_by}
-                </p>
+                    <p className="text-caption text-[var(--text-tertiary)]">
+                        {translations.powered_by}
+                    </p>
+                </div>
             </footer>
-        </GuestLayout>
+        </LandingLayout>
     );
 }

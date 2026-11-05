@@ -28,6 +28,7 @@ const SCOPE = [
     'resources/js/pages/errors',
     'resources/js/layouts/staff-layout.tsx',
     'resources/js/layouts/guest-layout.tsx',
+    'resources/js/layouts/landing-layout.tsx',
 ];
 
 /** Heights of the shared Button sizes, from button.tsx. */

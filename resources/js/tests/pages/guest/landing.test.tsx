@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Landing, { areaOf } from '@/pages/guest/landing';
+import { expectNoCriticalA11y } from '@/tests/a11y';
 import type { LandingPageProps } from '@/types/landing';
 
 const post = vi.fn();
@@ -124,8 +125,15 @@ const landingProps: LandingPageProps = {
     },
 };
 
-let currentSharedProps = {
-    locale: 'en' as const,
+let currentSharedProps: {
+    locale: 'en' | 'ar';
+    dir: 'ltr' | 'rtl';
+    flash: {
+        error: string | null;
+    };
+} = {
+    locale: 'en',
+    dir: 'ltr',
     flash: {
         error: null,
     },
@@ -149,6 +157,7 @@ describe('Guest landing page', () => {
 
         currentSharedProps = {
             locale: 'en',
+            dir: 'ltr',
             flash: {
                 error: null,
             },
@@ -305,5 +314,119 @@ describe('Guest landing page', () => {
         expect(
             screen.getByText("Tonight's featured dishes are being prepared."),
         ).toBeInTheDocument();
+    });
+
+    it('uses LandingLayout without the 390px phone clamp and composes sections for 390px, 768px and 1440px (#53)', () => {
+        const { container } = render(<Landing {...landingProps} />);
+
+        const shell = container.querySelector('[data-landing-shell]');
+        expect(shell).toBeInTheDocument();
+        expect(shell).toHaveClass('w-full', 'overflow-x-hidden');
+        expect(
+            container.querySelector('[data-guest-shell]'),
+        ).not.toBeInTheDocument();
+        expect(
+            container.querySelector('.max-w-\\[390px\\]'),
+        ).not.toBeInTheDocument();
+
+        // Header and main sections carry both mobile and desktop side gutters.
+        const headerInner = screen.getByRole('banner').firstElementChild;
+        expect(headerInner).toHaveClass(
+            'max-w-[var(--width-content)]',
+            'px-[var(--gutter-mobile)]',
+            'md:px-[var(--gutter-desktop)]',
+        );
+
+        // CTAs stack on phone (390px) and sit in a row at tablet/desktop (768px / 1440px).
+        const actions = container.querySelector('[data-landing-actions]');
+        expect(actions).toHaveClass(
+            'flex-col',
+            'md:flex-row',
+            'px-[var(--gutter-mobile)]',
+            'md:px-0',
+        );
+
+        // Dish rail scrolls 230px cards at 390px, becomes a 2-col grid at 768px and 3-col grid at 1440px.
+        const dishes = container.querySelector('[data-landing-dishes]');
+        expect(dishes).toHaveClass(
+            'flex',
+            'snap-x',
+            'overflow-x-auto',
+            'md:grid',
+            'md:grid-cols-2',
+            'md:overflow-visible',
+            'lg:grid-cols-3',
+        );
+
+        const firstCard = screen.getByText('Lamb kofta').closest('article');
+        expect(firstCard).toHaveClass(
+            'w-[230px]',
+            'shrink-0',
+            'md:w-auto',
+            'md:shrink',
+        );
+
+        // Room and Find us stack on phones and split into a 12-column desktop layout.
+        const details = container.querySelector('[data-landing-details]');
+        expect(details).toHaveClass(
+            'grid-cols-1',
+            'lg:grid-cols-12',
+            'px-[var(--gutter-mobile)]',
+            'md:px-[var(--gutter-desktop)]',
+        );
+    });
+
+    it('holds RTL direction and logical utilities when switched to Arabic (#53)', () => {
+        currentSharedProps = {
+            locale: 'ar',
+            dir: 'rtl',
+            flash: {
+                error: null,
+            },
+        };
+
+        const { container } = render(
+            <Landing
+                {...landingProps}
+                restaurant={{
+                    ...landingProps.restaurant,
+                    name: 'البستان',
+                    address: '14 شارع مارش، وسط المدينة',
+                }}
+            />,
+        );
+
+        expect(document.documentElement.lang).toBe('ar');
+        expect(document.documentElement.dir).toBe('rtl');
+
+        // Reassurance text uses logical margin-inline-start (md:ms-auto) and text-start so it mirrors in RTL.
+        expect(
+            screen.getByText(landingProps.translations.reassurance),
+        ).toHaveClass('md:ms-auto', 'md:text-start');
+
+        // Prices, hours and phone stay LTR inside RTL.
+        expect(screen.getByText('$18.00')).toHaveAttribute('dir', 'ltr');
+        expect(screen.getByText('12:00 – 22:00')).toHaveAttribute('dir', 'ltr');
+        expect(screen.getByText('+1 (212) 555 0148')).toHaveAttribute(
+            'dir',
+            'ltr',
+        );
+
+        // Every interactive element meets the 44px hit-area gate.
+        container.querySelectorAll('button, a[href]').forEach((control) => {
+            const classes = control.getAttribute('class') ?? '';
+            expect(
+                classes.includes('h-[54px]') ||
+                    classes.includes('size-11') ||
+                    classes.includes('min-h-11') ||
+                    classes.includes('touch-target'),
+            ).toBe(true);
+        });
+    });
+
+    it('has no critical axe violations (#36)', async () => {
+        const { container } = render(<Landing {...landingProps} />);
+
+        await expectNoCriticalA11y(container);
     });
 });
