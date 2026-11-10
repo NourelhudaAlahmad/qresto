@@ -3,7 +3,7 @@ import { Bell, CheckCheck } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Badge } from '@/components/qresto/badge';
-import { formatMinutes } from '@/lib/elapsed';
+import { formatAgo } from '@/lib/elapsed';
 
 export type StaffNotification = {
     id: string;
@@ -27,9 +27,7 @@ export function ago(iso: string | null, now = Date.now()): string {
         return '';
     }
 
-    const minutes = Math.max(0, Math.floor((now - Date.parse(iso)) / 60_000));
-
-    return minutes < 1 ? 'just now' : `${formatMinutes(minutes)} ago`;
+    return formatAgo(iso, now);
 }
 
 function count(n: number): string {

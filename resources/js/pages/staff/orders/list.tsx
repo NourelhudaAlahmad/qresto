@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/qresto/empty-state';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { StatusPill } from '@/components/qresto/status-pill';
 import { formatMinutes } from '@/lib/elapsed';
+import { formatMinor } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 
 export type OrderStatus =
@@ -116,17 +117,6 @@ export function elapsedLevel(
     }
 
     return 'normal';
-}
-
-export function money(minor: number, currency: string): string {
-    try {
-        return new Intl.NumberFormat('en', {
-            style: 'currency',
-            currency: currency || 'USD',
-        }).format(minor / 100);
-    } catch {
-        return `${(minor / 100).toFixed(2)} ${currency}`;
-    }
 }
 
 export function orderCode(code: string): string {
@@ -258,7 +248,7 @@ function TicketOverlay({
                     </span>
 
                     <Numeric className="text-title-3 font-semibold">
-                        {money(order.total_minor, order.currency)}
+                        {formatMinor(order.total_minor, order.currency)}
                     </Numeric>
                 </div>
 
@@ -504,7 +494,7 @@ export default function OrderList(props: Props) {
                                         </td>
                                         <td className="whitespace-nowrap p-3 text-end">
                                             <Numeric className="font-mono text-[var(--text-primary)]">
-                                                {money(
+                                                {formatMinor(
                                                     order.total_minor,
                                                     order.currency,
                                                 )}
@@ -551,7 +541,7 @@ export default function OrderList(props: Props) {
                                     </dt>
                                     <dd className="min-w-0">
                                         <Numeric className="font-mono text-[var(--text-primary)]">
-                                            {money(
+                                            {formatMinor(
                                                 order.total_minor,
                                                 order.currency,
                                             )}

@@ -7,7 +7,8 @@ import { Stat } from '@/components/qresto/stat';
 import { showToast } from '@/components/qresto/toast';
 import { Tooltip } from '@/components/qresto/tooltip';
 import { useLiveData } from '@/hooks/useLiveData';
-import { formatMinutes } from '@/lib/elapsed';
+import { formatAgo } from '@/lib/elapsed';
+import { currencySymbol, formatMinor } from '@/lib/formatMoney';
 
 type Cell = { granted: boolean; locked: boolean; reason: string | null };
 
@@ -108,9 +109,7 @@ export function lastSeen(iso: string | null, now: number): string {
         return 'never';
     }
 
-    const minutes = Math.max(0, Math.floor((now - Date.parse(iso)) / 60_000));
-
-    return minutes < 1 ? 'just now' : `${formatMinutes(minutes)} ago`;
+    return formatAgo(iso, now);
 }
 
 /** What the row says, before "last seen". */
@@ -130,35 +129,6 @@ function statusText(item: Health): string {
 // Shared with the matrix header so the columns line up (design: 62px).
 const MATRIX_GRID =
     'grid grid-cols-[minmax(176px,1.4fr)_repeat(6,62px)] gap-2 px-5';
-
-function money(minor: number, currency: string): string {
-    try {
-        return new Intl.NumberFormat('en', {
-            style: 'currency',
-            currency: currency || 'USD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(minor / 100);
-    } catch {
-        return `${Math.round(minor / 100)} ${currency}`;
-    }
-}
-
-function currencySymbol(currency: string): string {
-    try {
-        return (
-            new Intl.NumberFormat('en', {
-                style: 'currency',
-                currency,
-                currencyDisplay: 'narrowSymbol',
-            })
-                .formatToParts(0)
-                .find((part) => part.type === 'currency')?.value ?? ''
-        );
-    } catch {
-        return '';
-    }
-}
 
 function auditTime(iso: string): string {
     return new Intl.DateTimeFormat('en-GB', {
@@ -378,7 +348,11 @@ export default function AdminSystem({
                         tone="inverse"
                         className="p-5"
                         label="Month to date"
-                        value={money(revenue.net_of_fees_minor, currencyCode)}
+                        value={formatMinor(
+                            revenue.net_of_fees_minor,
+                            currencyCode,
+                            { digits: 0 },
+                        )}
                         hint="net of refunds and gateway fees"
                     />
 

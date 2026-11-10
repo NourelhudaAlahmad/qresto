@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { Stat } from '@/components/qresto/stat';
 import { useLiveData } from '@/hooks/useLiveData';
+import { formatMinor } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 import { useTableCheckout } from '@/pages/staff/floor';
-import OrderList, { money } from '@/pages/staff/orders/list';
+import OrderList from '@/pages/staff/orders/list';
 import type { Ticket } from '@/pages/staff/orders/list';
 
 type Props = {
@@ -77,7 +78,7 @@ export default function Cashier({
                         tone="inverse"
                         className="p-5"
                         label={t.outstanding}
-                        value={money(outstanding, currency)}
+                        value={formatMinor(outstanding, currency)}
                         hint={
                             orders.length === 1
                                 ? t.unpaid_one

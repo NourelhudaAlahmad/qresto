@@ -12,3 +12,13 @@ export function formatMinutes(minutes: number | null | undefined): string {
 
     return `${Math.floor(total / 60)}h ${total % 60}m`;
 }
+
+/**
+ * How long ago a timestamp was: "just now", "4 min ago", "2h 10m ago".
+ * Shared by the notification bell and the system page's "last seen".
+ */
+export function formatAgo(iso: string, now: number = Date.now()): string {
+    const minutes = Math.max(0, Math.floor((now - Date.parse(iso)) / 60_000));
+
+    return minutes < 1 ? 'just now' : `${formatMinutes(minutes)} ago`;
+}

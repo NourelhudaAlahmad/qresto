@@ -9,6 +9,7 @@ import { ChipFilter } from '@/components/qresto/chip-filter';
 import { EmptyState } from '@/components/qresto/empty-state';
 import { Input } from '@/components/qresto/input';
 import { Stat } from '@/components/qresto/stat';
+import { formatMinor } from '@/lib/formatMoney';
 
 type Preset = 'today' | 'week' | '3weeks' | 'month' | 'custom';
 
@@ -48,17 +49,6 @@ const PRESETS: { value: Exclude<Preset, 'custom'>; label: string }[] = [
 // Numbers: right-aligned mono with tabular figures. Text: left, UI type.
 const NUM = 'text-end font-mono tabular-nums';
 const TEXT = 'text-start';
-
-export function money(minor: number, currency: string): string {
-    try {
-        return new Intl.NumberFormat('en', {
-            style: 'currency',
-            currency,
-        }).format(minor / 100);
-    } catch {
-        return `${(minor / 100).toFixed(2)} ${currency}`;
-    }
-}
 
 function day(date: string, style: 'long' | 'short' = 'long'): string {
     return new Intl.DateTimeFormat('en-GB', {
@@ -119,7 +109,7 @@ function SalesChart({
                     <span className="text-caption font-normal text-[var(--text-tertiary)]">
                         Peak {day(peak.date)} ·{' '}
                         <Numeric className="font-mono">
-                            {money(peak.net_minor, currency)}
+                            {formatMinor(peak.net_minor, currency)}
                         </Numeric>
                     </span>
                 )}
@@ -134,7 +124,7 @@ function SalesChart({
                     <div
                         key={point.date}
                         data-peak={point.peak || undefined}
-                        title={`${day(point.date)}: ${money(point.net_minor, currency)}`}
+                        title={`${day(point.date)}: ${formatMinor(point.net_minor, currency)}`}
                         className="relative flex h-full min-w-0 flex-1 flex-col justify-end"
                     >
                         {point.peak && (
@@ -301,12 +291,12 @@ export default function Reports({
                     >
                         <Stat
                             label="Gross"
-                            value={money(totals.gross_minor, currency)}
+                            value={formatMinor(totals.gross_minor, currency)}
                             hint={`${totals.orders} orders · ${totals.covers} covers`}
                         />
                         <Stat
                             label="Service charge"
-                            value={money(totals.service_minor, currency)}
+                            value={formatMinor(totals.service_minor, currency)}
                         />
                         <Stat
                             label="Refunded"
@@ -315,8 +305,8 @@ export default function Reports({
                             }
                             value={
                                 totals.refunds_minor > 0
-                                    ? `−${money(totals.refunds_minor, currency)}`
-                                    : money(0, currency)
+                                    ? `−${formatMinor(totals.refunds_minor, currency)}`
+                                    : formatMinor(0, currency)
                             }
                         />
                     </section>
@@ -399,13 +389,13 @@ export default function Reports({
                                                     {row.orders}
                                                 </td>
                                                 <td className={`p-3 ${NUM}`}>
-                                                    {money(
+                                                    {formatMinor(
                                                         row.net_minor,
                                                         currency,
                                                     )}
                                                 </td>
                                                 <td className={`p-3 ${NUM}`}>
-                                                    {money(
+                                                    {formatMinor(
                                                         row.tips_minor,
                                                         currency,
                                                     )}
@@ -445,13 +435,13 @@ export default function Reports({
                                                 className={`p-3 ${NUM}`}
                                                 data-total="net"
                                             >
-                                                {money(
+                                                {formatMinor(
                                                     totals.net_minor,
                                                     currency,
                                                 )}
                                             </td>
                                             <td className={`p-3 ${NUM}`}>
-                                                {money(
+                                                {formatMinor(
                                                     totals.tips_minor,
                                                     currency,
                                                 )}
@@ -493,13 +483,16 @@ export default function Reports({
                                                 Net
                                             </dt>
                                             <dd className={NUM}>
-                                                {money(row.net_minor, currency)}
+                                                {formatMinor(
+                                                    row.net_minor,
+                                                    currency,
+                                                )}
                                             </dd>
                                             <dt className="text-[var(--text-tertiary)]">
                                                 Tips
                                             </dt>
                                             <dd className={NUM}>
-                                                {money(
+                                                {formatMinor(
                                                     row.tips_minor,
                                                     currency,
                                                 )}
@@ -517,11 +510,17 @@ export default function Reports({
                                     <dl className="text-body grid grid-cols-[auto_minmax(0,1fr)] gap-x-4">
                                         <dt>Total net</dt>
                                         <dd className={NUM}>
-                                            {money(totals.net_minor, currency)}
+                                            {formatMinor(
+                                                totals.net_minor,
+                                                currency,
+                                            )}
                                         </dd>
                                         <dt>Total tips</dt>
                                         <dd className={NUM}>
-                                            {money(totals.tips_minor, currency)}
+                                            {formatMinor(
+                                                totals.tips_minor,
+                                                currency,
+                                            )}
                                         </dd>
                                     </dl>
                                 </li>

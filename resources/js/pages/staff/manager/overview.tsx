@@ -18,6 +18,7 @@ import { StatusPill } from '@/components/qresto/status-pill';
 import { showToast } from '@/components/qresto/toast';
 import { useLiveData } from '@/hooks/useLiveData';
 import { formatMinutes } from '@/lib/elapsed';
+import { formatMinor } from '@/lib/formatMoney';
 import type { OrderStatus } from '@/types';
 
 type Stats = {
@@ -99,23 +100,6 @@ const AGE_COLORS = {
 // Status and total survive on a phone; the age column drops first.
 const ORDER_GRID =
     'grid grid-cols-[84px_minmax(0,1fr)_auto_80px] items-center gap-3 px-5 min-[720px]:grid-cols-[90px_minmax(0,1fr)_112px_92px_74px]';
-
-function money(minor: number | null, currency: string, digits = 2): string {
-    if (minor === null) {
-        return '—';
-    }
-
-    try {
-        return new Intl.NumberFormat('en', {
-            style: 'currency',
-            currency: currency || 'USD',
-            minimumFractionDigits: digits,
-            maximumFractionDigits: digits,
-        }).format(minor / 100);
-    } catch {
-        return `${(minor / 100).toFixed(digits)} ${currency}`;
-    }
-}
 
 const ageLabel = formatMinutes;
 
@@ -713,13 +697,15 @@ export default function ManagerOverview({
 
                 <Stat
                     label="Net sales"
-                    value={money(stats.net_sales_minor, currency, 0)}
+                    value={formatMinor(stats.net_sales_minor, currency, {
+                        digits: 0,
+                    })}
                     hintTone={
                         salesChange !== null && salesChange < 0
                             ? 'negative'
                             : 'default'
                     }
-                    hint={`${money(stats.avg_per_cover_minor, currency)} average per cover`}
+                    hint={`${formatMinor(stats.avg_per_cover_minor, currency)} average per cover`}
                 />
 
                 <Stat
@@ -737,7 +723,9 @@ export default function ManagerOverview({
 
                 <Stat
                     label="Unpaid at table"
-                    value={money(stats.unpaid_total_minor, currency, 0)}
+                    value={formatMinor(stats.unpaid_total_minor, currency, {
+                        digits: 0,
+                    })}
                     hint={`${plural(stats.open_bills, 'open bill', 'open bills')}${
                         stats.oldest_bill_minutes === null
                             ? ''
@@ -842,7 +830,7 @@ export default function ManagerOverview({
                             </span>
 
                             <Numeric className="text-body text-end font-mono">
-                                {money(
+                                {formatMinor(
                                     order.total_minor,
                                     order.currency || currency,
                                 )}

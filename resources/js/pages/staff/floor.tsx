@@ -27,6 +27,7 @@ import { showToast } from '@/components/qresto/toast';
 import { Tooltip } from '@/components/qresto/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useLiveData } from '@/hooks/useLiveData';
+import { formatMinor } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 import type { OrderStatus, TableState } from '@/types';
 
@@ -116,17 +117,6 @@ const STATE_DOT: Record<TableState, string> = {
     ordered: 'var(--table-ordered-fg)',
     bill: 'var(--table-bill-fg)',
 };
-
-function money(minor: number, currency: string): string {
-    try {
-        return new Intl.NumberFormat('en', {
-            style: 'currency',
-            currency: currency || 'USD',
-        }).format(minor / 100);
-    } catch {
-        return `${(minor / 100).toFixed(2)} ${currency}`;
-    }
-}
 
 function amountInput(minor: number): string {
     return (minor / 100).toFixed(2);
@@ -399,20 +389,20 @@ function OrderBill({
                         </div>
 
                         <Numeric>
-                            {money(line.line_total_minor, order.currency)}
+                            {formatMinor(line.line_total_minor, order.currency)}
                         </Numeric>
                     </li>
                 ))}
             </ul>
 
             <PriceSummary
-                subtotal={money(linesMinor, order.currency)}
+                subtotal={formatMinor(linesMinor, order.currency)}
                 service={
                     serviceMinor > 0
-                        ? money(serviceMinor, order.currency)
+                        ? formatMinor(serviceMinor, order.currency)
                         : undefined
                 }
-                total={money(totalMinor, order.currency)}
+                total={formatMinor(totalMinor, order.currency)}
                 subtotalLabel={t.subtotal}
                 serviceLabel={t.service}
                 totalLabel={t.total}
@@ -421,14 +411,14 @@ function OrderBill({
                         ? [
                               {
                                   label: t.paid,
-                                  value: money(paidMinor, order.currency),
+                                  value: formatMinor(paidMinor, order.currency),
                                   tone: 'positive' as const,
                               },
                           ]
                         : []),
                     {
                         label: t.due,
-                        value: money(order.balance_minor, order.currency),
+                        value: formatMinor(order.balance_minor, order.currency),
                         tone: 'warning' as const,
                     },
                 ]}
@@ -574,7 +564,7 @@ function OrderBill({
                                 <p className="text-caption text-[var(--text-secondary)]">
                                     {t.each_share}{' '}
                                     <Numeric>
-                                        {money(
+                                        {formatMinor(
                                             Math.ceil(totalMinor / splitWays),
                                             order.currency,
                                         )}
@@ -679,7 +669,7 @@ export function TableCheckout({
                 <span className="text-body text-[var(--text-secondary)]">
                     {t.due}{' '}
                     <Numeric className="font-semibold text-[var(--text-primary)]">
-                        {money(detail.open_bill_minor, detail.currency)}
+                        {formatMinor(detail.open_bill_minor, detail.currency)}
                     </Numeric>
                 </span>
             </div>
@@ -1018,7 +1008,7 @@ export function useTableCheckout({
             },
             `pay-${order.id}`,
             fill(method === 'cash' ? t.cash_received : t.card_taken, {
-                amount: money(amountMinor, order.currency),
+                amount: formatMinor(amountMinor, order.currency),
             }),
         );
     };
@@ -1182,7 +1172,7 @@ export default function Floor({ tables = [] }: Props) {
                             const minutes = minutesSince(table.seated_at, now);
                             const meta = [
                                 table.open_bill_minor > 0
-                                    ? money(
+                                    ? formatMinor(
                                           table.open_bill_minor,
                                           table.currency,
                                       )

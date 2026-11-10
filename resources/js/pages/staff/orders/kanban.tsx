@@ -15,13 +15,13 @@ import { useLiveAlertMute } from '@/hooks/useLiveAlertMute';
 import { useLiveData } from '@/hooks/useLiveData';
 import { useNewItemAlert } from '@/hooks/useNewItemAlert';
 import { formatMinutes } from '@/lib/elapsed';
+import { formatMinor } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 
 import OrderList, {
     actionLabel,
     canVoidStatus,
     minutesOld,
-    money,
     orderCode,
     statusGroup,
 } from './list';
@@ -191,7 +191,7 @@ function KanbanTicket({
                 note: line.note ?? undefined,
             }))}
             paid={order.paid}
-            total={money(order.total_minor, order.currency)}
+            total={formatMinor(order.total_minor, order.currency)}
             advanceLabel={verb ?? undefined}
             advancing={busy}
             onAdvance={advance ? () => onAdvance(order) : undefined}

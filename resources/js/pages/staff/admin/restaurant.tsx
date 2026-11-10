@@ -13,6 +13,7 @@ import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { Switch } from '@/components/qresto/switch';
 import { showToast } from '@/components/qresto/toast';
 import { Tooltip } from '@/components/qresto/tooltip';
+import { formatMinor } from '@/lib/formatMoney';
 
 type Details = {
     name: string;
@@ -72,23 +73,12 @@ const QR_SHEET = '/app/settings/tables/qr-sheet';
 const SELECT =
     'text-body h-11 w-full rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-card)] px-3 text-[var(--text-primary)] outline-none focus-visible:border-[var(--border-focus-color)] focus-visible:shadow-[var(--ring-focus)]';
 
-function money(minor: number, currency: string): string {
-    try {
-        return new Intl.NumberFormat('en', {
-            style: 'currency',
-            currency,
-        }).format(minor / 100);
-    } catch {
-        return `${(minor / 100).toFixed(2)} ${currency}`;
-    }
-}
-
 /** What a percentage does to a $50 bill, the way the guest will see it. */
 export function serviceExample(pct: number, currency: string): string {
     const bill = 5000;
     const service = Math.round((bill * (Number.isFinite(pct) ? pct : 0)) / 100);
 
-    return `On a ${money(bill, currency)} bill: ${money(service, currency)} service, ${money(bill + service, currency)} total`;
+    return `On a ${formatMinor(bill, currency)} bill: ${formatMinor(service, currency)} service, ${formatMinor(bill + service, currency)} total`;
 }
 
 function Panel({
