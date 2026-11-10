@@ -91,6 +91,14 @@ Run by hand:
 | `qresto:integration-token {id}` | Issues a new heartbeat token for a KDS screen, printer agent or gateway |
 | `qresto:demo-refresh`           | Moves the demo restaurant's times up to now                             |
 
+### Queue worker
+
+Every notification is queued, so a void, a Stripe webhook or a health check returns before anyone is told (#56). With `QUEUE_CONNECTION=database` (the `.env.example` default) nothing is delivered until a worker runs. `composer dev` starts one; anywhere else, keep one running:
+
+```bash
+php artisan queue:work
+```
+
 ## Checks before you push
 
 CI runs all of these on every push to `dev` and `main` and on every pull request. Running them first saves a red build.

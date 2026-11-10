@@ -4,9 +4,10 @@ namespace App\Notifications;
 
 use App\Models\Integration;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Notifications\Notification;
 
-class IntegrationFailing extends Notification
+class IntegrationFailing extends Notification implements ShouldQueueAfterCommit
 {
     use Queueable;
 

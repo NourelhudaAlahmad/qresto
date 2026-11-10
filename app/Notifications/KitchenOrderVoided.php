@@ -3,9 +3,10 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Notifications\Notification;
 
-class KitchenOrderVoided extends Notification
+class KitchenOrderVoided extends Notification implements ShouldQueueAfterCommit
 {
     use Queueable;
 

@@ -170,6 +170,29 @@ it('records a dispute and tells the people who see the money', function () {
     Notification::assertNotSentTo($nadia, PaymentDisputed::class);
 });
 
+it('answers Stripe before the dispute alert goes out', function () {
+    config(['queue.default' => 'database']);
+
+    $sara = User::factory()->create(['restaurant_id' => $this->restaurant->id, 'is_active' => true]);
+    $sara->assignRole('manager');
+
+    deliver(stripeEvent('evt_dispute_queued', 'charge.dispute.created', [
+        'id' => 'dp_2',
+        'object' => 'dispute',
+        'payment_intent' => 'pi_live',
+        'amount' => 2000,
+        'reason' => 'fraudulent',
+    ]))->assertOk()->assertJson(['received' => true]);
+
+    // Recorded and queued; the alert waits for a worker (#56).
+    expect(DB::table('jobs')->count())->toBe(1)
+        ->and($sara->notifications()->count())->toBe(0);
+
+    $this->artisan('queue:work', ['connection' => 'database', '--once' => true])->assertSuccessful();
+
+    expect($sara->notifications()->sole()->type)->toBe(PaymentDisputed::class);
+});
+
 it('answers 200 and logs when a payment cannot be settled, so Stripe does not retry forever', function () {
     $this->payment->update(['amount' => 0]);
 

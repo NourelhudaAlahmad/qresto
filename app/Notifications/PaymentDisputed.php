@@ -4,12 +4,13 @@ namespace App\Notifications;
 
 use App\Models\Order;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Notifications\Notification;
 
 /**
  * A guest's bank opened a dispute (chargeback) on a card payment (#35).
  */
-class PaymentDisputed extends Notification
+class PaymentDisputed extends Notification implements ShouldQueueAfterCommit
 {
     use Queueable;
 

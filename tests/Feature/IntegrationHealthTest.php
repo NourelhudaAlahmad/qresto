@@ -8,6 +8,7 @@ use App\Services\Integrations\IntegrationMonitor;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
@@ -249,4 +250,18 @@ it('refuses an oversized or nested meta payload', function () {
             'meta' => ['screens' => 2, 'paper' => 'low', 'online' => true],
         ])
         ->assertOk();
+});
+
+it('queues the failing alert rather than sending it inside the health check', function () {
+    config(['queue.default' => 'database']);
+
+    beat($this->token, $this->kds->id, 'failing', 'both screens down')->assertOk();
+
+    // Queued after the monitor's transaction commits; no worker has run (#56).
+    expect(DB::table('jobs')->count())->toBe(1)
+        ->and($this->sara->notifications()->count())->toBe(0);
+
+    $this->artisan('queue:work', ['connection' => 'database', '--once' => true])->assertSuccessful();
+
+    expect($this->sara->notifications()->sole()->type)->toBe(IntegrationFailing::class);
 });
