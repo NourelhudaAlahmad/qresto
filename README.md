@@ -119,6 +119,213 @@ Every notification is queued, so a void, a Stripe webhook or a health check retu
 php artisan queue:work
 ```
 
+## Deploying to production
+
+`.env.example` is set up for a laptop. Deployed as it is, it loses invitations, approves every card and queues a floor of polling screens behind one SQLite lock. This section goes from a bare server to a running restaurant. It does not pick a host for you.
+
+### What a deploy runs
+
+| Piece          | Why                                                                                                                         |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Web server     | nginx or Apache with PHP-FPM, serving `public/` over HTTPS                                                                  |
+| Database       | MySQL 8, MariaDB 10.6+ or PostgreSQL 14+. Not SQLite (below)                                                                |
+| Queue worker   | `php artisan queue:work`, always running. Every notification goes through the queue (#56)                                   |
+| Scheduler      | `php artisan schedule:run` every minute: closing idle sessions, health probes, integration checks and the daily prune (#57) |
+| Mail           | An SMTP account or mail service. Staff invitations and password resets depend on it                                         |
+| Stripe account | Live keys and a webhook endpoint, for card payments (#35)                                                                   |
+
+The server needs PHP 8.4 with the extensions Laravel itself requires (`ctype`, `curl`, `dom`, `fileinfo`, `mbstring`, `openssl`, `pdo`, `tokenizer`, `xml`), plus `pdo_mysql` or `pdo_pgsql` for the database and `gd` for menu photos; Composer; and Node 22 to build the frontend.
+
+### Drivers, and why
+
+| Setting                         | Production value                           | Why                                                                                                                                                                                                 |
+| ------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DB_CONNECTION`                 | `mysql`, `mariadb` or `pgsql`              | Nine screens poll every 4–10 seconds and sessions, cache and jobs all write too. SQLite allows one writer at a time, so a manager, three waiters, a pass and a cashier end up waiting on each other |
+| `SESSION_DRIVER`, `CACHE_STORE` | `database` is fine; `redis` if you have it | On a real database server these are cheap. Redis takes the load off it if the restaurant is busy                                                                                                    |
+| `QUEUE_CONNECTION`              | `database` or `redis`                      | Either works, as long as a worker runs. `sync` would send every notification inside the request again                                                                                               |
+| `MAIL_MAILER`                   | `smtp` (or `ses`, `postmark`, …)           | With `log`, an invitation is written to a file and the new waiter never gets it. **Mail is a prerequisite, not an extra**                                                                           |
+| `BROADCAST_CONNECTION`          | `log`                                      | Nothing broadcasts yet. Screens poll (#11)                                                                                                                                                          |
+
+### Environment checklist
+
+Each of these must change from `.env.example` before going live. `php artisan qresto:check-deploy` checks the ones marked ✓ and exits non-zero until they are right. In production, the app **refuses to serve** (every request, `/up` included, returns an error and the log names the setting) while any of them is still wrong.
+
+| Variable                                                                                       | Set to                                                                | Checked |
+| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | :-----: |
+| `APP_NAME`                                                                                     | The restaurant or brand name, used in emails                          |         |
+| `APP_ENV`                                                                                      | `production`                                                          |         |
+| `APP_KEY`                                                                                      | `php artisan key:generate --show`, then keep it forever (see Backups) |         |
+| `APP_DEBUG`                                                                                    | `false`                                                               |    ✓    |
+| `APP_URL`                                                                                      | `https://your-domain`. Table QR codes are printed with it             |    ✓    |
+| `LOG_LEVEL`                                                                                    | `warning` or `error`                                                  |         |
+| `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`             | Your MySQL, MariaDB or PostgreSQL server                              |    ✓    |
+| `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` | Your mail service                                                     |    ✓    |
+| `QRESTO_PAYMENT_DRIVER`                                                                        | `stripe`                                                              |    ✓    |
+| `STRIPE_KEY`, `STRIPE_SECRET`                                                                  | Live keys, `pk_live_…` and `sk_live_…`                                |    ✓    |
+| `STRIPE_WEBHOOK_SECRET`                                                                        | The endpoint's signing secret, `whsec_…` (below)                      |    ✓    |
+| `STRIPE_COUNTRY`                                                                               | The country of the Stripe account, for Apple Pay and Google Pay       |         |
+| `QRESTO_CURRENCY`                                                                              | The restaurant's ISO currency                                         |         |
+| `SEED_DEMO_DATA`                                                                               | `false`                                                               |         |
+
+`QRESTO_ENFORCE_DEPLOY_CHECKS=false` turns the refusal off. It exists for a deliberate exception, such as a single-tablet demo, not for getting a deploy past the check.
+
+To see the whole configuration at a glance, Laravel's drivers and a QResto section with the production checks, the payment driver, the Stripe mode (test or live) and the retention periods:
+
+```bash
+php artisan about
+```
+
+### First install
+
+On the server, as the user that runs PHP:
+
+```bash
+git clone <repository> qresto && cd qresto
+```
+
+```bash
+composer install --no-dev --optimize-autoloader
+```
+
+```bash
+npm ci && npm run build
+```
+
+```bash
+cp .env.example .env && php artisan key:generate
+```
+
+Edit `.env` through the checklist above, then:
+
+```bash
+php artisan qresto:check-deploy
+```
+
+```bash
+php artisan migrate --force && php artisan db:seed --force
+```
+
+```bash
+php artisan storage:link
+```
+
+```bash
+php artisan optimize
+```
+
+`db:seed` creates the roles and permissions only. With `SEED_DEMO_DATA=false` it adds no demo restaurant. Create the real one and invite its first admin:
+
+```bash
+php artisan qresto:create-restaurant "Lokanta Deniz" --admin-name="Selin Kaya" --admin-email=selin@example.com --timezone=Europe/Istanbul --currency=TRY
+```
+
+The invitation is sent straight away, not queued, so a mail problem shows up here. The admin sets a password from the link, then adds the menu, tables and staff from the app.
+
+Point the web server's document root at `public/`.
+
+### Keeping the worker and scheduler running
+
+Both must survive reboots and crashes. With systemd, a worker unit (`/etc/systemd/system/qresto-worker.service`):
+
+```ini
+[Unit]
+Description=QResto queue worker
+After=network.target
+
+[Service]
+User=www-data
+WorkingDirectory=/var/www/qresto
+ExecStart=/usr/bin/php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl enable --now qresto-worker
+```
+
+And the scheduler, in the crontab of the same user (`crontab -e -u www-data`):
+
+```
+* * * * * cd /var/www/qresto && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Supervisor works just as well for the worker. Whatever runs it, check that it is up: `php artisan schedule:list` shows what will run, and jobs piling up in the `jobs` table mean no worker is running.
+
+### Stripe webhooks
+
+In the Stripe dashboard (Developers → Webhooks), add an endpoint:
+
+- URL: `https://your-domain/webhooks/stripe`
+- Events: `payment_intent.succeeded`, `payment_intent.payment_failed`, `charge.refunded`, `charge.dispute.created`
+
+Copy its signing secret into `STRIPE_WEBHOOK_SECRET`. Test and live mode have separate keys **and separate endpoints**: switching to live means live `pk_`/`sk_` keys and the live endpoint's `whsec_` secret together. `php artisan about` shows which mode the secret key is in. Local testing with the Stripe CLI is in [`docs/payments-stripe.md`](docs/payments-stripe.md).
+
+### Updating
+
+```bash
+php artisan down
+```
+
+```bash
+git pull && composer install --no-dev --optimize-autoloader && npm ci && npm run build
+```
+
+```bash
+php artisan migrate --force && php artisan optimize
+```
+
+```bash
+php artisan queue:restart && php artisan up
+```
+
+`queue:restart` makes the worker finish its job and start again on the new code.
+
+### Backups
+
+What to keep:
+
+- **The database.** Orders, payments, the `order_events` and `permission_audits` audit trail, staff and the menu. Everything that matters.
+- **`.env`**, above all `APP_KEY`. Two-factor secrets and session cookies are encrypted with it. A restored database without its key cannot read them.
+- **`storage/app/public`**: the menu photos.
+
+A nightly database dump, kept off the server. MySQL or MariaDB:
+
+```bash
+mysqldump --single-transaction --routines --default-character-set=utf8mb4 -u qresto -p qresto | gzip > qresto-$(date +%F).sql.gz
+```
+
+PostgreSQL:
+
+```bash
+pg_dump -Fc -U qresto qresto > qresto-$(date +%F).dump
+```
+
+`--single-transaction` and `pg_dump` both take a consistent snapshot without stopping the service.
+
+### Restoring, and checking the restore
+
+A backup nobody has restored is a hope. Restore into a **new, empty** database first, never over the live one:
+
+```bash
+gunzip -c qresto-2026-11-12.sql.gz | mysql -u qresto -p qresto_restore
+```
+
+```bash
+pg_restore -U qresto -d qresto_restore --no-owner qresto-2026-11-12.dump
+```
+
+Then, from a copy of the app with `DB_DATABASE=qresto_restore` and the **same** `APP_KEY`:
+
+1. `php artisan migrate:status` lists every migration as ran, with none pending.
+2. `php artisan about` shows the restore's connection and no surprises.
+3. The newest order in the restore matches the newest one from before the dump: `php artisan tinker --execute 'echo App\Models\Order::query()->withoutGlobalScopes()->latest("id")->value("code");'`
+4. Sign in as a staff member and open a past order and its receipt.
+
+Only then point the live `.env` at the restored database (or rename it into place), clear the config cache with `php artisan optimize`, and restart the worker.
+
 ## Checks before you push
 
 CI runs all of these on every push to `dev` and `main` and on every pull request. Running them first saves a red build.

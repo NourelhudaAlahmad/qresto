@@ -135,6 +135,14 @@ return [
      * any session with an order are kept: a session with an order carries
      * the party size that covers are counted from.
      */
+    /*
+     * In production, refuse to serve while App\Support\DeploymentCheck finds
+     * a development default (#59). Turn off only for a deliberate exception.
+     */
+    'deploy' => [
+        'enforce' => (bool) env('QRESTO_ENFORCE_DEPLOY_CHECKS', true),
+    ],
+
     'retention' => [
         // A scan that never became an order.
         'table_sessions_days' => (int) env('QRESTO_RETAIN_TABLE_SESSIONS_DAYS', 30),

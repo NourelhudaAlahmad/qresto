@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureAccountIsActive;
+use App\Http\Middleware\EnsureDeploymentIsSafe;
 use App\Http\Middleware\EnsureStaffAccountCanAuthenticate;
 use App\Http\Middleware\EnsureTableSession;
 use App\Http\Middleware\ExtendRememberedSession;
@@ -29,6 +30,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'appearance',
             'sidebar_state',
         ]);
+
+        // Every request, the /up health check and webhooks included: a
+        // production deploy with development defaults is refused (#59).
+        $middleware->prepend(EnsureDeploymentIsSafe::class);
 
         $middleware->alias([
             'table.session' => EnsureTableSession::class,

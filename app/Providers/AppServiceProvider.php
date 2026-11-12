@@ -5,7 +5,9 @@ namespace App\Providers;
 use App\CurrentRestaurant;
 use App\Enums\Capability;
 use App\Models\User;
+use App\Support\DeploymentCheck;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -29,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureGuestRateLimits();
+        $this->describeInAbout();
 
         // A table's bill and receipt: the waiter whose table it is, or the
         // cashier settling across the floor (#34). TableAccess then checks
@@ -38,6 +41,35 @@ class AppServiceProvider extends ServiceProvider
             fn (User $user): bool => $user->can(Capability::SEE_OWN_TABLES->value)
                 || $user->can(Capability::TAKE_PAYMENT->value),
         );
+    }
+
+    /**
+     * A QResto section in `php artisan about`, so a misconfigured deploy is
+     * visible at a glance next to Laravel's own drivers (#59).
+     */
+    private function describeInAbout(): void
+    {
+        AboutCommand::add('QResto', function (): array {
+            $check = app(DeploymentCheck::class);
+            $problems = $check->problems();
+
+            return [
+                'Production checks' => $problems === []
+                    ? '<fg=green;options=bold>READY</>'
+                    : '<fg=red;options=bold>'.count($problems).' TO FIX</> (php artisan qresto:check-deploy)',
+                'Checks enforced' => $check->isEnforced() ? 'YES' : 'NO (not production, or QRESTO_ENFORCE_DEPLOY_CHECKS=false)',
+                'Currency' => (string) config('qresto.currency'),
+                'Payment driver' => (string) config('qresto.payments.driver'),
+                'Stripe mode' => $check->stripeMode(),
+                'Stripe webhook secret' => filled(config('qresto.payments.stripe.webhook_secret')) ? 'set' : 'not set',
+                'Retention' => sprintf(
+                    'sessions %d d, carts %d d, webhook events %d d',
+                    (int) config('qresto.retention.table_sessions_days'),
+                    (int) config('qresto.retention.carts_days'),
+                    (int) config('qresto.retention.webhook_events_days'),
+                ),
+            ];
+        });
     }
 
     /**
