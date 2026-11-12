@@ -68,6 +68,17 @@ return [
         'more_nav' => 'المزيد من القوائم',
     ],
 
+    // Whether the screen's live data can be trusted (#58).
+    'live' => [
+        'live' => 'مباشر',
+        'paused' => 'متوقف مؤقتًا',
+        'offline' => 'غير متصل',
+        'updated_just_now' => 'آخر تحديث الآن',
+        'updated_ago' => 'آخر تحديث قبل :time',
+        'pass_offline' => 'غير متصل: قد لا تكون هذه اللوحة محدّثة',
+        'reconnecting' => 'جارٍ إعادة الاتصال…',
+    ],
+
     'floor' => [
         'head' => 'الصالة',
         'filter' => 'تصفية الطاولات حسب الحالة',

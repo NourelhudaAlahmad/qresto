@@ -22,6 +22,7 @@ import { NotificationBell } from '@/components/qresto/notification-bell';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { TabBar } from '@/components/qresto/tab-bar';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
+import { useLiveConnection } from '@/hooks/useLiveConnection';
 import { useLiveData } from '@/hooks/useLiveData';
 import { useI18n } from '@/lib/i18n';
 
@@ -216,6 +217,7 @@ function Sidebar({
 
 function Topbar({
     liveStatus,
+    liveUpdatedAt,
     title,
     subtitle,
     unreadNotifications,
@@ -223,6 +225,7 @@ function Topbar({
     userEmail,
 }: {
     liveStatus: LiveStatus;
+    liveUpdatedAt: number;
     title: string;
     subtitle: string;
     unreadNotifications: number;
@@ -248,7 +251,10 @@ function Topbar({
             </div>
 
             <span className="hidden sm:inline-flex">
-                <LiveIndicator status={liveStatus} />
+                <LiveIndicator
+                    status={liveStatus}
+                    lastUpdatedAt={liveUpdatedAt}
+                />
             </span>
 
             <NotificationBell unread={unreadNotifications} />
@@ -335,6 +341,7 @@ export default function StaffLayout({
         data.staffUnreadNotifications ?? shell?.unreadNotifications ?? 0;
 
     const liveStatus = useConnectionStatus();
+    const { lastSuccessAt: liveUpdatedAt } = useLiveConnection();
 
     // The two shell counters refresh on their own slow cadence.
     useLiveData(COUNTER_INTERVAL_MS, { only: COUNTER_PROPS });
@@ -413,6 +420,7 @@ export default function StaffLayout({
             <div className="flex min-h-[100dvh] flex-col min-[900px]:ps-[var(--sidebar-w)]">
                 <Topbar
                     liveStatus={liveStatus}
+                    liveUpdatedAt={liveUpdatedAt}
                     title={shell?.pageTitle ?? t.pages.staff}
                     subtitle={subtitle}
                     unreadNotifications={unreadNotifications}

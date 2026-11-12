@@ -9,6 +9,8 @@ import Dashboard from '@/pages/dashboard';
 vi.mock('@/hooks/useLiveData', () => ({
     useLiveData: vi.fn(() => ({
         isPaused: false,
+        isDisconnected: false,
+        connection: { failures: 0, lastSuccessAt: 0, browserOnline: true },
         pause: vi.fn(),
         resume: vi.fn(),
     })),

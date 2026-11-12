@@ -1,6 +1,8 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { recordLiveFailure, resetLiveConnection } from '@/lib/liveConnection';
+
 import { useConnectionStatus } from './useConnectionStatus';
 
 const listeners: Record<string, () => void> = {};
@@ -25,6 +27,7 @@ function setHidden(hidden: boolean) {
 
 describe('useConnectionStatus', () => {
     beforeEach(() => {
+        resetLiveConnection();
         Object.defineProperty(navigator, 'onLine', {
             configurable: true,
             get: () => true,
@@ -73,5 +76,12 @@ describe('useConnectionStatus', () => {
 
         act(() => listeners.success?.());
         expect(result.current).toBe('live');
+    });
+
+    it('is offline when a poll gets an error back from the server (#58)', () => {
+        const { result } = renderHook(() => useConnectionStatus());
+
+        act(() => recordLiveFailure());
+        expect(result.current).toBe('offline');
     });
 });

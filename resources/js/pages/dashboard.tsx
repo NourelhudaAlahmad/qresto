@@ -67,10 +67,13 @@ export default function Dashboard({
 }: DashboardProps) {
     const { qresto } = usePage<PageProps>().props;
 
-    const { isPaused } = useLiveData(qresto.live.waiter_interval, {
-        only: ['liveOrders', 'liveServiceRequests'],
-        version: liveOrders.version,
-    });
+    const { isPaused, isDisconnected, connection } = useLiveData(
+        qresto.live.waiter_interval,
+        {
+            only: ['liveOrders', 'liveServiceRequests'],
+            version: liveOrders.version,
+        },
+    );
 
     const { muted, toggleMute } = useLiveAlertMute();
 
@@ -89,7 +92,16 @@ export default function Dashboard({
                     <h1 className="text-xl font-semibold">Dashboard</h1>
 
                     <div className="flex items-center gap-2">
-                        <LiveIndicator isPaused={isPaused} />
+                        <LiveIndicator
+                            status={
+                                isDisconnected
+                                    ? 'offline'
+                                    : isPaused
+                                      ? 'paused'
+                                      : 'live'
+                            }
+                            lastUpdatedAt={connection.lastSuccessAt}
+                        />
 
                         <button
                             type="button"

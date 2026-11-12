@@ -28,3 +28,32 @@ describe('LiveIndicator status', () => {
         expect(screen.getByText('Offline')).toBeInTheDocument();
     });
 });
+
+describe('LiveIndicator staleness (#58)', () => {
+    it('says how stale the data is when offline', () => {
+        render(
+            <LiveIndicator
+                status="offline"
+                lastUpdatedAt={Date.now() - 4 * 60_000}
+            />,
+        );
+
+        expect(screen.getByTestId('live-staleness')).toHaveTextContent(
+            'updated 4 min ago',
+        );
+    });
+
+    it('says just now for data less than a minute old', () => {
+        render(<LiveIndicator status="offline" lastUpdatedAt={Date.now()} />);
+
+        expect(screen.getByTestId('live-staleness')).toHaveTextContent(
+            'updated just now',
+        );
+    });
+
+    it('keeps Live and Paused short: no staleness while trustworthy', () => {
+        render(<LiveIndicator status="live" lastUpdatedAt={Date.now()} />);
+
+        expect(screen.queryByTestId('live-staleness')).toBeNull();
+    });
+});

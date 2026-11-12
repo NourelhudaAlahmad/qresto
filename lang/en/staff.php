@@ -68,6 +68,17 @@ return [
         'more_nav' => 'More navigation',
     ],
 
+    // Whether the screen's live data can be trusted (#58).
+    'live' => [
+        'live' => 'Live',
+        'paused' => 'Paused',
+        'offline' => 'Offline',
+        'updated_just_now' => 'updated just now',
+        'updated_ago' => 'updated :time ago',
+        'pass_offline' => 'Not live: this board may be out of date',
+        'reconnecting' => 'Reconnecting…',
+    ],
+
     'floor' => [
         'head' => 'Floor',
         'filter' => 'Filter tables by state',

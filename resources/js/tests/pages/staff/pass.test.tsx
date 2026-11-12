@@ -7,6 +7,11 @@ import {
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+    recordLiveFailure,
+    recordLiveSuccess,
+    resetLiveConnection,
+} from '@/lib/liveConnection';
 import Pass, { aggregates } from '@/pages/staff/kitchen/pass';
 import { expectNoCriticalA11y } from '@/tests/a11y';
 
@@ -75,6 +80,7 @@ beforeEach(() => {
 });
 afterEach(() => {
     cleanup();
+    resetLiveConnection();
     vi.unstubAllGlobals();
 });
 
@@ -283,5 +289,44 @@ describe('signing out of the pass (#52)', () => {
 
         expect(post).toHaveBeenCalledTimes(1);
         expect(post).toHaveBeenCalledWith('/logout');
+    });
+});
+
+describe('Kitchen pass connection (#58)', () => {
+    it('reads live with no banner while polls succeed', () => {
+        render(<Pass {...props} />);
+
+        expect(screen.queryByTestId('offline-banner')).toBeNull();
+        expect(screen.getByText('Pass · live')).toBeInTheDocument();
+    });
+
+    it('fills the width with a berry banner the moment a poll fails', () => {
+        const { container } = render(<Pass {...props} />);
+
+        act(() => recordLiveFailure());
+
+        const banner = screen.getByTestId('offline-banner');
+
+        expect(banner).toHaveAttribute('data-tone', 'pass');
+        expect(banner).toHaveAttribute('role', 'alert');
+        expect(banner.className).toContain('bg-[var(--berry-500)]');
+        expect(banner).toHaveTextContent(
+            'Not live: this board may be out of date',
+        );
+        expect(banner).toHaveTextContent('updated just now · Reconnecting…');
+        expect(screen.getByText('Pass · offline')).toBeInTheDocument();
+        expect(
+            container.querySelector('[data-surface="pass"]'),
+        ).toHaveAttribute('data-connection', 'offline');
+    });
+
+    it('clears the banner on its own once a poll gets through', () => {
+        render(<Pass {...props} />);
+
+        act(() => recordLiveFailure());
+        expect(screen.getByTestId('offline-banner')).toBeInTheDocument();
+
+        act(() => recordLiveSuccess());
+        expect(screen.queryByTestId('offline-banner')).toBeNull();
     });
 });

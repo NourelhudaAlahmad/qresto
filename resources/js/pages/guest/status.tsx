@@ -8,13 +8,16 @@ import { Button } from '@/components/qresto/button';
 import { CallWaiterSheet } from '@/components/qresto/call-waiter-sheet';
 import { Card } from '@/components/qresto/card';
 import { HelpPanel } from '@/components/qresto/help-panel';
+import { OfflineBanner } from '@/components/qresto/offline-banner';
 import { ProgressTrail } from '@/components/qresto/progress-trail';
 import { StatusPill } from '@/components/qresto/status-pill';
 import { StatusTransition } from '@/components/qresto/StatusTransition';
 import { StickyDock } from '@/components/qresto/sticky-dock';
 import { TabBar } from '@/components/qresto/tab-bar';
+import { useMinutesSince } from '@/hooks/useLiveConnection';
 import { useLiveData } from '@/hooks/useLiveData';
 import GuestLayout from '@/layouts/guest-layout';
+import { formatMinutes } from '@/lib/elapsed';
 import { formatMoney } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 import type { Money, OrderStatus } from '@/types';
@@ -143,9 +146,11 @@ export default function Status({
     const [helpOpen, setHelpOpen] = useState(false);
     const [callSheetOpen, setCallSheetOpen] = useState(false);
 
-    useLiveData(qresto.live.guest_status_interval, {
-        only: LIVE_ONLY,
-    });
+    const { isDisconnected, connection } = useLiveData(
+        qresto.live.guest_status_interval,
+        { only: LIVE_ONLY },
+    );
+    const minutesStale = useMinutesSince(connection.lastSuccessAt);
 
     const saveLastTab = (tab: 'menu' | 'order' | 'status') => {
         if (session?.id == null) {
@@ -306,6 +311,24 @@ export default function Status({
                 </header>
 
                 <main className="min-h-0 flex-1 overflow-y-auto">
+                    {/* Left open on the table through the meal, on a phone
+                        moving in and out of signal (#58). */}
+                    {isDisconnected && (
+                        <div className="px-5 pt-4">
+                            <OfflineBanner
+                                tone="guest"
+                                title={g.status.offline_title}
+                                detail={
+                                    minutesStale < 1
+                                        ? g.status.offline_just_now
+                                        : fill(g.status.offline_ago, {
+                                              time: formatMinutes(minutesStale),
+                                          })
+                                }
+                            />
+                        </div>
+                    )}
+
                     <section className="px-5 pb-6 pt-7">
                         <h1 className="font-display max-w-[320px] text-[40px] font-semibold leading-[1.02] tracking-[-0.045em] text-[var(--text-primary)]">
                             <StatusTransition status={live.status}>

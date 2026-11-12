@@ -1,3 +1,7 @@
+import { useMinutesSince } from '@/hooks/useLiveConnection';
+import { formatMinutes } from '@/lib/elapsed';
+import { fill, useI18n } from '@/lib/i18n';
+
 export type LiveStatus = 'live' | 'paused' | 'offline';
 
 type LiveIndicatorProps = {
@@ -5,12 +9,11 @@ type LiveIndicatorProps = {
     status?: LiveStatus;
     /** Older call sites: true reads as "paused". */
     isPaused?: boolean;
-};
-
-const LABELS: Record<LiveStatus, string> = {
-    live: 'Live',
-    paused: 'Paused',
-    offline: 'Offline',
+    /**
+     * When the data on screen was last confirmed (ms since the epoch).
+     * Offline, the pill says how stale it is (#58).
+     */
+    lastUpdatedAt?: number;
 };
 
 const DOTS: Record<LiveStatus, string> = {
@@ -19,11 +22,26 @@ const DOTS: Record<LiveStatus, string> = {
     offline: 'bg-[var(--berry-500)]',
 };
 
+/** "updated just now" / "updated 4 min ago", in the page language. */
+export function useUpdatedAgo(lastUpdatedAt: number): string {
+    const { staff: t } = useI18n();
+    const minutes = useMinutesSince(lastUpdatedAt);
+
+    return minutes < 1
+        ? t.live.updated_just_now
+        : fill(t.live.updated_ago, { time: formatMinutes(minutes) });
+}
+
 export function LiveIndicator({
     status,
     isPaused = false,
+    lastUpdatedAt,
 }: LiveIndicatorProps) {
+    const { staff: t } = useI18n();
     const current: LiveStatus = status ?? (isPaused ? 'paused' : 'live');
+    // A stable fallback: the text is only shown with a real timestamp.
+    const updatedAgo = useUpdatedAgo(lastUpdatedAt ?? 0);
+    const showStaleness = current === 'offline' && lastUpdatedAt !== undefined;
 
     return (
         <div
@@ -46,7 +64,13 @@ export function LiveIndicator({
                 />
             </span>
 
-            <span>{LABELS[current]}</span>
+            <span>{t.live[current]}</span>
+
+            {showStaleness && (
+                <span data-testid="live-staleness" className="font-normal">
+                    · {updatedAgo}
+                </span>
+            )}
         </div>
     );
 }

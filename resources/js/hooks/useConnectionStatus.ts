@@ -2,37 +2,44 @@ import { router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 import type { LiveStatus } from '@/components/qresto/LiveIndicator';
+import { useLiveConnection } from '@/hooks/useLiveConnection';
+import {
+    isDisconnected,
+    recordBrowserOnline,
+    recordLiveFailure,
+    recordLiveSuccess,
+} from '@/lib/liveConnection';
 
 /**
  * What the "Live" pill in the staff topbar should say.
  *
- * - offline: the browser reports no network, or the last request failed to
- *   reach the server. Cleared by the next successful response.
+ * - offline: the device reports no network, or the last request failed,
+ *   whether it never reached the server or the server answered with an
+ *   error (#58). Cleared by the next successful response.
  * - paused: the tab is in the background, so polling has stopped.
  * - live: otherwise.
  */
 export function useConnectionStatus(): LiveStatus {
-    const [online, setOnline] = useState(() =>
-        typeof navigator === 'undefined' ? true : navigator.onLine,
-    );
+    const connection = useLiveConnection();
     const [visible, setVisible] = useState(() =>
         typeof document === 'undefined' ? true : !document.hidden,
     );
-    const [requestFailed, setRequestFailed] = useState(false);
 
     useEffect(() => {
-        const goOnline = () => setOnline(true);
-        const goOffline = () => setOnline(false);
+        const goOnline = () => recordBrowserOnline(true);
+        const goOffline = () => recordBrowserOnline(false);
         const onVisibility = () => setVisible(!document.hidden);
 
         window.addEventListener('online', goOnline);
         window.addEventListener('offline', goOffline);
         document.addEventListener('visibilitychange', onVisibility);
 
+        // Any visit counts, not only polls: a bump that cannot reach the
+        // server means the screen is not live either.
         const stopNetworkError = router.on('networkError', () =>
-            setRequestFailed(true),
+            recordLiveFailure(),
         );
-        const stopSuccess = router.on('success', () => setRequestFailed(false));
+        const stopSuccess = router.on('success', () => recordLiveSuccess());
 
         return () => {
             window.removeEventListener('online', goOnline);
@@ -43,7 +50,7 @@ export function useConnectionStatus(): LiveStatus {
         };
     }, []);
 
-    if (!online || requestFailed) {
+    if (isDisconnected(connection)) {
         return 'offline';
     }
 

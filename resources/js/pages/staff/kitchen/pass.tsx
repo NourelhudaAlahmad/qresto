@@ -1,6 +1,8 @@
 import { Head, router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { useUpdatedAgo } from '@/components/qresto/LiveIndicator';
+import { OfflineBanner } from '@/components/qresto/offline-banner';
 import { OrderTicket } from '@/components/qresto/order-ticket';
 import { showToast } from '@/components/qresto/toast';
 import { useLiveData } from '@/hooks/useLiveData';
@@ -101,7 +103,13 @@ export default function Pass({
     const visible = tickets.filter((ticket) => !bumped.has(ticket.id));
     const busy = useRef(false);
 
-    useLiveData(pollIntervalMs, { only: ['tickets', 'now'] });
+    const {
+        staff: { live: liveCopy },
+    } = useI18n();
+    const { isDisconnected, connection } = useLiveData(pollIntervalMs, {
+        only: ['tickets', 'now'],
+    });
+    const updatedAgo = useUpdatedAgo(connection.lastSuccessAt);
 
     useNewItemAlert(tickets, (ticket) => ticket.id, {
         title: 'New ticket',
@@ -205,13 +213,24 @@ export default function Pass({
                 frame: "Kitchen display · Pass screen" in the topbar. */}
             <section
                 data-surface="pass"
+                data-connection={isDisconnected ? 'offline' : 'live'}
                 aria-label="Pass"
                 className="text-body rounded-[var(--radius-xl)] bg-[var(--ink-950)] p-6 text-[var(--ink-25)]"
             >
+                {/* A frozen board looks exactly like a quiet one; say so from
+                    across the kitchen (#58). */}
+                {isDisconnected && (
+                    <OfflineBanner
+                        tone="pass"
+                        title={liveCopy.pass_offline}
+                        detail={`${updatedAgo} · ${liveCopy.reconnecting}`}
+                    />
+                )}
+
                 {/* Header: live counts, the longest wait, the bump hint. */}
                 <header className="flex flex-wrap items-center gap-x-4 gap-y-3">
                     <h2 className="font-display text-title-1 font-semibold">
-                        Pass · live
+                        {isDisconnected ? 'Pass · offline' : 'Pass · live'}
                     </h2>
                     <p
                         data-testid="pass-totals"

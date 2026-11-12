@@ -106,8 +106,17 @@ const baseProps = {
     },
 };
 
+const healthy = {
+    isPaused: false,
+    isDisconnected: false,
+    connection: { failures: 0, lastSuccessAt: Date.now(), browserOnline: true },
+    pause: vi.fn(),
+    resume: vi.fn(),
+};
+
 beforeEach(() => {
-    useLiveDataMock.mockClear();
+    useLiveDataMock.mockReset();
+    useLiveDataMock.mockReturnValue(healthy);
 });
 
 describe('Guest order status', () => {
@@ -336,5 +345,33 @@ describe('accessibility (#36)', () => {
         const { container } = render(<Status {...baseProps} />);
 
         await expectNoCriticalA11y(container);
+    });
+});
+
+describe('connection (#58)', () => {
+    it('says nothing while the status is live', () => {
+        render(<Status {...baseProps} />);
+
+        expect(screen.queryByTestId('offline-banner')).toBeNull();
+    });
+
+    it('says the connection is lost, and how old the status is', () => {
+        useLiveDataMock.mockReturnValue({
+            ...healthy,
+            isDisconnected: true,
+            connection: {
+                failures: 2,
+                lastSuccessAt: Date.now() - 4 * 60_000,
+                browserOnline: false,
+            },
+        });
+
+        render(<Status {...baseProps} />);
+
+        const banner = screen.getByTestId('offline-banner');
+
+        expect(banner).toHaveAttribute('data-tone', 'guest');
+        expect(banner).toHaveTextContent('Connection lost');
+        expect(banner).toHaveTextContent('as of 4 min ago');
     });
 });
