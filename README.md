@@ -83,6 +83,7 @@ The scheduler runs these; locally, `php artisan schedule:work` runs them.
 | `qresto:close-idle-table-sessions` | every 5 minutes | Closes guest table sessions idle past the configured limit             |
 | `qresto:probe-gateway`             | every 5 minutes | Checks the payment gateway and records the result for system health    |
 | `qresto:check-integrations`        | every minute    | Flags integrations whose heartbeat went stale and alerts managers once |
+| `model:prune`                      | daily           | Deletes operational rows past their retention period (below)           |
 
 Run by hand:
 
@@ -90,6 +91,25 @@ Run by hand:
 | ------------------------------- | ----------------------------------------------------------------------- |
 | `qresto:integration-token {id}` | Issues a new heartbeat token for a KDS screen, printer agent or gateway |
 | `qresto:demo-refresh`           | Moves the demo restaurant's times up to now                             |
+
+### Retention
+
+`model:prune` deletes only rows that have outlived their use (#57). The periods are in `config('qresto.retention')`, each overridable by its env variable.
+
+| Rows                                                | Kept for                                                                      | Why                                                                                  |
+| --------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Table sessions with no order                        | 30 days after the guest's last activity (`QRESTO_RETAIN_TABLE_SESSIONS_DAYS`) | A QR scan that never became an order. Its service requests stay, unlinked            |
+| Carts, cart lines and add-ons                       | 7 days after the session's last activity (`QRESTO_RETAIN_CARTS_DAYS`)         | A cart is dead once its session is; orders copy what they need into `order_lines`    |
+| Webhook events                                      | 30 days after receipt (`QRESTO_RETAIN_WEBHOOK_EVENTS_DAYS`)                   | A replay guard. Stripe retries for three days and keeps events resendable for thirty |
+| Table sessions with an order                        | Indefinitely                                                                  | They hold the party size that covers are counted from in the overview and reports    |
+| Orders, order lines, payments                       | Indefinitely                                                                  | The sales record                                                                     |
+| `order_events`, `permission_audits`, `staff_audits` | Indefinitely                                                                  | The audit trail: who did what, and when                                              |
+
+To see what a prune would delete without deleting it:
+
+```bash
+php artisan model:prune --pretend
+```
 
 ### Queue worker
 

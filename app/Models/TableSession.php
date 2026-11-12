@@ -3,11 +3,16 @@
 namespace App\Models;
 
 use App\Concerns\BelongsToRestaurant;
+use Carbon\CarbonInterface;
 use Database\Factories\TableSessionFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Str;
 
 class TableSession extends Model
@@ -16,6 +21,8 @@ class TableSession extends Model
 
     /** @use HasFactory<TableSessionFactory> */
     use HasFactory;
+
+    use MassPrunable;
 
     protected $fillable = [
         'restaurant_id',
@@ -63,6 +70,51 @@ class TableSession extends Model
     public function cart(): HasOne
     {
         return $this->hasOne(Cart::class);
+    }
+
+    /**
+     * @return HasMany<Order, $this>
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Sessions with no guest activity since the cutoff, open or closed:
+     * the idle limit is minutes, so these are long over.
+     *
+     * @param  Builder<$this>  $query
+     * @return Builder<$this>
+     */
+    public function scopeQuietSince(Builder $query, CarbonInterface $cutoff): Builder
+    {
+        return $query->where(function (Builder $query) use ($cutoff): void {
+            $query->where('last_seen_at', '<', $cutoff)
+                ->orWhere(function (Builder $query) use ($cutoff): void {
+                    $query->whereNull('last_seen_at')
+                        ->where('opened_at', '<', $cutoff);
+                });
+        });
+    }
+
+    /**
+     * A scan that never became an order, quiet past the retention window
+     * (#57). Its cart, cart lines and add-ons go with it (cascade); its
+     * service requests stay, unlinked. A session with any order is kept:
+     * it holds the party size the covers are counted from.
+     *
+     * @return Builder<static>
+     */
+    public function prunable(): Builder
+    {
+        return static::query()->withoutGlobalScopes()
+            ->quietSince(now()->subDays((int) config('qresto.retention.table_sessions_days', 30)))
+            ->whereNotExists(function (QueryBuilder $orders): void {
+                $orders->selectRaw('1')
+                    ->from('orders')
+                    ->whereColumn('orders.table_session_id', 'table_sessions.id');
+            });
     }
 
     public static function openFor(RestaurantTable $table): self

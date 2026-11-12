@@ -126,4 +126,23 @@ return [
     'table_session_idle_minutes' => 30,
     'table_session_cookie_minutes' => 1440,
     'table_session_cookie' => 'qresto_table_session',
+
+    /*
+     * How long operational rows outlive their use (#57); `model:prune`
+     * deletes them daily. Days are counted from the guest's last activity
+     * (sessions, carts) or from receipt (webhook events). The audit trail
+     * (order_events, permission_audits, staff_audits), orders, payments and
+     * any session with an order are kept: a session with an order carries
+     * the party size that covers are counted from.
+     */
+    'retention' => [
+        // A scan that never became an order.
+        'table_sessions_days' => (int) env('QRESTO_RETAIN_TABLE_SESSIONS_DAYS', 30),
+        // A cart is dead once its session has gone quiet; orders copy what
+        // they need into order_lines.
+        'carts_days' => (int) env('QRESTO_RETAIN_CARTS_DAYS', 7),
+        // A replay guard, not a record: Stripe retries for three days and
+        // keeps events resendable for thirty.
+        'webhook_events_days' => (int) env('QRESTO_RETAIN_WEBHOOK_EVENTS_DAYS', 30),
+    ],
 ];

@@ -20,3 +20,9 @@ Schedule::command('qresto:probe-gateway')
 Schedule::command('qresto:check-integrations')
     ->everyMinute()
     ->withoutOverlapping();
+
+// Retention (#57): closed-out sessions, dead carts and old webhook
+// replay guards. Periods live in config('qresto.retention').
+Schedule::command('model:prune')
+    ->daily()
+    ->withoutOverlapping();
