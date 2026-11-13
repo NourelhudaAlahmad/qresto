@@ -14,14 +14,10 @@ use Symfony\Component\Finder\Finder;
  * be forgotten here.
  */
 $notYetMigrated = [
-    'manager/shift-qr.tsx',
     'staff/admin/menu.tsx',
     'staff/admin/restaurant.tsx',
     'staff/admin/system.tsx',
-    'staff/kitchen/pass.tsx',
-    'staff/kitchen/runner.tsx',
     'staff/manager/overview.tsx',
-    'staff/reports.tsx',
 ];
 
 /**
