@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import en from '@/i18n/en.json';
 import RestaurantSettings, {
     serviceExample,
 } from '@/pages/staff/admin/restaurant';
@@ -74,9 +75,13 @@ afterEach(cleanup);
 
 describe('Restaurant settings (#29)', () => {
     it('shows what the service charge does to a $50 bill, live', () => {
-        expect(serviceExample(12.5, 'USD')).toBe(
-            'On a $50.00 bill: $6.25 service, $56.25 total',
-        );
+        expect(
+            serviceExample(
+                12.5,
+                'USD',
+                en.staff.admin_restaurant.service_example,
+            ),
+        ).toBe('On a $50.00 bill: $6.25 service, $56.25 total');
 
         render(<RestaurantSettings {...props} />);
 

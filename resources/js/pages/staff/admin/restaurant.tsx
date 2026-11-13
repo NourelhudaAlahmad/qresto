@@ -14,6 +14,7 @@ import { Switch } from '@/components/qresto/switch';
 import { showToast } from '@/components/qresto/toast';
 import { Tooltip } from '@/components/qresto/tooltip';
 import { formatMinor } from '@/lib/formatMoney';
+import { fill, useI18n } from '@/lib/i18n';
 
 type Details = {
     name: string;
@@ -58,27 +59,28 @@ type Props = {
 
 type Errors = Record<string, string>;
 
-const DAY_NAMES = [
-    'Sunday',
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-];
-
 const QR_SHEET = '/app/settings/tables/qr-sheet';
 
 const SELECT =
     'text-body h-11 w-full rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-card)] px-3 text-[var(--text-primary)] outline-none focus-visible:border-[var(--border-focus-color)] focus-visible:shadow-[var(--ring-focus)]';
 
-/** What a percentage does to a $50 bill, the way the guest will see it. */
-export function serviceExample(pct: number, currency: string): string {
+/**
+ * What a percentage does to a $50 bill, the way the guest will see it.
+ * `sentence` holds :bill, :service and :total.
+ */
+export function serviceExample(
+    pct: number,
+    currency: string,
+    sentence: string,
+): string {
     const bill = 5000;
     const service = Math.round((bill * (Number.isFinite(pct) ? pct : 0)) / 100);
 
-    return `On a ${formatMinor(bill, currency)} bill: ${formatMinor(service, currency)} service, ${formatMinor(bill + service, currency)} total`;
+    return fill(sentence, {
+        bill: formatMinor(bill, currency),
+        service: formatMinor(service, currency),
+        total: formatMinor(bill + service, currency),
+    });
 }
 
 function Panel({
@@ -150,6 +152,9 @@ function DetailsForm({
     restaurant,
     options,
 }: Pick<Props, 'restaurant' | 'options'>) {
+    const {
+        staff: { admin_restaurant: t },
+    } = useI18n();
     const [form, setForm] = useState<Details>(restaurant);
     const [errors, setErrors] = useState<Errors>({});
     const [saving, setSaving] = useState(false);
@@ -181,9 +186,8 @@ function DetailsForm({
                 setErrors({});
                 showToast({
                     type: 'success',
-                    title: 'Restaurant details saved',
-                    description:
-                        'New carts use the new service charge; placed orders keep theirs.',
+                    title: t.details_saved,
+                    description: t.details_saved_body,
                 });
             },
             onError: (next) => setErrors(next),
@@ -202,22 +206,19 @@ function DetailsForm({
     );
 
     return (
-        <Panel
-            title="Details"
-            description="The numbers every other screen quotes."
-        >
+        <Panel title={t.details} description={t.details_hint}>
             <div className="grid grid-cols-1 gap-4 min-[720px]:grid-cols-2">
-                {text('name', 'Name')}
-                {text('tagline', 'Tagline')}
-                {text('cuisine', 'Cuisine')}
-                {text('phone', 'Phone')}
+                {text('name', t.name)}
+                {text('tagline', t.tagline)}
+                {text('cuisine', t.cuisine)}
+                {text('phone', t.phone)}
                 <div className="min-[720px]:col-span-2">
-                    {text('address', 'Address')}
+                    {text('address', t.address)}
                 </div>
 
                 <Field
                     id="restaurant-timezone"
-                    label="Timezone"
+                    label={t.timezone}
                     error={errors.timezone}
                 >
                     <select
@@ -238,7 +239,7 @@ function DetailsForm({
 
                 <Field
                     id="restaurant-currency"
-                    label="Currency"
+                    label={t.currency}
                     error={errors.currency}
                 >
                     <select
@@ -259,13 +260,14 @@ function DetailsForm({
 
                 <Field
                     id="restaurant-service"
-                    label="Service charge %"
+                    label={t.service_charge}
                     error={errors.service_charge_pct}
                     hint={
                         <Numeric data-testid="service-example">
                             {serviceExample(
                                 form.service_charge_pct,
                                 form.currency,
+                                t.service_example,
                             )}
                         </Numeric>
                     }
@@ -294,7 +296,7 @@ function DetailsForm({
 
                 <div className="flex flex-col gap-1.5">
                     <span className="text-label font-medium text-[var(--text-primary)]">
-                        Languages
+                        {t.languages}
                     </span>
 
                     <div className="flex flex-wrap gap-4">
@@ -313,7 +315,9 @@ function DetailsForm({
                                             checked === true,
                                         )
                                     }
-                                    aria-label={`Offer ${locale.label}`}
+                                    aria-label={fill(t.offer_language, {
+                                        language: locale.label,
+                                    })}
                                 />
                                 {locale.label}
                             </label>
@@ -324,7 +328,7 @@ function DetailsForm({
                         htmlFor="restaurant-default-locale"
                         className="text-caption text-[var(--text-tertiary)]"
                     >
-                        Default language
+                        {t.default_language}
                     </label>
                     <select
                         id="restaurant-default-locale"
@@ -363,7 +367,7 @@ function DetailsForm({
                     loading={saving}
                     onClick={save}
                 >
-                    Save details
+                    {t.save_details}
                 </Button>
             </div>
         </Panel>
@@ -371,6 +375,9 @@ function DetailsForm({
 }
 
 function HoursEditor({ hours }: { hours: Day[] }) {
+    const {
+        staff: { admin_restaurant: t },
+    } = useI18n();
     const [days, setDays] = useState<Day[]>(hours);
     const [errors, setErrors] = useState<Errors>({});
     const [saving, setSaving] = useState(false);
@@ -395,7 +402,7 @@ function HoursEditor({ hours }: { hours: Day[] }) {
                     setErrors({});
                     showToast({
                         type: 'success',
-                        title: 'Opening hours saved',
+                        title: t.hours_saved,
                     });
                 },
                 onError: (next) => setErrors(next),
@@ -404,13 +411,10 @@ function HoursEditor({ hours }: { hours: Day[] }) {
     }
 
     return (
-        <Panel
-            title="Opening hours"
-            description="00:00 as a closing time means midnight."
-        >
+        <Panel title={t.hours} description={t.hours_hint}>
             <div className="flex flex-col">
                 {days.map((day, index) => {
-                    const name = DAY_NAMES[day.day_of_week];
+                    const name = t.days[day.day_of_week];
                     const error =
                         errors[`hours.${index}.closes_at`] ??
                         errors[`hours.${index}.opens_at`];
@@ -427,7 +431,7 @@ function HoursEditor({ hours }: { hours: Day[] }) {
                             <label className="text-caption flex min-h-11 items-center gap-2 text-[var(--text-secondary)]">
                                 <Switch
                                     checked={!day.closed}
-                                    aria-label={`${name} open`}
+                                    aria-label={fill(t.day_open, { day: name })}
                                     onCheckedChange={(open) =>
                                         update(index, {
                                             closed: !open,
@@ -440,7 +444,7 @@ function HoursEditor({ hours }: { hours: Day[] }) {
                                         })
                                     }
                                 />
-                                {day.closed ? 'Closed' : 'Open'}
+                                {day.closed ? t.closed : t.open}
                             </label>
 
                             {!day.closed && (
@@ -450,7 +454,9 @@ function HoursEditor({ hours }: { hours: Day[] }) {
                                 >
                                     <Input
                                         type="time"
-                                        aria-label={`${name} opens`}
+                                        aria-label={fill(t.day_opens, {
+                                            day: name,
+                                        })}
                                         className="w-[120px]"
                                         value={day.opens_at ?? ''}
                                         onChange={(event) =>
@@ -462,7 +468,9 @@ function HoursEditor({ hours }: { hours: Day[] }) {
                                     <span aria-hidden="true">–</span>
                                     <Input
                                         type="time"
-                                        aria-label={`${name} closes`}
+                                        aria-label={fill(t.day_closes, {
+                                            day: name,
+                                        })}
                                         className="w-[120px]"
                                         value={day.closes_at ?? ''}
                                         aria-invalid={error ? true : undefined}
@@ -495,7 +503,7 @@ function HoursEditor({ hours }: { hours: Day[] }) {
                     loading={saving}
                     onClick={save}
                 >
-                    Save hours
+                    {t.save_hours}
                 </Button>
             </div>
         </Panel>
@@ -505,6 +513,9 @@ function HoursEditor({ hours }: { hours: Day[] }) {
 type Confirm = { kind: 'reissue' | 'retire'; table: Table } | null;
 
 function TablesList({ tables }: { tables: Table[] }) {
+    const {
+        staff: { admin_restaurant: t },
+    } = useI18n();
     const [drafts, setDrafts] = useState<Record<number, Partial<Table>>>({});
     const [adding, setAdding] = useState({ number: '', seats: 4 });
     const [errors, setErrors] = useState<Errors>({});
@@ -538,7 +549,7 @@ function TablesList({ tables }: { tables: Table[] }) {
             if (message) {
                 showToast({
                     type: 'error',
-                    title: 'That did not go through',
+                    title: t.action_failed,
                     description: message,
                 });
             }
@@ -562,7 +573,9 @@ function TablesList({ tables }: { tables: Table[] }) {
                 });
                 showToast({
                     type: 'success',
-                    title: `Table ${value(table, 'number')} saved`,
+                    title: fill(t.table_saved, {
+                        table: value(table, 'number'),
+                    }),
                 });
             }),
         );
@@ -575,8 +588,8 @@ function TablesList({ tables }: { tables: Table[] }) {
             options('add', () => {
                 showToast({
                     type: 'success',
-                    title: `Table ${adding.number} added`,
-                    description: 'Print its card from the QR column.',
+                    title: fill(t.table_added, { table: adding.number }),
+                    description: t.table_added_body,
                 });
                 setAdding({ number: '', seats: 4 });
             }),
@@ -599,13 +612,12 @@ function TablesList({ tables }: { tables: Table[] }) {
                     kind === 'reissue'
                         ? {
                               type: 'success',
-                              title: `New code for Table ${table.number}`,
-                              description:
-                                  'The old sticker no longer works. Print and replace it.',
+                              title: fill(t.reissued, { table: table.number }),
+                              description: t.reissued_body,
                           }
                         : {
                               type: 'success',
-                              title: `Table ${table.number} retired`,
+                              title: fill(t.retired, { table: table.number }),
                           },
                 );
             }),
@@ -614,15 +626,17 @@ function TablesList({ tables }: { tables: Table[] }) {
 
     const rows = tables.map((table) => {
         const retireBlocked = table.busy
-            ? 'Guests are seated here. Free the table first.'
+            ? t.retire_busy
             : table.unpaid
-              ? 'This table has an unpaid bill.'
+              ? t.retire_unpaid
               : null;
+        const labelled = (template: string) =>
+            fill(template, { table: table.number });
 
         return {
             number: (
                 <Input
-                    aria-label={`Table ${table.number} number`}
+                    aria-label={labelled(t.table_number)}
                     value={value(table, 'number')}
                     className="font-mono"
                     onChange={(event) =>
@@ -641,7 +655,7 @@ function TablesList({ tables }: { tables: Table[] }) {
                     type="number"
                     min={1}
                     max={30}
-                    aria-label={`Table ${table.number} seats`}
+                    aria-label={labelled(t.table_seats)}
                     value={value(table, 'seats')}
                     className="font-mono"
                     onChange={(event) =>
@@ -659,7 +673,7 @@ function TablesList({ tables }: { tables: Table[] }) {
                 <Input
                     type="number"
                     min={0}
-                    aria-label={`Table ${table.number} order`}
+                    aria-label={labelled(t.table_order)}
                     value={value(table, 'sort_order')}
                     className="font-mono"
                     onChange={(event) =>
@@ -683,7 +697,7 @@ function TablesList({ tables }: { tables: Table[] }) {
                             loading={busy === `save-${table.id}`}
                             onClick={() => saveRow(table)}
                         >
-                            Save
+                            {t.save}
                         </Button>
                     )}
 
@@ -692,7 +706,7 @@ function TablesList({ tables }: { tables: Table[] }) {
                             href={`${QR_SHEET}?table=${table.id}`}
                             target="_blank"
                             rel="noopener"
-                            aria-label={`Print Table ${table.number} QR code`}
+                            aria-label={labelled(t.print_qr)}
                         >
                             <QrCode className="size-4" aria-hidden />
                         </a>
@@ -702,20 +716,20 @@ function TablesList({ tables }: { tables: Table[] }) {
                         type="button"
                         size="sm"
                         variant="ghost"
-                        aria-label={`Reissue Table ${table.number} QR code`}
+                        aria-label={labelled(t.reissue_qr)}
                         onClick={() => setConfirm({ kind: 'reissue', table })}
                     >
                         <RotateCcw className="size-4" aria-hidden />
                     </Button>
 
-                    <Tooltip content={retireBlocked ?? 'Retire this table'}>
+                    <Tooltip content={retireBlocked ?? t.retire_hint}>
                         <span tabIndex={retireBlocked ? 0 : -1}>
                             <Button
                                 type="button"
                                 size="sm"
                                 variant="ghost"
                                 disabled={retireBlocked !== null}
-                                aria-label={`Retire Table ${table.number}`}
+                                aria-label={labelled(t.retire_label)}
                                 onClick={() =>
                                     setConfirm({ kind: 'retire', table })
                                 }
@@ -734,22 +748,26 @@ function TablesList({ tables }: { tables: Table[] }) {
 
     return (
         <Panel
-            title="Tables & QR codes"
-            description={`${tables.length} tables · ${tables.length} printed`}
+            title={t.tables}
+            description={
+                tables.length === 1
+                    ? t.tables_summary_one
+                    : fill(t.tables_summary_other, { count: tables.length })
+            }
             aside={
                 <Button asChild variant="outline" size="sm">
                     <a href={QR_SHEET} target="_blank" rel="noopener">
                         <Printer className="size-4" aria-hidden />
-                        Print all QR codes
+                        {t.print_all}
                     </a>
                 </Button>
             }
         >
             <DataTable
                 columns={[
-                    { key: 'number', label: 'Table' },
-                    { key: 'seats', label: 'Seats' },
-                    { key: 'sort', label: 'Order' },
+                    { key: 'number', label: t.col_table },
+                    { key: 'seats', label: t.col_seats },
+                    { key: 'sort', label: t.col_order },
                     { key: 'actions', label: '' },
                 ]}
                 rows={rows}
@@ -758,7 +776,7 @@ function TablesList({ tables }: { tables: Table[] }) {
             <div className="mt-4 flex flex-wrap items-end gap-3">
                 <Field
                     id="new-table-number"
-                    label="New table"
+                    label={t.new_table}
                     error={errors.number}
                 >
                     <Input
@@ -772,7 +790,11 @@ function TablesList({ tables }: { tables: Table[] }) {
                     />
                 </Field>
 
-                <Field id="new-table-seats" label="Seats" error={errors.seats}>
+                <Field
+                    id="new-table-seats"
+                    label={t.seats}
+                    error={errors.seats}
+                >
                     <Input
                         id="new-table-seats"
                         type="number"
@@ -796,7 +818,7 @@ function TablesList({ tables }: { tables: Table[] }) {
                     disabled={adding.number.trim() === ''}
                     onClick={add}
                 >
-                    Add table
+                    {t.add_table}
                 </Button>
             </div>
 
@@ -808,15 +830,16 @@ function TablesList({ tables }: { tables: Table[] }) {
                             setConfirm(null);
                         }
                     }}
-                    title={
+                    title={fill(
                         confirm.kind === 'reissue'
-                            ? `Reissue Table ${confirm.table.number}’s code?`
-                            : `Retire Table ${confirm.table.number}?`
-                    }
+                            ? t.reissue_title
+                            : t.retire_title,
+                        { table: confirm.table.number },
+                    )}
                     description={
                         confirm.kind === 'reissue'
-                            ? 'The sticker on the table stops working immediately, and anyone seated with it is signed out. Print the new card and replace the sticker.'
-                            : 'It leaves the floor, the QR sheet and the table picker. Its past orders stay in your reports.'
+                            ? t.reissue_body
+                            : t.retire_body
                     }
                 >
                     <div className="flex gap-3">
@@ -827,7 +850,7 @@ function TablesList({ tables }: { tables: Table[] }) {
                             disabled={busy !== null}
                             onClick={() => setConfirm(null)}
                         >
-                            Cancel
+                            {t.cancel}
                         </Button>
                         <Button
                             type="button"
@@ -837,8 +860,8 @@ function TablesList({ tables }: { tables: Table[] }) {
                             onClick={confirmAction}
                         >
                             {confirm.kind === 'reissue'
-                                ? 'Reissue code'
-                                : 'Retire table'}
+                                ? t.reissue_code
+                                : t.retire_table}
                         </Button>
                     </div>
                 </ResponsiveOverlay>
@@ -853,9 +876,13 @@ export default function RestaurantSettings({
     tables,
     options,
 }: Props) {
+    const {
+        staff: { pages },
+    } = useI18n();
+
     return (
         <>
-            <Head title="Restaurant" />
+            <Head title={pages.restaurant} />
 
             <div className="flex flex-col gap-4">
                 <DetailsForm restaurant={restaurant} options={options} />

@@ -97,6 +97,7 @@ return [
         'number_format' => 'Use letters, numbers, spaces or dashes.',
         'has_guests' => 'Table :table has guests right now. Free it first.',
         'unpaid_bill' => 'Table :table still has an unpaid bill.',
+        'number_retired' => 'A retired table uses that number. Add it again from "New table" to bring it back.',
     ],
 
     'restaurant' => [
@@ -105,6 +106,7 @@ return [
         'locale_unavailable' => 'That language is not available yet.',
         'default_locale' => 'The default language must be one of the languages you offer.',
         'service_charge_max' => 'A service charge above 30% is almost certainly a typo.',
+        'closes_after_opens' => 'Closing time must be after opening time.',
     ],
 
     'staff' => [
@@ -123,5 +125,10 @@ return [
     'settings' => [
         'profile_updated' => 'Profile updated.',
         'password_updated' => 'Password updated.',
+    ],
+
+    'permissions' => [
+        'admin_keeps_config' => 'The admin role always keeps system config, so nobody is locked out.',
+        'own_role' => 'You cannot remove a capability from your own role.',
     ],
 ];
