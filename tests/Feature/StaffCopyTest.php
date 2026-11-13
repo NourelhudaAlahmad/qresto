@@ -16,7 +16,6 @@ use Symfony\Component\Finder\Finder;
 $notYetMigrated = [
     'staff/admin/restaurant.tsx',
     'staff/admin/system.tsx',
-    'staff/manager/overview.tsx',
 ];
 
 /**
