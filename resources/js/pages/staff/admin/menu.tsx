@@ -22,6 +22,10 @@ import { Switch } from '@/components/qresto/switch';
 import { Tag } from '@/components/qresto/tag';
 import { Textarea } from '@/components/qresto/textarea';
 import { showToast } from '@/components/qresto/toast';
+import { fill, useI18n } from '@/lib/i18n';
+import type { SharedTranslations } from '@/lib/i18n';
+
+type Copy = SharedTranslations['staff']['admin_menu'];
 
 type Category = { id: number; name: string; dish_count: number };
 
@@ -85,9 +89,6 @@ type Form = {
 type Layout = 'desktop' | 'tablet' | 'phone';
 type Errors = Record<string, string>;
 
-const DIRTY_WARNING =
-    'You have unsaved changes to this dish. Leave without saving?';
-
 /** Desktop ≥1100: three panels. Tablet: editor in a drawer. Phone: screens. */
 function useLayout(): Layout {
     const read = (): Layout => {
@@ -147,7 +148,7 @@ function formFor(dish: Dish | null, categoryId: number): Form {
 }
 
 /** "last saved 18:42 by Yusuf Aziz" */
-export function lastSaved(dish: Dish | null): string | null {
+export function lastSaved(dish: Dish | null, t: Copy): string | null {
     if (!dish?.updated_at) {
         return null;
     }
@@ -157,7 +158,9 @@ export function lastSaved(dish: Dish | null): string | null {
         minute: '2-digit',
     }).format(new Date(dish.updated_at));
 
-    return `Last saved ${time}${dish.updated_by ? ` by ${dish.updated_by}` : ''}`;
+    return dish.updated_by
+        ? fill(t.last_saved_by, { time, editor: dish.updated_by })
+        : fill(t.last_saved, { time });
 }
 
 /**
@@ -168,13 +171,17 @@ export function photoProblem(
     width: number,
     height: number,
     minWidth: number,
+    t: Copy,
 ): string | null {
     if (width < minWidth) {
-        return `This photo is ${width}px wide. Use one at least ${minWidth}px wide.`;
+        return fill(t.photo_too_narrow, {
+            width: `${width}px`,
+            required: `${minWidth}px`,
+        });
     }
 
     if (Math.abs(width / height - 4 / 3) > 0.01) {
-        return 'Use a 4:3 photo, like 1600 × 1200.';
+        return t.photo_ratio;
     }
 
     return null;
@@ -191,6 +198,10 @@ function PanelHeader({
     onBack?: () => void;
     aside?: ReactNode;
 }) {
+    const {
+        staff: { admin_menu: t },
+    } = useI18n();
+
     return (
         <div className="flex min-h-14 items-center gap-2 border-b border-[var(--border-subtle)] px-4 py-2">
             {onBack && (
@@ -198,7 +209,7 @@ function PanelHeader({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    aria-label="Back"
+                    aria-label={t.back}
                     onClick={onBack}
                 >
                     <ArrowLeft className="size-4" aria-hidden />
@@ -228,6 +239,9 @@ function Categories({
     selectedId: number | null;
     onSelect: (id: number) => void;
 }) {
+    const {
+        staff: { admin_menu: t },
+    } = useI18n();
     const [order, setOrder] = useState(categories);
     const [synced, setSynced] = useState(categories);
     const [dragId, setDragId] = useState<number | null>(null);
@@ -251,8 +265,8 @@ function Categories({
                 onSuccess: () =>
                     showToast({
                         type: 'success',
-                        title: 'Menu order saved',
-                        description: 'The guest menu follows this order.',
+                        title: t.order_saved,
+                        description: t.order_saved_body,
                     }),
                 onError: () => setOrder(categories),
             },
@@ -303,7 +317,7 @@ function Categories({
                 onError: (errors) =>
                     showToast({
                         type: 'error',
-                        title: 'Category not added',
+                        title: t.category_not_added,
                         description: Object.values(errors)[0],
                     }),
             },
@@ -311,13 +325,13 @@ function Categories({
     }
 
     return (
-        <nav aria-label="Categories" className="flex flex-col">
+        <nav aria-label={t.categories} className="flex flex-col">
             <div className="flex items-baseline gap-2 px-4 pb-2 pt-4">
                 <h2 className="text-label flex-1 font-semibold text-[var(--text-secondary)]">
-                    Categories
+                    {t.categories}
                 </h2>
                 <span className="text-micro text-[var(--text-tertiary)]">
-                    drag to reorder
+                    {t.drag_hint}
                 </span>
             </div>
 
@@ -376,7 +390,7 @@ function Categories({
                     <div className="flex gap-2">
                         <Input
                             autoFocus
-                            aria-label="New category name"
+                            aria-label={t.new_category_name}
                             value={name}
                             onChange={(event) => setName(event.target.value)}
                             onKeyDown={(event) => {
@@ -390,7 +404,7 @@ function Categories({
                             }}
                         />
                         <Button type="button" size="sm" onClick={add}>
-                            Add
+                            {t.add}
                         </Button>
                     </div>
                 ) : (
@@ -400,7 +414,7 @@ function Categories({
                         className="text-label flex min-h-11 w-full items-center gap-2 rounded-[var(--radius-md)] px-2 font-semibold text-[var(--text-link)] hover:bg-[var(--action-ghost-hover)]"
                     >
                         <Plus className="size-4" aria-hidden />
-                        New category
+                        {t.new_category}
                     </button>
                 )}
             </div>
@@ -417,6 +431,11 @@ function DishTable({
     selectedId: number | 'new' | null;
     onSelect: (id: number) => void;
 }) {
+    const {
+        staff: { admin_menu: t },
+    } = useI18n();
+    const [soldBefore, soldAfter] = t.sold_today.split(':count');
+
     // Availability saves immediately, with an optimistic switch.
     const [optimistic, setOptimistic] = useState<Record<number, boolean>>({});
 
@@ -433,16 +452,19 @@ function DishTable({
                 onSuccess: () =>
                     showToast({
                         type: 'success',
-                        title: available
-                            ? `${dish.name} is back on`
-                            : `${dish.name} is sold out`,
-                        description: 'Guests see it on their next menu load.',
+                        title: fill(available ? t.back_on : t.sold_out, {
+                            dish: dish.name,
+                        }),
+                        description: t.availability_body,
                     }),
                 onError: () =>
                     showToast({
                         type: 'error',
-                        title: 'Not saved',
-                        description: `${dish.name} is still ${dish.available ? 'on' : 'sold out'}.`,
+                        title: t.not_saved,
+                        description: fill(
+                            dish.available ? t.still_on : t.still_sold_out,
+                            { dish: dish.name },
+                        ),
                     }),
                 onFinish: () =>
                     setOptimistic((current) => {
@@ -456,12 +478,7 @@ function DishTable({
     }
 
     if (dishes.length === 0) {
-        return (
-            <EmptyState
-                headline="No dishes here yet"
-                body="Add the first one with New dish."
-            />
-        );
+        return <EmptyState headline={t.no_dishes} body={t.no_dishes_body} />;
     }
 
     return (
@@ -470,16 +487,16 @@ function DishTable({
                 <tr>
                     <th scope="col" className="w-14 p-2" />
                     <th scope="col" className="p-2 text-start font-semibold">
-                        Dish
+                        {t.col_dish}
                     </th>
                     <th scope="col" className="w-24 p-2 text-end font-semibold">
-                        Price
+                        {t.col_price}
                     </th>
                     <th
                         scope="col"
                         className="w-20 p-2 text-center font-semibold"
                     >
-                        On
+                        {t.col_on}
                     </th>
                 </tr>
             </thead>
@@ -524,8 +541,9 @@ function DishTable({
                                     {dish.name}
                                 </button>
                                 <span className="text-micro text-[var(--text-tertiary)]">
-                                    <Numeric>{dish.sold_today}</Numeric> sold
-                                    today
+                                    {soldBefore}
+                                    <Numeric>{dish.sold_today}</Numeric>
+                                    {soldAfter}
                                 </span>
                             </td>
                             <td className="p-2 text-end">
@@ -539,7 +557,9 @@ function DishTable({
                             >
                                 <Switch
                                     checked={available}
-                                    aria-label={`${dish.name} available`}
+                                    aria-label={fill(t.dish_available, {
+                                        dish: dish.name,
+                                    })}
                                     onCheckedChange={(next) =>
                                         toggle(dish, next)
                                     }
@@ -603,6 +623,9 @@ function Editor({
     onSave: () => void;
     onDelete: () => void;
 }) {
+    const {
+        staff: { admin_menu: t },
+    } = useI18n();
     const [preview, setPreview] = useState<string | null>(null);
     const [photoError, setPhotoError] = useState<string | null>(null);
     const [newAllergen, setNewAllergen] = useState('');
@@ -634,6 +657,7 @@ function Editor({
                 image.naturalWidth,
                 image.naturalHeight,
                 photoRules.min_width,
+                t,
             );
 
             setPhotoError(problem);
@@ -648,7 +672,7 @@ function Editor({
             set('photo', file);
         };
 
-        image.onerror = () => setPhotoError('That file is not a photo.');
+        image.onerror = () => setPhotoError(t.not_a_photo);
         image.src = url;
     }
 
@@ -678,7 +702,7 @@ function Editor({
     }
 
     const photo = preview ?? dish?.photo ?? null;
-    const saved = lastSaved(dish);
+    const saved = lastSaved(dish, t);
 
     return (
         <div className="flex flex-col gap-5 p-4">
@@ -686,7 +710,7 @@ function Editor({
             <div
                 role="button"
                 tabIndex={0}
-                aria-label="Drop a photo"
+                aria-label={t.drop_photo}
                 onClick={() => fileInput.current?.click()}
                 onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
@@ -714,11 +738,12 @@ function Editor({
                             className="size-6 text-[var(--text-tertiary)]"
                         />
                         <span className="text-body font-semibold">
-                            Drop a photo
+                            {t.drop_photo}
                         </span>
                         <span className="text-caption px-6 text-[var(--text-tertiary)]">
-                            4:3, at least {photoRules.min_width}px wide. Cropped
-                            square for list rows.
+                            {fill(t.photo_hint, {
+                                width: `${photoRules.min_width}px`,
+                            })}
                         </span>
                     </>
                 )}
@@ -727,7 +752,7 @@ function Editor({
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     className="sr-only"
-                    aria-label="Choose a photo"
+                    aria-label={t.choose_photo}
                     onChange={(event) => choosePhoto(event.target.files?.[0])}
                 />
             </div>
@@ -740,7 +765,7 @@ function Editor({
                 </span>
             )}
 
-            <Field id="dish-name" label="Name" error={errors.name}>
+            <Field id="dish-name" label={t.name} error={errors.name}>
                 <Input
                     id="dish-name"
                     value={form.name}
@@ -750,7 +775,7 @@ function Editor({
 
             <Field
                 id="dish-description"
-                label="Description"
+                label={t.description}
                 error={errors.description}
             >
                 <Textarea
@@ -767,7 +792,7 @@ function Editor({
 
             {/* Price and prep minutes side by side, in mono. */}
             <div className="grid grid-cols-2 gap-3">
-                <Field id="dish-price" label="Price" error={errors.price}>
+                <Field id="dish-price" label={t.price} error={errors.price}>
                     <Input
                         id="dish-price"
                         inputMode="decimal"
@@ -779,7 +804,7 @@ function Editor({
                 </Field>
                 <Field
                     id="dish-prep"
-                    label="Prep minutes"
+                    label={t.prep_minutes}
                     error={errors.prep_minutes}
                 >
                     <Input
@@ -800,7 +825,7 @@ function Editor({
             <div className="grid grid-cols-2 gap-3">
                 <Field
                     id="dish-category"
-                    label="Category"
+                    label={t.category}
                     error={errors.menu_category_id}
                 >
                     <select
@@ -825,13 +850,13 @@ function Editor({
                             set('chef_flag', checked === true)
                         }
                     />
-                    Chef’s pick
+                    {t.chefs_pick}
                 </label>
             </div>
 
             {/* Allergen tags with add and remove. */}
             <section className="flex flex-col gap-2">
-                <span className="text-label font-medium">Contains</span>
+                <span className="text-label font-medium">{t.contains}</span>
                 <div className="flex flex-wrap gap-2">
                     {form.allergens.map((tag) => (
                         <span
@@ -846,7 +871,9 @@ function Editor({
                                 }
                             >
                                 {tag.may_contain
-                                    ? `May contain ${tag.name}`
+                                    ? fill(t.may_contain_tag, {
+                                          allergen: tag.name,
+                                      })
                                     : tag.name}
                             </Tag>
                             <button
@@ -867,11 +894,13 @@ function Editor({
                                     )
                                 }
                             >
-                                {tag.may_contain ? 'contains' : 'may contain'}
+                                {tag.may_contain
+                                    ? t.mark_contains
+                                    : t.mark_may_contain}
                             </button>
                             <button
                                 type="button"
-                                aria-label={`Remove ${tag.name}`}
+                                aria-label={fill(t.remove, { name: tag.name })}
                                 className="touch-target grid size-6 place-items-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--action-ghost-hover)]"
                                 onClick={() =>
                                     set(
@@ -889,9 +918,9 @@ function Editor({
                 </div>
                 <div className="flex gap-2">
                     <Input
-                        aria-label="Add an allergen"
+                        aria-label={t.add_allergen}
                         list="allergen-catalog"
-                        placeholder="Add an allergen"
+                        placeholder={t.add_allergen}
                         value={newAllergen}
                         onChange={(event) => setNewAllergen(event.target.value)}
                         onKeyDown={(event) => {
@@ -912,20 +941,20 @@ function Editor({
                         size="sm"
                         onClick={addAllergen}
                     >
-                        Add
+                        {t.add}
                     </Button>
                 </div>
             </section>
 
             {/* Dietary tags shown on the guest menu. */}
             <section className="flex flex-col gap-2">
-                <span className="text-label font-medium">Dietary tags</span>
+                <span className="text-label font-medium">{t.dietary_tags}</span>
                 <div className="flex flex-wrap gap-2">
                     {form.dietary_tags.map((tag) => (
                         <button
                             key={tag}
                             type="button"
-                            aria-label={`Remove ${tag}`}
+                            aria-label={fill(t.remove, { name: tag })}
                             onClick={() =>
                                 set(
                                     'dietary_tags',
@@ -939,8 +968,8 @@ function Editor({
                         </button>
                     ))}
                     <Input
-                        aria-label="Add a dietary tag"
-                        placeholder="vegan"
+                        aria-label={t.add_dietary_tag}
+                        placeholder={t.dietary_example}
                         className="h-8 w-28"
                         value={newTag}
                         onChange={(event) => setNewTag(event.target.value)}
@@ -965,24 +994,28 @@ function Editor({
             </section>
 
             <OptionRows
-                title="Sizes"
+                title={t.sizes}
+                rowName={t.size}
+                addLabel={t.add_size}
                 rows={form.variants}
                 onChange={(rows) => set('variants', rows as Variant[])}
                 blank={{ label: '', price_delta: '0.00', is_default: false }}
-                flag={{ key: 'is_default', label: 'Default' }}
+                flag={{ key: 'is_default', label: t.default }}
             />
 
             <OptionRows
-                title="Add-ons"
+                title={t.addons}
+                rowName={t.addon}
+                addLabel={t.add_addon}
                 rows={form.addons}
                 onChange={(rows) => set('addons', rows as Addon[])}
                 blank={{ label: '', price_delta: '0.00', is_available: true }}
-                flag={{ key: 'is_available', label: 'Available' }}
+                flag={{ key: 'is_available', label: t.available }}
             />
 
             <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center gap-3 border-t border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 py-3">
                 <span className="text-caption min-w-0 flex-1 text-[var(--text-tertiary)]">
-                    {saved ?? 'Not saved yet'}
+                    {saved ?? t.not_saved_yet}
                 </span>
                 {dish && (
                     <Button
@@ -990,7 +1023,7 @@ function Editor({
                         variant="ghost"
                         size="sm"
                         onClick={onDelete}
-                        aria-label={`Delete ${dish.name}`}
+                        aria-label={fill(t.delete_named, { dish: dish.name })}
                     >
                         <Trash2
                             className="size-4 text-[var(--berry-500)]"
@@ -1004,7 +1037,7 @@ function Editor({
                     loading={saving}
                     onClick={onSave}
                 >
-                    Save
+                    {t.save}
                 </Button>
             </div>
         </div>
@@ -1013,17 +1046,27 @@ function Editor({
 
 function OptionRows({
     title,
+    rowName,
+    addLabel,
     rows,
     onChange,
     blank,
     flag,
 }: {
     title: string;
+    rowName: string;
+    addLabel: string;
     rows: (Variant | Addon)[];
     onChange: (rows: (Variant | Addon)[]) => void;
     blank: Variant | Addon;
     flag: { key: 'is_default' | 'is_available'; label: string };
 }) {
+    const {
+        staff: { admin_menu: t },
+    } = useI18n();
+    const rowCopy = (text: string, index: number) =>
+        fill(text, { section: rowName, number: index + 1 });
+
     const update = (index: number, change: Partial<Variant & Addon>) =>
         onChange(
             rows.map((row, i) => (i === index ? { ...row, ...change } : row)),
@@ -1035,14 +1078,14 @@ function OptionRows({
             {rows.map((row, index) => (
                 <div key={row.id ?? `new-${index}`} className="flex gap-2">
                     <Input
-                        aria-label={`${title} ${index + 1} label`}
+                        aria-label={rowCopy(t.option_label, index)}
                         value={row.label}
                         onChange={(event) =>
                             update(index, { label: event.target.value })
                         }
                     />
                     <Input
-                        aria-label={`${title} ${index + 1} price change`}
+                        aria-label={rowCopy(t.option_price, index)}
                         dir="ltr"
                         className="w-24 font-mono"
                         value={row.price_delta}
@@ -1065,7 +1108,7 @@ function OptionRows({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        aria-label={`Remove ${title} ${index + 1}`}
+                        aria-label={rowCopy(t.option_remove, index)}
                         onClick={() =>
                             onChange(rows.filter((_, i) => i !== index))
                         }
@@ -1080,7 +1123,7 @@ function OptionRows({
                 className="text-label touch-target flex min-h-9 items-center gap-1 self-start font-semibold text-[var(--text-link)]"
             >
                 <Plus className="size-4" aria-hidden />
-                Add {title.toLowerCase().replace(/s$/, '')}
+                {addLabel}
             </button>
         </section>
     );
@@ -1092,6 +1135,9 @@ export default function MenuManagement({
     allergens,
     photoRules,
 }: Props) {
+    const {
+        staff: { admin_menu: t },
+    } = useI18n();
     const layout = useLayout();
 
     const [categoryId, setCategoryId] = useState<number | null>(
@@ -1148,7 +1194,7 @@ export default function MenuManagement({
                 visit.method !== 'get' ||
                 (visit.only?.length ?? 0) > 0;
 
-            if (!isOwnSave && !window.confirm(DIRTY_WARNING)) {
+            if (!isOwnSave && !window.confirm(t.unsaved_warning)) {
                 event.preventDefault();
             }
         });
@@ -1157,10 +1203,10 @@ export default function MenuManagement({
             window.removeEventListener('beforeunload', beforeUnload);
             stop();
         };
-    }, [dirty]);
+    }, [dirty, t.unsaved_warning]);
 
     function guard(): boolean {
-        return !dirty || window.confirm(DIRTY_WARNING);
+        return !dirty || window.confirm(t.unsaved_warning);
     }
 
     function open(id: number | 'new') {
@@ -1225,7 +1271,10 @@ export default function MenuManagement({
                 setDirty(false);
                 setErrors({});
                 setFormState((current) => ({ ...current, photo: null }));
-                showToast({ type: 'success', title: `${form.name} saved` });
+                showToast({
+                    type: 'success',
+                    title: fill(t.saved, { dish: form.name }),
+                });
 
                 // A new dish now has a row in the table; leaving the form
                 // open in "new" mode would make a second Save a duplicate.
@@ -1268,13 +1317,16 @@ export default function MenuManagement({
                 setSelected(null);
                 setDirty(false);
                 setPhonePanel('dishes');
-                showToast({ type: 'success', title: `${dish.name} deleted` });
+                showToast({
+                    type: 'success',
+                    title: fill(t.deleted, { dish: dish.name }),
+                });
             },
             onError: (next) => {
                 setConfirmDelete(false);
                 showToast({
                     type: 'error',
-                    title: 'Not deleted',
+                    title: t.not_deleted,
                     description: next.dish ?? Object.values(next)[0],
                 });
             },
@@ -1283,7 +1335,7 @@ export default function MenuManagement({
 
     const editorOpen = selected !== null;
     const editorTitle =
-        selected === 'new' ? 'New dish' : (dish?.name ?? 'Dish');
+        selected === 'new' ? t.new_dish : (dish?.name ?? t.dish);
 
     const editor = editorOpen ? (
         <Editor
@@ -1312,10 +1364,15 @@ export default function MenuManagement({
     const dishesPanel = (
         <div className="flex min-w-0 flex-col">
             <PanelHeader
-                title={category?.name ?? 'Dishes'}
+                title={category?.name ?? t.dishes}
                 eyebrow={
                     category
-                        ? `${category.dish_count} ${category.dish_count === 1 ? 'dish' : 'dishes'}`
+                        ? fill(
+                              category.dish_count === 1
+                                  ? t.dishes_one
+                                  : t.dishes_other,
+                              { count: category.dish_count },
+                          )
                         : undefined
                 }
                 onBack={
@@ -1332,7 +1389,7 @@ export default function MenuManagement({
                         onClick={() => open('new')}
                     >
                         <Plus className="size-4" aria-hidden />
-                        New dish
+                        {t.new_dish}
                     </Button>
                 }
             />
@@ -1351,7 +1408,7 @@ export default function MenuManagement({
 
     return (
         <>
-            <Head title="Menu" />
+            <Head title={t.head} />
 
             {layout === 'phone' ? (
                 // Phone: three full screens with a back path.
@@ -1387,7 +1444,7 @@ export default function MenuManagement({
                                                 type="button"
                                                 variant="ghost"
                                                 size="sm"
-                                                aria-label="Close editor"
+                                                aria-label={t.close_editor}
                                                 onClick={close}
                                             >
                                                 <X
@@ -1401,8 +1458,8 @@ export default function MenuManagement({
                                 </>
                             ) : (
                                 <EmptyState
-                                    headline="Pick a dish to edit"
-                                    body="Sold-out is the switch in the table; it saves on its own."
+                                    headline={t.pick_dish}
+                                    body={t.pick_dish_body}
                                 />
                             )}
                         </div>
@@ -1432,8 +1489,8 @@ export default function MenuManagement({
                             setConfirmDelete(false);
                         }
                     }}
-                    title={`Delete ${dish.name}?`}
-                    description="It leaves the guest menu. Past orders keep its name and price."
+                    title={fill(t.delete_title, { dish: dish.name })}
+                    description={t.delete_body}
                 >
                     <div className="flex gap-3">
                         <Button
@@ -1442,7 +1499,7 @@ export default function MenuManagement({
                             className="flex-1"
                             onClick={() => setConfirmDelete(false)}
                         >
-                            Keep it
+                            {t.keep}
                         </Button>
                         <Button
                             type="button"
@@ -1450,7 +1507,7 @@ export default function MenuManagement({
                             className="flex-1"
                             onClick={destroy}
                         >
-                            Delete dish
+                            {t.delete_dish}
                         </Button>
                     </div>
                 </ResponsiveOverlay>
