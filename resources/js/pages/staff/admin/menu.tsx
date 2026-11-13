@@ -22,6 +22,7 @@ import { Switch } from '@/components/qresto/switch';
 import { Tag } from '@/components/qresto/tag';
 import { Textarea } from '@/components/qresto/textarea';
 import { showToast } from '@/components/qresto/toast';
+import { activeLocale } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 import type { SharedTranslations } from '@/lib/i18n';
 
@@ -153,9 +154,11 @@ export function lastSaved(dish: Dish | null, t: Copy): string | null {
         return null;
     }
 
-    const time = new Intl.DateTimeFormat('en-GB', {
+    // 24-hour clock in the page language, as everywhere else on staff screens.
+    const time = new Intl.DateTimeFormat(activeLocale(), {
         hour: '2-digit',
         minute: '2-digit',
+        hourCycle: 'h23',
     }).format(new Date(dish.updated_at));
 
     return dish.updated_by
