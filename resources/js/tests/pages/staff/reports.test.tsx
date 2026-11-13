@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import en from '@/i18n/en.json';
 import Reports, { methodLabel } from '@/pages/staff/reports';
 import { expectNoCriticalA11y } from '@/tests/a11y';
 
@@ -49,8 +50,13 @@ const props = {
     ],
 };
 
-beforeEach(() => get.mockReset());
-afterEach(cleanup);
+beforeEach(() => {
+    get.mockReset();
+});
+afterEach(() => {
+    cleanup();
+    document.documentElement.lang = '';
+});
 
 describe('Reports (#32)', () => {
     it('right-aligns every number in mono and left-aligns text', () => {
@@ -95,12 +101,50 @@ describe('Reports (#32)', () => {
     });
 
     it('calls out the peak day', () => {
+        document.documentElement.lang = 'en-GB';
         render(<Reports {...props} />);
 
         expect(document.querySelectorAll('[data-peak]')).toHaveLength(1);
         expect(screen.getByRole('img').getAttribute('aria-label')).toContain(
             'peak on Sat 24 Oct',
         );
+    });
+
+    it('formats dates in the page language', () => {
+        document.documentElement.lang = 'ar';
+        render(<Reports {...props} />);
+
+        const arabicDay = new Intl.DateTimeFormat('ar', {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+            timeZone: 'UTC',
+        }).format(new Date('2026-10-24T00:00:00Z'));
+
+        expect(screen.getByRole('img').getAttribute('aria-label')).toContain(
+            arabicDay,
+        );
+    });
+
+    it('counts covers in the singular and plural', () => {
+        render(
+            <Reports
+                {...props}
+                rows={[{ ...props.rows[0], covers: 1 }]}
+                totals={{ ...props.totals, covers: 38, orders: 1 }}
+            />,
+        );
+
+        const table = screen.getByRole('table');
+
+        expect(table.querySelector('tbody')?.textContent).toContain('1 cover');
+        expect(table.querySelector('tbody')?.textContent).not.toContain(
+            '1 covers',
+        );
+        expect(table.querySelector('tfoot')?.textContent).toContain(
+            '38 covers',
+        );
+        expect(screen.getByText('1 order · 38 covers')).toBeInTheDocument();
     });
 
     it('becomes a card stack below 720px with label–value pairs', () => {
@@ -148,9 +192,11 @@ describe('Reports (#32)', () => {
     });
 
     it('labels payment methods the same way as the CSV and PDF', () => {
-        expect(methodLabel('pos')).toBe('POS');
-        expect(methodLabel('card')).toBe('Card');
-        expect(methodLabel(null)).toBe('');
+        const labels = en.staff.reports.methods;
+
+        expect(methodLabel('pos', labels)).toBe('POS');
+        expect(methodLabel('card', labels)).toBe('Card');
+        expect(methodLabel(null, labels)).toBe('');
     });
 });
 
