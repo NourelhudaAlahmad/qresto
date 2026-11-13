@@ -27,3 +27,6 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Agent worktrees: full copies of the repo, never committed.
+/.claude/worktrees/

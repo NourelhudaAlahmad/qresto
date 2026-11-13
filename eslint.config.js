@@ -114,8 +114,10 @@ export default [
             'resources/js/components/ui/*',
             'resources/js/routes/**',
             'resources/js/wayfinder/**',
-                         'docs/design/vendor/**',
-'docs/design/support.js',
+            'docs/design/vendor/**',
+            'docs/design/support.js',
+            // Agent worktrees hold full copies of the repo.
+            '.claude/**',
         ],
     },
     prettier,

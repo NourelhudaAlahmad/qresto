@@ -1,7 +1,7 @@
 import { fileURLToPath, URL } from 'node:url';
 
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
     plugins: [
@@ -18,9 +18,11 @@ export default defineConfig({
         },
     },
 
-   test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./resources/js/test-setup.ts'],
-},
+    test: {
+        environment: 'jsdom',
+        globals: true,
+        setupFiles: ['./resources/js/test-setup.ts'],
+        // Agent worktrees hold full copies of the repo; never run their tests.
+        exclude: [...configDefaults.exclude, '.claude/**'],
+    },
 });

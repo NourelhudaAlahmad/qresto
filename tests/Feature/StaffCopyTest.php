@@ -9,14 +9,11 @@ use Symfony\Component\Finder\Finder;
  * person reads: JSX text, a text attribute, or a quoted or templated sentence
  * such as a toast. Same shape as LogicalUtilitiesTest.
  *
- * Screens not migrated yet. Each batch of #48 removes its screens; the list
- * must end empty. An entry whose screen is already clean fails, so it cannot
- * be forgotten here.
+ * Every staff screen is migrated (#48), so the list of exceptions is empty and
+ * should stay that way: a new screen starts on useI18n(). An entry whose screen
+ * is already clean fails, so a temporary exception cannot be forgotten here.
  */
-$notYetMigrated = [
-    'staff/admin/restaurant.tsx',
-    'staff/admin/system.tsx',
-];
+$notYetMigrated = [];
 
 /**
  * English a person would read, as [line => text].
@@ -114,6 +111,9 @@ it('keeps hard-coded English out of the staff screens', function () use ($notYet
 
 it('keeps the not-yet-migrated list honest', function () use ($notYetMigrated, $screens) {
     $all = $screens();
+
+    // The guard above covers every screen it finds; make sure it finds them.
+    expect(count($all))->toBeGreaterThan(10);
 
     foreach ($notYetMigrated as $path) {
         // array_key_exists, not toHaveKey: the dot in ".tsx" reads as nesting there.
