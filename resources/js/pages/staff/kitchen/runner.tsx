@@ -6,6 +6,7 @@ import { showToast } from '@/components/qresto/toast';
 import { useLiveData } from '@/hooks/useLiveData';
 import { useNewItemAlert } from '@/hooks/useNewItemAlert';
 import { formatMinutes } from '@/lib/elapsed';
+import { fill, useI18n } from '@/lib/i18n';
 import type { OrderStatus } from '@/types';
 
 type Ticket = {
@@ -29,14 +30,20 @@ type Props = {
  * the runner's one action, Collected, takes a plate from ready to served.
  */
 export default function Runner({ tickets, pollIntervalMs }: Props) {
+    const {
+        staff: { runner: t },
+    } = useI18n();
     const [collected, setCollected] = useState<Set<number>>(new Set());
     const visible = tickets.filter((ticket) => !collected.has(ticket.id));
 
     useLiveData(pollIntervalMs, { only: ['tickets', 'now'] });
 
     useNewItemAlert(tickets, (ticket) => ticket.id, {
-        title: 'Ready to collect',
+        title: t.new_ticket,
     });
+
+    const tableLabel = (ticket: Ticket) =>
+        ticket.table ? fill(t.table, { table: ticket.table }) : t.takeaway;
 
     function collect(ticket: Ticket) {
         setCollected((current) => new Set(current).add(ticket.id));
@@ -51,7 +58,7 @@ export default function Runner({ tickets, pollIntervalMs }: Props) {
                 onSuccess: () =>
                     showToast({
                         type: 'success',
-                        title: `${ticket.code} collected`,
+                        title: fill(t.collected_toast, { code: ticket.code }),
                     }),
                 onError: (errors) => {
                     setCollected((current) => {
@@ -62,7 +69,7 @@ export default function Runner({ tickets, pollIntervalMs }: Props) {
                     });
                     showToast({
                         type: 'error',
-                        title: 'Not collected',
+                        title: t.not_collected,
                         description: errors.order ?? Object.values(errors)[0],
                     });
                 },
@@ -72,26 +79,30 @@ export default function Runner({ tickets, pollIntervalMs }: Props) {
 
     return (
         <>
-            <Head title="Ready to collect" />
+            <Head title={t.head} />
 
             <section
                 data-surface="runner"
-                aria-label="Ready to collect"
+                aria-label={t.head}
                 className="text-body rounded-[var(--radius-xl)] bg-[var(--ink-950)] p-6 text-[var(--ink-25)]"
             >
                 <header className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
                     <h2 className="font-display text-title-1 font-semibold">
-                        Ready to collect
+                        {t.head}
                     </h2>
                     <p className="text-body-lg font-mono text-[var(--ink-400)]">
-                        {visible.length}{' '}
-                        {visible.length === 1 ? 'plate' : 'plates'}
+                        {fill(
+                            visible.length === 1
+                                ? t.plates_one
+                                : t.plates_other,
+                            { count: visible.length },
+                        )}
                     </p>
                 </header>
 
                 {visible.length === 0 ? (
                     <p className="font-display text-title-1 py-24 text-center text-[var(--ink-400)]">
-                        Nothing waiting at the pass.
+                        {t.empty}
                     </p>
                 ) : (
                     // One column, so it reads across a room.
@@ -109,12 +120,8 @@ export default function Runner({ tickets, pollIntervalMs }: Props) {
                                     elapsed={formatMinutes(
                                         ticket.elapsed_minutes,
                                     )}
-                                    table={
-                                        ticket.table
-                                            ? `Table ${ticket.table}`
-                                            : 'Takeaway'
-                                    }
-                                    guest={ticket.guest ?? 'Guest'}
+                                    table={tableLabel(ticket)}
+                                    guest={ticket.guest ?? t.guest}
                                     status={ticket.status as OrderStatus}
                                     items={ticket.lines.map((line) => ({
                                         qty: `${line.qty}×`,
@@ -123,8 +130,11 @@ export default function Runner({ tickets, pollIntervalMs }: Props) {
                                     }))}
                                     paid={false}
                                     total=""
-                                    advanceLabel="Collected"
-                                    advanceAriaLabel={`Collected ${ticket.code} for Table ${ticket.table ?? ''}`.trim()}
+                                    advanceLabel={t.collected}
+                                    advanceAriaLabel={fill(t.collected_aria, {
+                                        code: ticket.code,
+                                        table: tableLabel(ticket),
+                                    })}
                                     onAdvance={() => collect(ticket)}
                                 />
                             </li>

@@ -6,6 +6,7 @@ import type { FormEvent } from 'react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/qresto/button';
 import { Label } from '@/components/qresto/label';
+import { fill, useI18n } from '@/lib/i18n';
 
 type StaffMember = {
     id: number;
@@ -29,6 +30,9 @@ export default function ManagerShiftQr({
     restaurantSlug,
     shiftQrToken = null,
 }: Props) {
+    const {
+        staff: { shift_qr_display: t },
+    } = useI18n();
     const { data, setData, post, processing, errors } =
         useForm<ShiftQrFormData>({
             user_id: '',
@@ -63,7 +67,7 @@ export default function ManagerShiftQr({
 
     return (
         <>
-            <Head title="Staff Shift QR" />
+            <Head title={t.head} />
 
             <main className="bg-surface-page font-ui min-h-screen px-5 py-10 sm:px-8">
                 <div className="mx-auto w-full max-w-3xl">
@@ -72,7 +76,7 @@ export default function ManagerShiftQr({
                         className="text-label text-text-secondary hover:text-text-primary mb-8 inline-flex items-center gap-2"
                     >
                         <ArrowLeft className="size-4" />
-                        Back to dashboard
+                        {t.back}
                     </a>
 
                     <div className="mb-8">
@@ -81,17 +85,16 @@ export default function ManagerShiftQr({
 
                             <span className="font-display text-title-1 text-text-primary font-bold">
                                 <span className="text-text-brand">Q</span>
-                                Resto
+                                {'Resto'}
                             </span>
                         </div>
 
                         <h1 className="font-display text-display-3 text-text-primary">
-                            Staff Shift QR
+                            {t.title}
                         </h1>
 
                         <p className="text-body text-text-secondary mt-3">
-                            Generate a secure, one-time sign-in code for a staff
-                            member at your restaurant.
+                            {t.intro}
                         </p>
                     </div>
 
@@ -102,7 +105,7 @@ export default function ManagerShiftQr({
                         >
                             <div className="grid gap-2">
                                 <Label htmlFor="staff-member">
-                                    Select staff member
+                                    {t.select_label}
                                 </Label>
 
                                 <select
@@ -115,7 +118,7 @@ export default function ManagerShiftQr({
                                     className="border-border-subtle bg-surface-card text-body text-text-primary focus:border-action-primary h-12 w-full rounded-lg border px-4 outline-none"
                                 >
                                     <option value="">
-                                        Choose a staff member
+                                        {t.select_placeholder}
                                     </option>
 
                                     {staff.map((member) => (
@@ -141,7 +144,7 @@ export default function ManagerShiftQr({
                                 className="h-12"
                             >
                                 <QrCode className="size-5" />
-                                Generate Shift QR
+                                {t.generate}
                             </Button>
                         </form>
 
@@ -149,13 +152,15 @@ export default function ManagerShiftQr({
                             <div className="border-border-subtle mt-8 border-t pt-8">
                                 <div className="text-center">
                                     <h2 className="font-display text-title-1 text-text-primary">
-                                        Shift QR ready
+                                        {t.ready}
                                     </h2>
 
                                     <p className="text-body text-text-secondary mt-2">
                                         {selectedStaff
-                                            ? `Code for ${selectedStaff.name}`
-                                            : 'Scan this code to sign in'}
+                                            ? fill(t.code_for, {
+                                                  name: selectedStaff.name,
+                                              })
+                                            : t.scan_to_sign_in}
                                     </p>
                                 </div>
 
@@ -165,25 +170,24 @@ export default function ManagerShiftQr({
                                         size={240}
                                         level="M"
                                         marginSize={2}
-                                        title="QRestO staff shift QR"
+                                        title={t.qr_title}
                                     />
                                 </div>
 
                                 <div className="text-label text-text-secondary mt-6 flex items-center justify-center gap-2">
                                     <Clock3 className="size-4" />
-                                    Valid for 5 minutes
+                                    {t.valid_for}
                                 </div>
 
                                 <p className="text-caption text-text-tertiary mt-3 text-center">
-                                    This code works once only. Keep it visible
-                                    to the intended staff member.
+                                    {t.once_only}
                                 </p>
                             </div>
                         )}
 
                         {staff.length === 0 && (
                             <p className="text-body text-text-secondary mt-5">
-                                No active staff members are available.
+                                {t.no_staff}
                             </p>
                         )}
                     </div>
@@ -192,9 +196,7 @@ export default function ManagerShiftQr({
                         <ShieldCheck className="text-action-primary mt-1 size-5 shrink-0" />
 
                         <p className="text-caption leading-relaxed">
-                            Shift QR codes are restricted to your restaurant.
-                            They expire after five minutes, cannot be reused,
-                            and do not bypass two-factor authentication.
+                            {t.security}
                         </p>
                     </div>
                 </div>
