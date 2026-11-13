@@ -8,7 +8,11 @@ import { showToast } from '@/components/qresto/toast';
 import { Tooltip } from '@/components/qresto/tooltip';
 import { useLiveData } from '@/hooks/useLiveData';
 import { formatAgo } from '@/lib/elapsed';
-import { currencySymbol, formatMinor } from '@/lib/formatMoney';
+import { activeLocale, currencySymbol, formatMinor } from '@/lib/formatMoney';
+import { fill, useI18n } from '@/lib/i18n';
+import type { SharedTranslations } from '@/lib/i18n';
+
+type Copy = SharedTranslations['staff']['admin_system'];
 
 type Cell = { granted: boolean; locked: boolean; reason: string | null };
 
@@ -103,26 +107,40 @@ const HEALTH_TEXT: Record<Health['health'], string> = {
     unknown: 'text-[var(--text-tertiary)]',
 };
 
-/** "just now", "4 min ago", "2h 10m ago", or "never". */
-export function lastSeen(iso: string | null, now: number): string {
+/** "just now", "4 min ago", "2h 10m ago", or the page's word for never. */
+export function lastSeen(
+    iso: string | null,
+    now: number,
+    never: string,
+): string {
     if (iso === null) {
-        return 'never';
+        return never;
     }
 
     return formatAgo(iso, now);
 }
 
 /** What the row says, before "last seen". */
-function statusText(item: Health): string {
+export function statusText(
+    item: Pick<Health, 'health' | 'detail' | 'last_heartbeat_at'>,
+    t: Pick<
+        Copy,
+        | 'operational'
+        | 'degraded'
+        | 'failing'
+        | 'no_heartbeat'
+        | 'stopped_reporting'
+    >,
+): string {
     switch (item.health) {
         case 'operational':
-            return 'operational';
+            return t.operational;
         case 'unknown':
             return item.last_heartbeat_at === null
-                ? 'no heartbeat yet'
-                : 'stopped reporting';
+                ? t.no_heartbeat
+                : t.stopped_reporting;
         default:
-            return item.detail ?? item.health;
+            return item.detail ?? t[item.health];
     }
 }
 
@@ -131,7 +149,7 @@ const MATRIX_GRID =
     'grid grid-cols-[minmax(176px,1.4fr)_repeat(6,62px)] gap-2 px-5';
 
 function auditTime(iso: string): string {
-    return new Intl.DateTimeFormat('en-GB', {
+    return new Intl.DateTimeFormat(activeLocale(), {
         day: 'numeric',
         month: 'short',
         hour: '2-digit',
@@ -166,14 +184,12 @@ function PanelTitle({
  * but a real switch: click to grant or revoke.
  */
 function MatrixCell({
-    roleLabel,
-    capabilityLabel,
+    label,
     cell,
     pending,
     onToggle,
 }: {
-    roleLabel: string;
-    capabilityLabel: string;
+    label: string;
     cell: Cell;
     pending: boolean;
     onToggle: (granted: boolean) => void;
@@ -183,7 +199,7 @@ function MatrixCell({
             type="button"
             role="switch"
             aria-checked={cell.granted}
-            aria-label={`${capabilityLabel} for ${roleLabel}`}
+            aria-label={label}
             aria-disabled={cell.locked || undefined}
             aria-busy={pending || undefined}
             disabled={pending}
@@ -221,6 +237,10 @@ export default function AdminSystem({
     health,
     currencyCode,
 }: Props) {
+    const {
+        staff: { admin_system: t, pages },
+    } = useI18n();
+
     // Optimistic overrides keyed "role:capability"; the server's next
     // matrix replaces them.
     const [overrides, setOverrides] = useState<Record<string, boolean>>({});
@@ -278,8 +298,11 @@ export default function AdminSystem({
                 onSuccess: () =>
                     showToast({
                         type: 'success',
-                        title: `${row.label} ${granted ? 'granted to' : 'removed from'} ${roleLabel}`,
-                        description: 'Lands on their next sign-in.',
+                        title: fill(
+                            granted ? t.granted_toast : t.removed_toast,
+                            { capability: row.label, role: roleLabel },
+                        ),
+                        description: t.next_sign_in,
                     }),
                 onError: (errors) => {
                     setOverrides((current) => {
@@ -291,11 +314,11 @@ export default function AdminSystem({
 
                     showToast({
                         type: 'error',
-                        title: 'Permission not changed',
+                        title: t.not_changed,
                         description:
                             errors.capability ??
                             Object.values(errors)[0] ??
-                            'Please try again.',
+                            t.try_again,
                     });
                 },
                 onFinish: () => setPending(null),
@@ -307,63 +330,69 @@ export default function AdminSystem({
 
     const failedHint =
         failed_payments.count === 0
-            ? 'none this month'
+            ? t.failed_none
             : failed_payments.count === failed_payments.recovered
-              ? 'all recovered at the table'
-              : `${failed_payments.recovered} of ${failed_payments.count} recovered`;
+              ? t.failed_all_recovered
+              : fill(t.failed_recovered, {
+                    recovered: failed_payments.recovered,
+                    count: failed_payments.count,
+                });
 
     const details: [string, ReactNode][] = [
-        ['Name', restaurant.name],
+        [t.name, restaurant.name],
         [
-            'Service charge',
+            t.service_charge,
             <Numeric key="sc" className="font-mono">
                 {restaurant.service_charge_pct}%
             </Numeric>,
         ],
         [
-            'Currency',
+            t.currency,
             <Numeric key="cur" className="font-mono">
                 {restaurant.currency} {currencySymbol(restaurant.currency)}
             </Numeric>,
         ],
-        ['Languages', restaurant.languages.join(' · ')],
+        [t.languages, restaurant.languages.join(' · ')],
         [
-            'Tables · QR codes',
+            t.tables_qr,
             <Numeric key="qr" className="font-mono">
-                {restaurant.tables_count} · {restaurant.tables_count} printed
+                {fill(t.tables_printed, {
+                    count: restaurant.tables_count,
+                    printed: restaurant.tables_count,
+                })}
             </Numeric>,
         ],
     ];
 
     return (
         <>
-            <Head title="System" />
+            <Head title={pages.system} />
 
             <div className="flex flex-col gap-4">
                 <section
-                    aria-label="This month"
+                    aria-label={t.this_month}
                     className="grid grid-cols-1 gap-4 min-[560px]:grid-cols-2 min-[1100px]:grid-cols-[1.5fr_1fr_1fr_1fr]"
                 >
                     <Stat
                         tone="inverse"
                         className="p-5"
-                        label="Month to date"
+                        label={t.month_to_date}
                         value={formatMinor(
                             revenue.net_of_fees_minor,
                             currencyCode,
                             { digits: 0 },
                         )}
-                        hint="net of refunds and gateway fees"
+                        hint={t.net_hint}
                     />
 
                     <Stat
                         className="p-5"
-                        label="Paid in app"
+                        label={t.paid_in_app}
                         value={`${split.app_share}%`}
                         hint={
                             <span
                                 role="progressbar"
-                                aria-label="Paid in app"
+                                aria-label={t.paid_in_app}
                                 aria-valuemin={0}
                                 aria-valuemax={100}
                                 aria-valuenow={split.app_share}
@@ -379,14 +408,17 @@ export default function AdminSystem({
 
                     <Stat
                         className="p-5"
-                        label="Menu items live"
+                        label={t.menu_live}
                         value={String(menu.live_count)}
-                        hint={`${menu.sold_out} sold out · ${menu.scheduled} scheduled`}
+                        hint={fill(t.menu_hint, {
+                            sold_out: menu.sold_out,
+                            scheduled: menu.scheduled,
+                        })}
                     />
 
                     <Stat
                         className="p-5"
-                        label="Failed payments"
+                        label={t.failed_payments}
                         value={String(failed_payments.count)}
                         valueTone={
                             failed_payments.count > 0 ? 'danger' : 'default'
@@ -400,19 +432,17 @@ export default function AdminSystem({
                         <section className="min-w-0 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-card)]">
                             <div className="border-b border-[var(--border-subtle)] px-5 py-4">
                                 <PanelTitle className="">
-                                    Roles &amp; permissions
+                                    {t.roles_permissions}
                                 </PanelTitle>
                                 <p className="text-caption mt-0.5 text-[var(--text-tertiary)]">
-                                    Six roles. A permission granted here appears
-                                    in that role’s sidebar on their next
-                                    sign-in.
+                                    {t.roles_intro}
                                 </p>
                             </div>
 
                             {/* Pinned first column, sideways scroll: never a reflow. */}
                             <div
                                 role="region"
-                                aria-label="Permission matrix"
+                                aria-label={t.matrix}
                                 tabIndex={0}
                                 className="overflow-x-auto"
                             >
@@ -425,7 +455,7 @@ export default function AdminSystem({
                                             role="columnheader"
                                             className="sticky start-0 z-[1] -ms-5 bg-[var(--surface-sunken)] ps-5"
                                         >
-                                            Capability
+                                            {t.capability}
                                         </span>
                                         {roles.map((role) => (
                                             <span
@@ -459,12 +489,14 @@ export default function AdminSystem({
                                                         role="cell"
                                                     >
                                                         <MatrixCell
-                                                            roleLabel={
-                                                                role.label
-                                                            }
-                                                            capabilityLabel={
-                                                                row.label
-                                                            }
+                                                            label={fill(
+                                                                t.cell_label,
+                                                                {
+                                                                    capability:
+                                                                        row.label,
+                                                                    role: role.label,
+                                                                },
+                                                            )}
                                                             cell={cellFor(
                                                                 role.key,
                                                                 row,
@@ -494,12 +526,12 @@ export default function AdminSystem({
 
                         <Panel>
                             <PanelTitle className="mb-3">
-                                Recent changes
+                                {t.recent_changes}
                             </PanelTitle>
 
                             {audits.length === 0 ? (
                                 <p className="text-body text-[var(--text-tertiary)]">
-                                    No permission changes yet.
+                                    {t.no_changes}
                                 </p>
                             ) : (
                                 <ul className="text-body flex flex-col gap-2">
@@ -512,12 +544,16 @@ export default function AdminSystem({
                                                 {audit.actor}
                                             </span>
                                             <span className="flex-1 text-[var(--text-secondary)]">
-                                                {audit.granted
-                                                    ? 'granted'
-                                                    : 'removed'}{' '}
-                                                {audit.capability}{' '}
-                                                {audit.granted ? 'to' : 'from'}{' '}
-                                                {audit.role}
+                                                {fill(
+                                                    audit.granted
+                                                        ? t.audit_granted
+                                                        : t.audit_removed,
+                                                    {
+                                                        capability:
+                                                            audit.capability,
+                                                        role: audit.role,
+                                                    },
+                                                )}
                                             </span>
                                             <Numeric className="text-caption font-mono text-[var(--text-tertiary)]">
                                                 {auditTime(audit.at)}
@@ -531,7 +567,7 @@ export default function AdminSystem({
 
                     <div className="flex min-w-0 flex-col gap-4">
                         <Panel>
-                            <PanelTitle>Restaurant</PanelTitle>
+                            <PanelTitle>{t.restaurant}</PanelTitle>
 
                             <dl className="flex flex-col gap-3">
                                 {details.map(([label, value]) => (
@@ -551,13 +587,13 @@ export default function AdminSystem({
                                 href="/app/settings/restaurant"
                                 className="text-body duration-fast mt-4 flex h-11 w-full items-center justify-center rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--surface-card)] font-semibold transition-colors hover:bg-[var(--ink-50)]"
                             >
-                                Edit details · reprint QR codes
+                                {t.edit_details}
                             </Link>
                         </Panel>
 
                         <Panel>
                             <PanelTitle className="mb-3">
-                                System health
+                                {t.system_health}
                             </PanelTitle>
 
                             <ul className="text-body flex flex-col">
@@ -585,10 +621,7 @@ export default function AdminSystem({
                                             {item.name}
                                         </span>
                                         <Tooltip
-                                            content={
-                                                item.detail ??
-                                                'No detail reported'
-                                            }
+                                            content={item.detail ?? t.no_detail}
                                         >
                                             <span
                                                 tabIndex={0}
@@ -597,14 +630,16 @@ export default function AdminSystem({
                                                 <span
                                                     className={`text-caption font-mono ${HEALTH_TEXT[item.health]}`}
                                                 >
-                                                    {statusText(item)}
+                                                    {statusText(item, t)}
                                                 </span>
                                                 <span className="text-micro text-[var(--text-tertiary)]">
-                                                    last seen{' '}
-                                                    {lastSeen(
-                                                        item.last_heartbeat_at,
-                                                        now,
-                                                    )}
+                                                    {fill(t.last_seen, {
+                                                        time: lastSeen(
+                                                            item.last_heartbeat_at,
+                                                            now,
+                                                            t.never,
+                                                        ),
+                                                    })}
                                                 </span>
                                             </span>
                                         </Tooltip>
@@ -613,7 +648,7 @@ export default function AdminSystem({
 
                                 {health.length === 0 && (
                                     <li className="text-body text-[var(--text-tertiary)]">
-                                        Nothing connected yet.
+                                        {t.nothing_connected}
                                     </li>
                                 )}
                             </ul>

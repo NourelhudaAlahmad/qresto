@@ -50,7 +50,7 @@ class TableRequest extends FormRequest
                         ->exists();
 
                     if ($retired) {
-                        $fail('A retired table uses that number. Add it again from "New table" to bring it back.');
+                        $fail(__('messages.tables.number_retired'));
                     }
                 },
             ],

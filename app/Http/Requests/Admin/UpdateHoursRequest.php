@@ -51,7 +51,7 @@ class UpdateHoursRequest extends FormRequest
                 if ($closes <= $opens) {
                     $validator->errors()->add(
                         "hours.{$index}.closes_at",
-                        'Closing time must be after opening time.',
+                        __('messages.restaurant.closes_after_opens'),
                     );
                 }
             }

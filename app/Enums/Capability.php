@@ -15,16 +15,7 @@ enum Capability: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::SEE_OWN_TABLES => 'See own tables',
-            self::SEE_ALL_ORDERS => 'See all orders',
-            self::CHANGE_ORDER_STATUS => 'Change order status',
-            self::TAKE_PAYMENT => 'Take payment · refund',
-            self::MANAGE_WAITER_ACCOUNTS => 'Manage waiter accounts',
-            self::EDIT_MENU_PRICES => 'Edit menu & prices',
-            self::FINANCIAL_REPORTS => 'Financial reports · export',
-            self::MANAGE_RESTAURANT_CONFIG => 'Restaurant & system config',
-        };
+        return __('staff.admin_system.capabilities.'.$this->value);
     }
 
     public function color(): string

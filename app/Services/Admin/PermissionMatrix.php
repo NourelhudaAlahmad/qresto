@@ -54,7 +54,7 @@ class PermissionMatrix
         $roles = array_map(
             fn (Role $role): array => [
                 'key' => $role->value,
-                'label' => ucfirst($role->value),
+                'label' => $this->roleLabel($role->value),
             ],
             self::ROLE_ORDER,
         );
@@ -128,8 +128,8 @@ class PermissionMatrix
             ->get()
             ->map(fn (PermissionAudit $audit): array => [
                 'id' => (int) $audit->id,
-                'actor' => $audit->actor->name ?? 'System',
-                'role' => ucfirst((string) $audit->role),
+                'actor' => $audit->actor->name ?? __('staff.admin_system.system_actor'),
+                'role' => $this->roleLabel((string) $audit->role),
                 'capability' => Capability::tryFrom((string) $audit->permission)?->label()
                     ?? (string) $audit->permission,
                 'granted' => (bool) $audit->granted,
@@ -141,14 +141,25 @@ class PermissionMatrix
     public function revokeBlockedReason(User $actor, Role $role, Capability $capability): ?string
     {
         if ($role === Role::ADMIN && $capability === Capability::MANAGE_RESTAURANT_CONFIG) {
-            return 'The admin role always keeps system config, so nobody is locked out.';
+            return __('messages.permissions.admin_keeps_config');
         }
 
         if ($actor->hasRole($role->value)) {
-            return 'You cannot remove a capability from your own role.';
+            return __('messages.permissions.own_role');
         }
 
         return null;
+    }
+
+    /**
+     * The short column name the matrix uses ("Admin", not "Super admin"),
+     * in the active language; an unknown role keeps its stored name.
+     */
+    private function roleLabel(string $role): string
+    {
+        return Role::tryFrom($role) === null
+            ? ucfirst($role)
+            : __('staff.admin_system.roles.'.$role);
     }
 
     /**

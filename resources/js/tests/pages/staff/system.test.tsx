@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import AdminSystem, { lastSeen } from '@/pages/staff/admin/system';
+import en from '@/i18n/en.json';
+import AdminSystem, { lastSeen, statusText } from '@/pages/staff/admin/system';
 
 type VisitOptions = {
     onError?: (errors: Record<string, string>) => void;
@@ -136,11 +137,33 @@ afterEach(cleanup);
 describe('lastSeen', () => {
     it('reads like a person would say it', () => {
         const now = Date.parse('2026-10-28T20:00:00Z');
+        const never = en.staff.admin_system.never;
 
-        expect(lastSeen(null, now)).toBe('never');
-        expect(lastSeen('2026-10-28T19:59:40Z', now)).toBe('just now');
-        expect(lastSeen('2026-10-28T19:56:00Z', now)).toBe('4 min ago');
-        expect(lastSeen('2026-10-28T17:50:00Z', now)).toBe('2h 10m ago');
+        expect(lastSeen(null, now, never)).toBe('never');
+        expect(lastSeen('2026-10-28T19:59:40Z', now, never)).toBe('just now');
+        expect(lastSeen('2026-10-28T19:56:00Z', now, never)).toBe('4 min ago');
+        expect(lastSeen('2026-10-28T17:50:00Z', now, never)).toBe('2h 10m ago');
+    });
+});
+
+describe('statusText', () => {
+    const t = en.staff.admin_system;
+    const row = (
+        health: 'operational' | 'degraded' | 'failing' | 'unknown',
+        detail: string | null = null,
+        last_heartbeat_at: string | null = '2026-10-28T19:00:00Z',
+    ) => ({ health, detail, last_heartbeat_at });
+
+    it('says the health in the words it is given', () => {
+        expect(statusText(row('operational'), t)).toBe('operational');
+        expect(statusText(row('unknown', null, null), t)).toBe(
+            'no heartbeat yet',
+        );
+        expect(statusText(row('unknown'), t)).toBe('stopped reporting');
+        expect(statusText(row('failing', 'out of paper'), t)).toBe(
+            'out of paper',
+        );
+        expect(statusText(row('degraded'), t)).toBe('degraded');
     });
 });
 
@@ -266,5 +289,8 @@ describe('Super admin dashboard (#28)', () => {
             'appears in that role’s sidebar on their next sign-in',
         );
         expect(screen.getByText('Yusuf Aziz')).toBeInTheDocument();
+        expect(document.body.textContent).toContain(
+            'granted Financial reports · export to Manager',
+        );
     });
 });
