@@ -1,10 +1,13 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import en from '@/i18n/en.json';
 import MenuManagement, {
     lastSaved,
     photoProblem,
 } from '@/pages/staff/admin/menu';
+
+const copy = en.staff.admin_menu;
 
 const post = vi.fn();
 const put = vi.fn();
@@ -92,6 +95,20 @@ describe('Menu management (#31)', () => {
         expect(screen.getByText('Pick a dish to edit')).toBeInTheDocument();
     });
 
+    it('fills counts into the translated copy', () => {
+        render(<MenuManagement {...props} />);
+        openGrill();
+
+        expect(screen.getByText('2 dishes')).toBeInTheDocument();
+        expect(
+            screen.getAllByText(
+                (_, element) =>
+                    element?.tagName === 'SPAN' &&
+                    element.textContent === '6 sold today',
+            ),
+        ).toHaveLength(2);
+    });
+
     it('saves availability immediately, with no Save press', () => {
         render(<MenuManagement {...props} />);
         openGrill();
@@ -155,16 +172,21 @@ describe('Menu management (#31)', () => {
     });
 
     it('shows who saved last, and when', () => {
-        expect(lastSaved(dish(1, 'x'))).toMatch(
+        expect(lastSaved(dish(1, 'x'), copy)).toMatch(
             /^Last saved \d\d:\d\d by Yusuf Aziz$/,
         );
-        expect(lastSaved(null)).toBeNull();
+        expect(lastSaved(dish(1, 'x', { updated_by: null }), copy)).toMatch(
+            /^Last saved \d\d:\d\d$/,
+        );
+        expect(lastSaved(null, copy)).toBeNull();
     });
 
     it('checks the 4:3, 1200px photo rule before uploading', () => {
-        expect(photoProblem(1600, 1200, 1200)).toBeNull();
-        expect(photoProblem(800, 600, 1200)).toContain('1200px wide');
-        expect(photoProblem(1600, 900, 1200)).toContain('4:3');
+        expect(photoProblem(1600, 1200, 1200, copy)).toBeNull();
+        expect(photoProblem(800, 600, 1200, copy)).toBe(
+            'This photo is 800px wide. Use one at least 1200px wide.',
+        );
+        expect(photoProblem(1600, 900, 1200, copy)).toContain('4:3');
     });
 
     it('closes the editor after creating a dish, so Save cannot duplicate it', () => {
