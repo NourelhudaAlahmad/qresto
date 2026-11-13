@@ -18,7 +18,9 @@ import { StatusPill } from '@/components/qresto/status-pill';
 import { showToast } from '@/components/qresto/toast';
 import { useLiveData } from '@/hooks/useLiveData';
 import { formatMinutes } from '@/lib/elapsed';
-import { formatMinor } from '@/lib/formatMoney';
+import { activeLocale, formatMinor } from '@/lib/formatMoney';
+import { fill, useI18n } from '@/lib/i18n';
+import type { SharedTranslations } from '@/lib/i18n';
 import type { OrderStatus } from '@/types';
 
 type Stats = {
@@ -103,8 +105,16 @@ const ORDER_GRID =
 
 const ageLabel = formatMinutes;
 
-function plural(count: number, one: string, many: string): string {
-    return `${count} ${count === 1 ? one : many}`;
+type RoleCopy = SharedTranslations['staff']['roles'];
+
+/** Pick the `_one` or `_other` form and fill in the count. */
+function plural(
+    count: number,
+    one: string,
+    many: string,
+    replacements: Record<string, string | number> = {},
+): string {
+    return fill(count === 1 ? one : many, { ...replacements, count });
 }
 
 function percentChange(current: number, previous: number): number | null {
@@ -113,14 +123,16 @@ function percentChange(current: number, previous: number): number | null {
         : null;
 }
 
-function tableName(table: Order['table']): string {
+function tableName(table: Order['table'], template: string): string {
     if (table === null || table === '') {
         return '—';
     }
 
     const raw = String(table);
 
-    return /^\d+$/.test(raw) ? `Table ${raw.padStart(2, '0')}` : raw;
+    return /^\d+$/.test(raw)
+        ? fill(template, { table: raw.padStart(2, '0') })
+        : raw;
 }
 
 // "Nadia Rahman" → "Nadia R."
@@ -195,8 +207,12 @@ type FormErrors = Partial<Record<keyof WaiterForm | 'member', string>>;
 
 const FORM_ID = 'staff-member-form';
 
-function roleLabel(role: string): string {
-    return role.charAt(0).toUpperCase() + role.slice(1);
+/** The role in the page's language; an unknown role is shown capitalised. */
+function roleLabel(role: string, roles: RoleCopy): string {
+    return (
+        roles[role as keyof RoleCopy] ??
+        role.charAt(0).toUpperCase() + role.slice(1)
+    );
 }
 
 function WaiterFields({
@@ -212,6 +228,10 @@ function WaiterFields({
     errors: FormErrors;
     onSubmit: (form: WaiterForm) => void;
 }) {
+    const {
+        staff: { overview: t, roles: roleCopy },
+    } = useI18n();
+
     // Mounted fresh on every open (Radix unmounts closed content).
     const [form, setForm] = useState<WaiterForm>(() => ({
         name: editing?.name ?? '',
@@ -240,11 +260,11 @@ function WaiterFields({
         const next: FormErrors = {};
 
         if (form.name.trim() === '') {
-            next.name = 'Enter the full name.';
+            next.name = t.name_required;
         }
 
         if (!editing && !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
-            next.email = 'Enter a work email, like name@albustan.co.';
+            next.email = t.email_invalid;
         }
 
         setLocalErrors(next);
@@ -266,11 +286,11 @@ function WaiterFields({
             className="flex flex-col gap-5"
         >
             <div className="flex flex-col gap-1.5">
-                <Label htmlFor="staff-name">Full name</Label>
+                <Label htmlFor="staff-name">{t.full_name}</Label>
                 <Input
                     id="staff-name"
                     value={form.name}
-                    placeholder="Omar Faruk"
+                    placeholder={t.name_placeholder}
                     autoComplete="off"
                     aria-invalid={shown.name ? true : undefined}
                     onChange={(event) =>
@@ -285,7 +305,7 @@ function WaiterFields({
             </div>
 
             <div className="flex flex-col gap-1.5">
-                <Label htmlFor="staff-email">Work email</Label>
+                <Label htmlFor="staff-email">{t.work_email}</Label>
                 <Input
                     id="staff-email"
                     type="email"
@@ -308,11 +328,11 @@ function WaiterFields({
 
             <div className="flex flex-col gap-1.5">
                 <span className="text-label font-medium text-[var(--text-primary)]">
-                    Role
+                    {t.role}
                 </span>
                 <div
                     role="group"
-                    aria-label="Role"
+                    aria-label={t.role}
                     className="flex flex-wrap gap-2"
                 >
                     {roles.map((role) => (
@@ -322,7 +342,7 @@ function WaiterFields({
                             active={form.role === role}
                             onClick={() => setForm({ ...form, role })}
                         >
-                            {roleLabel(role)}
+                            {roleLabel(role, roleCopy)}
                         </ChipFilter>
                     ))}
                 </div>
@@ -335,17 +355,17 @@ function WaiterFields({
 
             <div className="flex flex-col gap-1.5">
                 <span className="text-label font-medium text-[var(--text-primary)]">
-                    Tables tonight
+                    {t.tables_tonight}
                 </span>
 
                 {tableOptions.length === 0 ? (
                     <p className="text-caption text-[var(--text-tertiary)]">
-                        No tables set up yet.
+                        {t.no_tables_set_up}
                     </p>
                 ) : (
                     <div
                         role="group"
-                        aria-label="Tables tonight"
+                        aria-label={t.tables_tonight}
                         className="grid grid-cols-4 gap-2"
                     >
                         {tableOptions.map((table) => (
@@ -362,7 +382,7 @@ function WaiterFields({
                 )}
 
                 <span className="text-caption text-[var(--text-tertiary)]">
-                    A table taken from someone else moves to this person.
+                    {t.table_moves}
                 </span>
 
                 {shown.tables && (
@@ -382,7 +402,7 @@ function WaiterFields({
                         }
                     />
                     <Label htmlFor="staff-send-invite" className="font-normal">
-                        Send a set-password link now
+                        {t.send_invite}
                     </Label>
                 </div>
             )}
@@ -403,6 +423,9 @@ function MemberMenu({
     onDeactivate: () => void;
     onReactivate: () => void;
 }) {
+    const {
+        staff: { overview: t },
+    } = useI18n();
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -452,7 +475,7 @@ function MemberMenu({
         <div ref={ref} className="relative shrink-0">
             <button
                 type="button"
-                aria-label={`Actions for ${member.name}`}
+                aria-label={fill(t.actions_for, { name: member.name })}
                 aria-haspopup="menu"
                 aria-expanded={open}
                 onClick={() => setOpen((current) => !current)}
@@ -468,12 +491,12 @@ function MemberMenu({
                 >
                     {member.active ? (
                         <>
-                            {item('Edit and reassign tables', onEdit)}
-                            {item('Send set-password link', onInvite)}
-                            {item('Deactivate', onDeactivate, true)}
+                            {item(t.edit_reassign, onEdit)}
+                            {item(t.send_link, onInvite)}
+                            {item(t.deactivate, onDeactivate, true)}
                         </>
                     ) : (
-                        item('Reactivate', onReactivate)
+                        item(t.reactivate, onReactivate)
                     )}
                 </div>
             )}
@@ -494,6 +517,9 @@ export default function ManagerOverview({
     lateMinutes,
     pollIntervalMs,
 }: Props) {
+    const {
+        staff: { overview: t, roles },
+    } = useI18n();
     const [busyOrderId, setBusyOrderId] = useState<number | null>(null);
     const [reassigning, setReassigning] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -506,14 +532,19 @@ export default function ManagerOverview({
 
     useLiveData(pollIntervalMs, { only: LIVE_PROPS });
 
-    const weekday = new Intl.DateTimeFormat('en', { weekday: 'long' }).format(
-        new Date(now),
-    );
+    const weekday = new Intl.DateTimeFormat(activeLocale(), {
+        weekday: 'long',
+    }).format(new Date(now));
 
     const coversChange = percentChange(stats.covers, stats.covers_last_week);
     const salesChange = percentChange(
         stats.net_sales_minor,
         stats.net_sales_last_week_minor,
+    );
+    const openBills = plural(
+        stats.open_bills,
+        t.open_bills_one,
+        t.open_bills_other,
     );
 
     function ageLevel(minutes: number): keyof typeof AGE_COLORS {
@@ -543,17 +574,17 @@ export default function ManagerOverview({
                 onSuccess: () =>
                     showToast({
                         type: 'success',
-                        title: 'Assignment updated',
+                        title: t.assignment_updated,
                         description: order.code,
                     }),
                 onError: (errors) =>
                     showToast({
                         type: 'error',
-                        title: 'Could not reassign',
+                        title: t.reassign_failed,
                         description:
                             errors.assigned_user_id ??
                             errors.order ??
-                            'Please try again.',
+                            t.try_again,
                     }),
                 onFinish: () => setBusyOrderId(null),
             },
@@ -596,12 +627,15 @@ export default function ManagerOverview({
                 setFormErrors({});
                 showToast(
                     editing
-                        ? { type: 'success', title: `${form.name} updated` }
+                        ? {
+                              type: 'success',
+                              title: fill(t.updated, { name: form.name }),
+                          }
                         : {
                               type: 'success',
-                              title: `${form.name} added to tonight`,
+                              title: fill(t.added, { name: form.name }),
                               description: form.send_invite
-                                  ? 'Set-password link sent'
+                                  ? t.link_sent
                                   : undefined,
                           },
                 );
@@ -651,14 +685,14 @@ export default function ManagerOverview({
                     const message =
                         errors.member ??
                         Object.values(errors)[0] ??
-                        'Please try again.';
+                        t.try_again;
 
                     if (onError) {
                         onError(message);
                     } else {
                         showToast({
                             type: 'error',
-                            title: 'That did not go through',
+                            title: t.action_failed,
                             description: message,
                         });
                     }
@@ -670,12 +704,12 @@ export default function ManagerOverview({
     return (
         <div className="flex flex-col gap-6">
             <section
-                aria-label="Tonight's service"
+                aria-label={t.service}
                 className="grid grid-cols-1 gap-4 min-[560px]:grid-cols-2 min-[1100px]:grid-cols-4"
             >
                 <Stat
-                    label="Covers tonight"
-                    value={stats.covers.toLocaleString('en')}
+                    label={t.covers}
+                    value={stats.covers.toLocaleString(activeLocale())}
                     hintTone={
                         coversChange === null
                             ? 'default'
@@ -685,18 +719,18 @@ export default function ManagerOverview({
                     }
                     hint={
                         coversChange === null ? (
-                            'Guests seated tonight'
+                            t.covers_hint
                         ) : (
                             <Trend
                                 change={coversChange}
-                                label={`vs last ${weekday}`}
+                                label={fill(t.vs_last, { weekday })}
                             />
                         )
                     }
                 />
 
                 <Stat
-                    label="Net sales"
+                    label={t.net_sales}
                     value={formatMinor(stats.net_sales_minor, currency, {
                         digits: 0,
                     })}
@@ -705,11 +739,16 @@ export default function ManagerOverview({
                             ? 'negative'
                             : 'default'
                     }
-                    hint={`${formatMinor(stats.avg_per_cover_minor, currency)} average per cover`}
+                    hint={fill(t.avg_per_cover, {
+                        amount: formatMinor(
+                            stats.avg_per_cover_minor,
+                            currency,
+                        ),
+                    })}
                 />
 
                 <Stat
-                    label="Kitchen time, median"
+                    label={t.kitchen_median}
                     value={
                         stats.median_prep_minutes === null
                             ? '—'
@@ -718,25 +757,33 @@ export default function ManagerOverview({
                     hintTone={
                         stats.late_orders_count > 0 ? 'warning' : 'default'
                     }
-                    hint={`${plural(stats.late_orders_count, 'order', 'orders')} over ${lateMinutes} min`}
+                    hint={plural(
+                        stats.late_orders_count,
+                        t.late_one,
+                        t.late_other,
+                        { minutes: lateMinutes },
+                    )}
                 />
 
                 <Stat
-                    label="Unpaid at table"
+                    label={t.unpaid}
                     value={formatMinor(stats.unpaid_total_minor, currency, {
                         digits: 0,
                     })}
-                    hint={`${plural(stats.open_bills, 'open bill', 'open bills')}${
+                    hint={
                         stats.oldest_bill_minutes === null
-                            ? ''
-                            : `, oldest ${ageLabel(stats.oldest_bill_minutes)}`
-                    }`}
+                            ? openBills
+                            : fill(t.oldest_bill, {
+                                  bills: openBills,
+                                  age: ageLabel(stats.oldest_bill_minutes),
+                              })
+                    }
                 />
             </section>
 
             <div className="grid grid-cols-1 items-start gap-4 min-[1100px]:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
                 <Panel
-                    title="All active orders"
+                    title={t.active_orders}
                     aside={
                         <>
                             <Button
@@ -747,7 +794,7 @@ export default function ManagerOverview({
                                 disabled={waiters.length === 0}
                                 onClick={() => setReassigning((on) => !on)}
                             >
-                                {reassigning ? 'Done' : 'Reassign'}
+                                {reassigning ? t.done : t.reassign}
                             </Button>
                         </>
                     }
@@ -755,12 +802,12 @@ export default function ManagerOverview({
                     <div
                         className={`${ORDER_GRID} text-label border-b border-[var(--border-subtle)] bg-[var(--surface-sunken)] py-2 font-semibold text-[var(--text-secondary)]`}
                     >
-                        <span>Order</span>
-                        <span>Table · waiter</span>
-                        <span>Status</span>
-                        <span className="text-end">Total</span>
+                        <span>{t.col_order}</span>
+                        <span>{t.col_table_waiter}</span>
+                        <span>{t.col_status}</span>
+                        <span className="text-end">{t.col_total}</span>
                         <span className="hidden text-end min-[720px]:block">
-                            Age
+                            {t.col_age}
                         </span>
                     </div>
 
@@ -776,14 +823,16 @@ export default function ManagerOverview({
                             </Numeric>
 
                             <span className="text-body min-w-0">
-                                {tableName(order.table)} ·{' '}
+                                {tableName(order.table, t.table)} ·{' '}
                                 {reassigning ? (
                                     <>
                                         <label
                                             className="sr-only"
                                             htmlFor={`waiter-${order.id}`}
                                         >
-                                            Assign waiter for {order.code}
+                                            {fill(t.assign_waiter, {
+                                                code: order.code,
+                                            })}
                                         </label>
                                         <select
                                             id={`waiter-${order.id}`}
@@ -801,7 +850,7 @@ export default function ManagerOverview({
                                         >
                                             {order.assigned_waiter === null && (
                                                 <option value="">
-                                                    Unassigned
+                                                    {t.unassigned}
                                                 </option>
                                             )}
                                             {waiters.map((waiter) => (
@@ -820,7 +869,7 @@ export default function ManagerOverview({
                                             ? shortName(
                                                   order.assigned_waiter.name,
                                               )
-                                            : 'Unassigned'}
+                                            : t.unassigned}
                                     </span>
                                 )}
                             </span>
@@ -847,12 +896,12 @@ export default function ManagerOverview({
                     ))}
 
                     {orders.length === 0 && (
-                        <EmptyState headline="No active orders right now" />
+                        <EmptyState headline={t.no_active_orders} />
                     )}
                 </Panel>
 
                 <Panel
-                    title="Floor team"
+                    title={t.floor_team}
                     aside={
                         <Button
                             type="button"
@@ -861,35 +910,46 @@ export default function ManagerOverview({
                             onClick={() => openDrawer(null)}
                         >
                             <Plus size={15} strokeWidth={2.5} aria-hidden />
-                            Add waiter
+                            {t.add_waiter}
                         </Button>
                     }
                 >
                     {staff.map((member, index) => {
                         const meta = [
-                            member.role_label,
+                            roleLabel(member.role, roles),
                             member.tables.length
-                                ? `${member.tables.length === 1 ? 'table' : 'tables'} ${member.tables.join(', ')}`
-                                : 'no tables',
-                            plural(member.order_count, 'order', 'orders'),
+                                ? fill(
+                                      member.tables.length === 1
+                                          ? t.tables_one
+                                          : t.tables_other,
+                                      { tables: member.tables.join(', ') },
+                                  )
+                                : t.no_tables,
+                            plural(
+                                member.order_count,
+                                t.orders_one,
+                                t.orders_other,
+                            ),
                         ].join(' · ');
 
                         const chip = !member.active
                             ? {
-                                  label: 'Deactivated',
+                                  label: t.deactivated,
                                   className:
                                       'bg-[var(--danger-bg)] text-[var(--danger-fg)]',
                               }
                             : member.on_shift
                               ? {
-                                    label: 'On shift',
+                                    label: t.on_shift,
                                     className:
                                         'bg-[var(--success-bg)] text-[var(--success-fg)]',
                                 }
                               : {
                                     label: member.shift
-                                        ? `Off at ${member.shift.ends_at}`
-                                        : 'Off shift',
+                                        ? fill(t.off_at, {
+                                              time: member.shift.ends_at,
+                                          })
+                                        : t.off_shift,
                                     className:
                                         'bg-[var(--ink-100)] text-[var(--text-tertiary)]',
                                 };
@@ -940,7 +1000,9 @@ export default function ManagerOverview({
                                         memberAction(
                                             member,
                                             'invite',
-                                            `Set-password link sent to ${member.name}`,
+                                            fill(t.link_sent_to, {
+                                                name: member.name,
+                                            }),
                                         )
                                     }
                                     onDeactivate={() => {
@@ -951,7 +1013,9 @@ export default function ManagerOverview({
                                         memberAction(
                                             member,
                                             'reactivate',
-                                            `${member.name} can sign in again`,
+                                            fill(t.reactivated, {
+                                                name: member.name,
+                                            }),
                                         )
                                     }
                                 />
@@ -959,13 +1023,10 @@ export default function ManagerOverview({
                         );
                     })}
 
-                    {staff.length === 0 && (
-                        <EmptyState headline="No floor team yet" />
-                    )}
+                    {staff.length === 0 && <EmptyState headline={t.no_team} />}
 
                     <p className="text-caption px-5 py-3 text-[var(--text-tertiary)]">
-                        Deleting a waiter keeps their order history and releases
-                        their tables to the pool.
+                        {t.delete_note}
                     </p>
                 </Panel>
             </div>
@@ -977,7 +1038,11 @@ export default function ManagerOverview({
                         setDrawerOpen(open);
                     }
                 }}
-                title={editing ? `Edit ${editing.name}` : 'Add a waiter'}
+                title={
+                    editing
+                        ? fill(t.edit_title, { name: editing.name })
+                        : t.add_title
+                }
                 footer={
                     <>
                         <Button
@@ -987,7 +1052,7 @@ export default function ManagerOverview({
                             disabled={saving}
                             onClick={() => setDrawerOpen(false)}
                         >
-                            Cancel
+                            {t.cancel}
                         </Button>
                         <Button
                             type="submit"
@@ -996,7 +1061,7 @@ export default function ManagerOverview({
                             className="flex-1"
                             loading={saving}
                         >
-                            {editing ? 'Save changes' : 'Add to shift'}
+                            {editing ? t.save : t.add_to_shift}
                         </Button>
                     </>
                 }
@@ -1018,8 +1083,10 @@ export default function ManagerOverview({
                             setDeactivating(null);
                         }
                     }}
-                    title={`Deactivate ${deactivating.name}?`}
-                    description="Their order history stays, and their tables go back to the pool. They can no longer sign in until you reactivate them."
+                    title={fill(t.deactivate_title, {
+                        name: deactivating.name,
+                    })}
+                    description={t.deactivate_body}
                 >
                     <div className="flex flex-col gap-3">
                         {deactivateError && (
@@ -1039,7 +1106,7 @@ export default function ManagerOverview({
                                 disabled={busyMemberId !== null}
                                 onClick={() => setDeactivating(null)}
                             >
-                                Keep active
+                                {t.keep_active}
                             </Button>
                             <Button
                                 type="button"
@@ -1050,12 +1117,14 @@ export default function ManagerOverview({
                                     memberAction(
                                         deactivating,
                                         'deactivate',
-                                        `${deactivating.name} deactivated`,
+                                        fill(t.deactivated_toast, {
+                                            name: deactivating.name,
+                                        }),
                                         setDeactivateError,
                                     )
                                 }
                             >
-                                Deactivate
+                                {t.deactivate}
                             </Button>
                         </div>
                     </div>
