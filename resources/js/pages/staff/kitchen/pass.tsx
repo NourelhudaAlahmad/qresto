@@ -40,11 +40,12 @@ type Props = {
     signedInAs?: string;
 };
 
+type PassCopy = ReturnType<typeof useI18n>['staff']['pass'];
+
 /** The next state, read out to screen readers; the button says "Bump". */
-export const BUMP_TO: Record<Ticket['status'], string> = {
-    pending: 'start cooking',
-    preparing: 'mark ready',
-};
+function bumpTo(status: Ticket['status'], t: PassCopy): string {
+    return status === 'pending' ? t.bump_to_pending : t.bump_to_preparing;
+}
 
 /** "4 tickets · 11 items · longest 14 min", over what is on screen. */
 export function aggregates(tickets: Ticket[]): {
@@ -66,8 +67,8 @@ export function aggregates(tickets: Ticket[]): {
     };
 }
 
-function plural(n: number, one: string, many: string): string {
-    return `${n} ${n === 1 ? one : many}`;
+function plural(count: number, one: string, other: string): string {
+    return fill(count === 1 ? one : other, { count });
 }
 
 function readCookie(name: string): string {
@@ -112,7 +113,7 @@ export default function Pass({
     const updatedAgo = useUpdatedAgo(connection.lastSuccessAt);
 
     useNewItemAlert(tickets, (ticket) => ticket.id, {
-        title: 'New ticket',
+        title: t.new_ticket,
     });
 
     // Tell system health (#30) the pass screen is up while it is open.
@@ -134,47 +135,54 @@ export default function Pass({
         return () => window.clearInterval(timer);
     }, [heartbeatIntervalMs]);
 
-    const bump = useCallback((ticket: Ticket) => {
-        if (busy.current) {
-            return;
-        }
+    const bump = useCallback(
+        (ticket: Ticket) => {
+            if (busy.current) {
+                return;
+            }
 
-        busy.current = true;
-        setBumped((current) => new Set(current).add(ticket.id));
+            busy.current = true;
+            setBumped((current) => new Set(current).add(ticket.id));
 
-        router.post(
-            `/app/kds/tickets/${ticket.id}/bump`,
-            {},
-            {
-                preserveScroll: true,
-                preserveState: true,
-                only: ['tickets', 'now'],
-                onSuccess: () =>
-                    showToast({
-                        type: 'success',
-                        title: `${ticket.code} · ${
-                            ticket.status === 'pending' ? 'cooking' : 'ready'
-                        }`,
-                    }),
-                onError: (errors) => {
-                    setBumped((current) => {
-                        const next = new Set(current);
-                        next.delete(ticket.id);
+            router.post(
+                `/app/kds/tickets/${ticket.id}/bump`,
+                {},
+                {
+                    preserveScroll: true,
+                    preserveState: true,
+                    only: ['tickets', 'now'],
+                    onSuccess: () =>
+                        showToast({
+                            type: 'success',
+                            title: fill(
+                                ticket.status === 'pending'
+                                    ? t.bumped_cooking
+                                    : t.bumped_ready,
+                                { code: ticket.code },
+                            ),
+                        }),
+                    onError: (errors) => {
+                        setBumped((current) => {
+                            const next = new Set(current);
+                            next.delete(ticket.id);
 
-                        return next;
-                    });
-                    showToast({
-                        type: 'error',
-                        title: 'Not bumped',
-                        description: errors.order ?? Object.values(errors)[0],
-                    });
+                            return next;
+                        });
+                        showToast({
+                            type: 'error',
+                            title: t.not_bumped,
+                            description:
+                                errors.order ?? Object.values(errors)[0],
+                        });
+                    },
+                    onFinish: () => {
+                        busy.current = false;
+                    },
                 },
-                onFinish: () => {
-                    busy.current = false;
-                },
-            },
-        );
-    }, []);
+            );
+        },
+        [t],
+    );
 
     // Keypad at the pass: 1–9 bumps the nth ticket on screen.
     useEffect(() => {
@@ -207,14 +215,14 @@ export default function Pass({
 
     return (
         <>
-            <Head title="Pass" />
+            <Head title={t.head} />
 
             {/* The design draws the pass as a dark panel inside the staff
                 frame: "Kitchen display · Pass screen" in the topbar. */}
             <section
                 data-surface="pass"
                 data-connection={isDisconnected ? 'offline' : 'live'}
-                aria-label="Pass"
+                aria-label={t.head}
                 className="text-body rounded-[var(--radius-xl)] bg-[var(--ink-950)] p-6 text-[var(--ink-25)]"
             >
                 {/* A frozen board looks exactly like a quiet one; say so from
@@ -230,21 +238,29 @@ export default function Pass({
                 {/* Header: live counts, the longest wait, the bump hint. */}
                 <header className="flex flex-wrap items-center gap-x-4 gap-y-3">
                     <h2 className="font-display text-title-1 font-semibold">
-                        {isDisconnected ? 'Pass · offline' : 'Pass · live'}
+                        {isDisconnected ? t.heading_offline : t.heading_live}
                     </h2>
                     <p
                         data-testid="pass-totals"
                         className="text-body font-mono text-[var(--ink-400)]"
                     >
-                        {plural(totals.tickets, 'ticket', 'tickets')} ·{' '}
-                        {plural(totals.items, 'item', 'items')} · longest{' '}
-                        {formatMinutes(totals.longest)}
+                        {[
+                            plural(
+                                totals.tickets,
+                                t.tickets_one,
+                                t.tickets_other,
+                            ),
+                            plural(totals.items, t.items_one, t.items_other),
+                            fill(t.longest, {
+                                time: formatMinutes(totals.longest),
+                            }),
+                        ].join(' · ')}
                     </p>
 
                     <span className="flex-1" />
 
                     <p className="text-body rounded-[var(--radius-pill)] border border-[var(--alpha-paper-08)] px-4 py-2 font-semibold">
-                        Bump with the touch bar or the keypad
+                        {t.bump_hint}
                     </p>
 
                     {/* Shared equipment: who is signed in, and a way out that a
@@ -300,7 +316,10 @@ export default function Pass({
                 </header>
 
                 {/* Station filter: one station's work only. Touch-sized. */}
-                <nav aria-label="Station" className="mt-4 flex flex-wrap gap-2">
+                <nav
+                    aria-label={t.stations}
+                    className="mt-4 flex flex-wrap gap-2"
+                >
                     {[null, ...stations].map((value) => {
                         const active = station === value;
 
@@ -325,7 +344,7 @@ export default function Pass({
                                         : 'border-[var(--alpha-paper-08)] bg-transparent text-[var(--ink-300)]'
                                 }`}
                             >
-                                {value ?? 'All'}
+                                {value ?? t.all_stations}
                             </button>
                         );
                     })}
@@ -334,7 +353,7 @@ export default function Pass({
                 <div className="mt-5">
                     {visible.length === 0 ? (
                         <p className="font-display text-title-1 py-24 text-center text-[var(--ink-400)]">
-                            Nothing on the pass.
+                            {t.empty}
                         </p>
                     ) : (
                         // Two across on a tablet, three at 1180, four on a
@@ -359,10 +378,12 @@ export default function Pass({
                                         )}
                                         table={
                                             ticket.table
-                                                ? `Table ${ticket.table}`
-                                                : 'Takeaway'
+                                                ? fill(t.table, {
+                                                      table: ticket.table,
+                                                  })
+                                                : t.takeaway
                                         }
-                                        guest={ticket.guest ?? 'Guest'}
+                                        guest={ticket.guest ?? t.guest}
                                         status={ticket.status as OrderStatus}
                                         items={ticket.lines.map((line) => ({
                                             qty: `${line.qty}×`,
@@ -371,12 +392,17 @@ export default function Pass({
                                         }))}
                                         paid={false}
                                         total=""
-                                        advanceLabel="Bump"
-                                        advanceAriaLabel={`Bump ${ticket.code}: ${BUMP_TO[ticket.status]}${
+                                        advanceLabel={t.bump}
+                                        advanceAriaLabel={fill(
                                             index < 9
-                                                ? ` (key ${index + 1})`
-                                                : ''
-                                        }`}
+                                                ? t.bump_aria_key
+                                                : t.bump_aria,
+                                            {
+                                                code: ticket.code,
+                                                next: bumpTo(ticket.status, t),
+                                                key: index + 1,
+                                            },
+                                        )}
                                         onAdvance={() => bump(ticket)}
                                     />
                                 </li>
@@ -386,18 +412,9 @@ export default function Pass({
                 </div>
 
                 <footer className="text-body mt-6 flex flex-col gap-1 border-t border-[var(--alpha-paper-08)] pt-4 text-[var(--ink-400)]">
-                    <p>
-                        Guest notes are saffron here too — the only colour on a
-                        black screen, so it cannot be missed across the kitchen.
-                    </p>
-                    <p>
-                        Runner view is this grid filtered to Ready, one column,
-                        60px type.
-                    </p>
-                    <p>
-                        Cashier view is the same tickets with the bill total and
-                        a Take payment action.
-                    </p>
+                    <p>{t.footer_notes}</p>
+                    <p>{t.footer_runner}</p>
+                    <p>{t.footer_cashier}</p>
                 </footer>
             </section>
         </>
