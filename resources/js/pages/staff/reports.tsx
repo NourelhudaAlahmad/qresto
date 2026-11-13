@@ -9,7 +9,11 @@ import { ChipFilter } from '@/components/qresto/chip-filter';
 import { EmptyState } from '@/components/qresto/empty-state';
 import { Input } from '@/components/qresto/input';
 import { Stat } from '@/components/qresto/stat';
-import { formatMinor } from '@/lib/formatMoney';
+import { activeLocale, formatMinor } from '@/lib/formatMoney';
+import type { SharedTranslations } from '@/lib/i18n';
+import { fill, useI18n } from '@/lib/i18n';
+
+type ReportsCopy = SharedTranslations['staff']['reports'];
 
 type Preset = 'today' | 'week' | '3weeks' | 'month' | 'custom';
 
@@ -39,11 +43,14 @@ type Props = {
     series: { date: string; net_minor: number; peak: boolean }[];
 };
 
-const PRESETS: { value: Exclude<Preset, 'custom'>; label: string }[] = [
-    { value: 'today', label: 'Today' },
-    { value: 'week', label: 'This week' },
-    { value: '3weeks', label: '3 weeks' },
-    { value: 'month', label: 'This month' },
+const PRESETS: {
+    value: Exclude<Preset, 'custom'>;
+    label: keyof ReportsCopy;
+}[] = [
+    { value: 'today', label: 'today' },
+    { value: 'week', label: 'week' },
+    { value: '3weeks', label: 'three_weeks' },
+    { value: 'month', label: 'month' },
 ];
 
 // Numbers: right-aligned mono with tabular figures. Text: left, UI type.
@@ -51,7 +58,7 @@ const NUM = 'text-end font-mono tabular-nums';
 const TEXT = 'text-start';
 
 function day(date: string, style: 'long' | 'short' = 'long'): string {
-    return new Intl.DateTimeFormat('en-GB', {
+    return new Intl.DateTimeFormat(activeLocale(), {
         weekday: 'short',
         day: 'numeric',
         ...(style === 'long' ? { month: 'short' } : {}),
@@ -59,16 +66,17 @@ function day(date: string, style: 'long' | 'short' = 'long'): string {
     }).format(new Date(`${date}T00:00:00Z`));
 }
 
-/** Same labels as the CSV and PDF. */
-export function methodLabel(method: string | null): string {
-    const labels: Record<string, string> = {
-        pos: 'POS',
-        card: 'Card',
-        wallet: 'Wallet',
-        cash: 'Cash',
-    };
-
+/** Payment method in the page language; in English, the CSV and PDF labels. */
+export function methodLabel(
+    method: string | null,
+    labels: Record<string, string>,
+): string {
     return method ? (labels[method] ?? method) : '';
+}
+
+/** "1 cover" or ":count covers", picked by count. */
+function countLabel(one: string, other: string, count: number): string {
+    return count === 1 ? one : fill(other, { count });
 }
 
 /** "Nadia Rahman" → "Nadia R." */
@@ -98,16 +106,19 @@ function SalesChart({
     series: Props['series'];
     currency: string;
 }) {
+    const {
+        staff: { reports: t },
+    } = useI18n();
     const max = Math.max(1, ...series.map((point) => point.net_minor));
     const peak = series.find((point) => point.peak);
 
     return (
         <figure className="min-w-0">
             <figcaption className="text-label mb-3 flex flex-wrap items-baseline gap-x-3 font-semibold text-[var(--text-secondary)]">
-                Sales by day
+                {t.sales_by_day}
                 {peak && (
                     <span className="text-caption font-normal text-[var(--text-tertiary)]">
-                        Peak {day(peak.date)} ·{' '}
+                        {fill(t.peak_on, { day: day(peak.date) })} ·{' '}
                         <Numeric className="font-mono">
                             {formatMinor(peak.net_minor, currency)}
                         </Numeric>
@@ -117,7 +128,11 @@ function SalesChart({
 
             <div
                 role="img"
-                aria-label={`Sales by day${peak ? `, peak on ${day(peak.date)}` : ''}`}
+                aria-label={
+                    peak
+                        ? fill(t.sales_by_day_peak, { day: day(peak.date) })
+                        : t.sales_by_day
+                }
                 className="flex h-40 items-end gap-[3px]"
             >
                 {series.map((point) => (
@@ -129,7 +144,7 @@ function SalesChart({
                     >
                         {point.peak && (
                             <span className="text-micro absolute -top-5 start-1/2 -translate-x-1/2 whitespace-nowrap font-semibold text-[var(--clay-600)] rtl:translate-x-1/2">
-                                Peak
+                                {t.peak}
                             </span>
                         )}
                         <span
@@ -163,6 +178,13 @@ export default function Reports({
     totals,
     series,
 }: Props) {
+    const {
+        staff: { reports: t },
+    } = useI18n();
+    const covers = (count: number) =>
+        countLabel(t.covers_one, t.covers_other, count);
+    const orders = (count: number) =>
+        countLabel(t.orders_one, t.orders_other, count);
     const [start, setStart] = useState(range.start);
     const [end, setEnd] = useState(range.end);
     const [error, setError] = useState<string | null>(null);
@@ -178,7 +200,7 @@ export default function Reports({
 
     function applyCustom() {
         if (end < start) {
-            setError('The end date must be on or after the start date.');
+            setError(t.end_before_start);
 
             return;
         }
@@ -190,17 +212,17 @@ export default function Reports({
 
     return (
         <>
-            <Head title="Reports" />
+            <Head title={t.head} />
 
             <div className="flex flex-col gap-4">
                 {/* Filter bar: presets, custom range, CSV and PDF export. */}
                 <section
-                    aria-label="Filters"
+                    aria-label={t.filters}
                     className="flex flex-wrap items-end gap-3 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-[var(--shadow-rest)]"
                 >
                     <div
                         role="group"
-                        aria-label="Range"
+                        aria-label={t.range}
                         className="flex flex-wrap gap-2"
                     >
                         {PRESETS.map((preset) => (
@@ -210,14 +232,14 @@ export default function Reports({
                                 active={range.preset === preset.value}
                                 onClick={() => load({ preset: preset.value })}
                             >
-                                {preset.label}
+                                {t[preset.label] as string}
                             </ChipFilter>
                         ))}
                     </div>
 
                     <div className="flex flex-wrap items-end gap-2">
                         <label className="text-caption flex flex-col gap-1 text-[var(--text-tertiary)]">
-                            From
+                            {t.from}
                             <Input
                                 type="date"
                                 dir="ltr"
@@ -229,7 +251,7 @@ export default function Reports({
                             />
                         </label>
                         <label className="text-caption flex flex-col gap-1 text-[var(--text-tertiary)]">
-                            To
+                            {t.to}
                             <Input
                                 type="date"
                                 dir="ltr"
@@ -248,7 +270,7 @@ export default function Reports({
                             }
                             onClick={applyCustom}
                         >
-                            Apply
+                            {t.apply}
                         </Button>
                     </div>
 
@@ -258,13 +280,13 @@ export default function Reports({
                         <Button asChild variant="outline">
                             <a href={`/app/reports/export.csv?${qs}`}>
                                 <Download className="size-4" aria-hidden />
-                                CSV
+                                {t.export_csv}
                             </a>
                         </Button>
                         <Button asChild variant="outline">
                             <a href={`/app/reports/export.pdf?${qs}`}>
                                 <FileText className="size-4" aria-hidden />
-                                PDF
+                                {t.export_pdf}
                             </a>
                         </Button>
                     </div>
@@ -286,20 +308,20 @@ export default function Reports({
 
                     {/* Three totals to anchor. */}
                     <section
-                        aria-label="Totals"
+                        aria-label={t.totals}
                         className="grid grid-cols-1 gap-3 min-[560px]:grid-cols-3 min-[1100px]:grid-cols-1"
                     >
                         <Stat
-                            label="Gross"
+                            label={t.gross}
                             value={formatMinor(totals.gross_minor, currency)}
-                            hint={`${totals.orders} orders · ${totals.covers} covers`}
+                            hint={`${orders(totals.orders)} · ${covers(totals.covers)}`}
                         />
                         <Stat
-                            label="Service charge"
+                            label={t.service_charge}
                             value={formatMinor(totals.service_minor, currency)}
                         />
                         <Stat
-                            label="Refunded"
+                            label={t.refunded}
                             valueTone={
                                 totals.refunds_minor > 0 ? 'danger' : 'default'
                             }
@@ -313,13 +335,13 @@ export default function Reports({
                 </div>
 
                 <section
-                    aria-label="Sales by day and waiter"
+                    aria-label={t.sales_table}
                     className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-rest)]"
                 >
                     {rows.length === 0 ? (
                         <EmptyState
-                            headline="No settled sales in this range"
-                            body="Pick another range above."
+                            headline={t.empty_headline}
+                            body={t.empty_body}
                         />
                     ) : (
                         <>
@@ -332,37 +354,37 @@ export default function Reports({
                                                 scope="col"
                                                 className={`p-3 font-semibold ${TEXT}`}
                                             >
-                                                Date
+                                                {t.date}
                                             </th>
                                             <th
                                                 scope="col"
                                                 className={`p-3 font-semibold ${TEXT}`}
                                             >
-                                                Waiter · covers
+                                                {t.waiter_covers}
                                             </th>
                                             <th
                                                 scope="col"
                                                 className={`p-3 font-semibold ${NUM}`}
                                             >
-                                                Orders
+                                                {t.orders}
                                             </th>
                                             <th
                                                 scope="col"
                                                 className={`p-3 font-semibold ${NUM}`}
                                             >
-                                                Net
+                                                {t.net}
                                             </th>
                                             <th
                                                 scope="col"
                                                 className={`p-3 font-semibold ${NUM}`}
                                             >
-                                                Tips
+                                                {t.tips}
                                             </th>
                                             <th
                                                 scope="col"
                                                 className={`p-3 font-semibold ${TEXT}`}
                                             >
-                                                Method
+                                                {t.method}
                                             </th>
                                         </tr>
                                     </thead>
@@ -378,11 +400,7 @@ export default function Reports({
                                                 <td className={`p-3 ${TEXT}`}>
                                                     {shortName(row.waiter)}{' '}
                                                     <span className="text-[var(--text-tertiary)]">
-                                                        ·{' '}
-                                                        <Numeric>
-                                                            {row.covers}
-                                                        </Numeric>{' '}
-                                                        covers
+                                                        · {covers(row.covers)}
                                                     </span>
                                                 </td>
                                                 <td className={`p-3 ${NUM}`}>
@@ -405,6 +423,7 @@ export default function Reports({
                                                         <Badge>
                                                             {methodLabel(
                                                                 row.method,
+                                                                t.methods,
                                                             )}
                                                         </Badge>
                                                     )}
@@ -418,15 +437,12 @@ export default function Reports({
                                                 scope="row"
                                                 className={`p-3 ${TEXT}`}
                                             >
-                                                Total
+                                                {t.total}
                                             </th>
                                             <td
                                                 className={`p-3 ${TEXT} font-mono`}
                                             >
-                                                <Numeric>
-                                                    {totals.covers}
-                                                </Numeric>{' '}
-                                                covers
+                                                {covers(totals.covers)}
                                             </td>
                                             <td className={`p-3 ${NUM}`}>
                                                 {totals.orders}
@@ -461,26 +477,26 @@ export default function Reports({
                                     >
                                         <dl className="text-body grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1">
                                             <dt className="text-[var(--text-tertiary)]">
-                                                Date
+                                                {t.date}
                                             </dt>
                                             <dd className={TEXT}>
                                                 {day(row.date)}
                                             </dd>
                                             <dt className="text-[var(--text-tertiary)]">
-                                                Waiter
+                                                {t.waiter}
                                             </dt>
                                             <dd className={TEXT}>
-                                                {row.waiter} · {row.covers}{' '}
-                                                covers
+                                                {row.waiter} ·{' '}
+                                                {covers(row.covers)}
                                             </dd>
                                             <dt className="text-[var(--text-tertiary)]">
-                                                Orders
+                                                {t.orders}
                                             </dt>
                                             <dd className={NUM}>
                                                 {row.orders}
                                             </dd>
                                             <dt className="text-[var(--text-tertiary)]">
-                                                Net
+                                                {t.net}
                                             </dt>
                                             <dd className={NUM}>
                                                 {formatMinor(
@@ -489,7 +505,7 @@ export default function Reports({
                                                 )}
                                             </dd>
                                             <dt className="text-[var(--text-tertiary)]">
-                                                Tips
+                                                {t.tips}
                                             </dt>
                                             <dd className={NUM}>
                                                 {formatMinor(
@@ -498,24 +514,27 @@ export default function Reports({
                                                 )}
                                             </dd>
                                             <dt className="text-[var(--text-tertiary)]">
-                                                Method
+                                                {t.method}
                                             </dt>
                                             <dd className={TEXT}>
-                                                {methodLabel(row.method) || '—'}
+                                                {methodLabel(
+                                                    row.method,
+                                                    t.methods,
+                                                ) || '—'}
                                             </dd>
                                         </dl>
                                     </li>
                                 ))}
                                 <li className="sticky bottom-0 bg-[var(--surface-card)] p-4 font-bold">
                                     <dl className="text-body grid grid-cols-[auto_minmax(0,1fr)] gap-x-4">
-                                        <dt>Total net</dt>
+                                        <dt>{t.total_net}</dt>
                                         <dd className={NUM}>
                                             {formatMinor(
                                                 totals.net_minor,
                                                 currency,
                                             )}
                                         </dd>
-                                        <dt>Total tips</dt>
+                                        <dt>{t.total_tips}</dt>
                                         <dd className={NUM}>
                                             {formatMinor(
                                                 totals.tips_minor,
