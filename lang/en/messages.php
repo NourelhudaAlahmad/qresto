@@ -67,6 +67,7 @@ return [
         'cannot_void' => 'This order cannot be voided.',
         'reassign_waiter' => 'Select an active waiter from this restaurant.',
         'reassign_active_only' => 'Only active orders can be reassigned.',
+        'reassigned' => 'Order reassigned successfully.',
     ],
 
     'menu' => [

@@ -487,6 +487,6 @@ class ManagerDashboardController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Order reassigned successfully.');
+        return back()->with('success', __('messages.orders.reassigned'));
     }
 }
