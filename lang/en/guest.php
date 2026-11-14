@@ -61,6 +61,8 @@ return [
         'still_owes' => 'Table still owes',
         'all_paid' => 'Everything is paid',
         'this_round' => 'This round',
+        'open_round' => 'Open this round',
+        'round_items' => 'What was in :code',
     ],
 
     'table' => [

@@ -113,8 +113,8 @@ it('04 echoes the guest note in saffron on the printed receipt', function () {
     expect($html)->toMatch('/data-guest-note[^>]*>\s*no tahini|text-\[var\(--warning-fg\)\][^>]*data-guest-note[^>]*>\s*no tahini/');
 });
 
-it('04 echoes the guest note in saffron in the cart and on the waiter card', function () {
-    foreach (['js/pages/guest/cart.tsx', 'js/pages/staff/floor.tsx'] as $file) {
+it('04 echoes the guest note in saffron in the cart, on the guest status screen and on the waiter card', function () {
+    foreach (['js/pages/guest/cart.tsx', 'js/pages/guest/status.tsx', 'js/pages/staff/floor.tsx'] as $file) {
         $source = file_get_contents(resource_path($file));
 
         preg_match_all('/\.note\s*&&\s*\(\s*<[^>]*className=["{`]([^"}`]+)/s', $source, $matches);

@@ -61,6 +61,8 @@ return [
         'still_owes' => 'المتبقي على الطاولة',
         'all_paid' => 'تم دفع كل شيء',
         'this_round' => 'هذه الجولة',
+        'open_round' => 'افتح هذه الجولة',
+        'round_items' => 'ما طُلب في :code',
     ],
 
     'table' => [

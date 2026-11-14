@@ -62,6 +62,9 @@ const baseProps = {
             name: 'Lamb Kofta',
             qty: 2,
             total: money(3600),
+            variant: null,
+            addons: [],
+            note: null,
         },
     ],
     receipt: {
@@ -279,6 +282,7 @@ describe('Guest order status', () => {
                                 },
                                 paid: false,
                                 current: true,
+                                lines: [],
                             },
                             {
                                 id: 2,
@@ -291,6 +295,20 @@ describe('Guest order status', () => {
                                 },
                                 paid: true,
                                 current: false,
+                                lines: [
+                                    {
+                                        id: 9,
+                                        name: 'Lamb Kofta',
+                                        qty: 1,
+                                        total: money(900),
+                                        variant: 'Sharing',
+                                        addons: [
+                                            'Extra bread',
+                                            'Tahini, extra',
+                                        ],
+                                        note: 'no tahini',
+                                    },
+                                ],
                             },
                         ],
                         due: {
@@ -305,10 +323,19 @@ describe('Guest order status', () => {
 
         expect(screen.getByText('Your table')).toBeInTheDocument();
         expect(screen.getByText('2 rounds')).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: '#A-1051' })).toHaveAttribute(
-            'href',
-            '/orders/2/status',
+        // An earlier round opens in place to show what was in it (#63).
+        expect(
+            screen.getByLabelText('What was in #A-1051'),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('Sharing · Extra bread, Tahini, extra'),
+        ).toBeInTheDocument();
+        expect(screen.getByText('no tahini')).toHaveClass(
+            'text-[var(--warning-fg)]',
         );
+        expect(
+            screen.getByRole('link', { name: 'Open this round' }),
+        ).toHaveAttribute('href', '/orders/2/status');
         expect(screen.getByText('Table still owes')).toBeInTheDocument();
     });
 
@@ -373,5 +400,37 @@ describe('connection (#58)', () => {
         expect(banner).toHaveAttribute('data-tone', 'guest');
         expect(banner).toHaveTextContent('Connection lost');
         expect(banner).toHaveTextContent('as of 4 min ago');
+    });
+});
+
+describe('what was ordered (#63)', () => {
+    it('shows the size, add-ons and note under a line of this round', () => {
+        render(
+            <Status
+                {...baseProps}
+                lines={[
+                    {
+                        id: 1,
+                        name: 'Lamb Kofta',
+                        qty: 1,
+                        total: money(3750),
+                        variant: 'Sharing',
+                        addons: ['Extra bread'],
+                        note: 'no tahini',
+                    },
+                ]}
+            />,
+        );
+
+        expect(screen.getByText('Sharing · Extra bread')).toBeInTheDocument();
+        expect(screen.getByText('no tahini')).toHaveClass(
+            'text-[var(--warning-fg)]',
+        );
+    });
+
+    it('adds nothing under a plain line', () => {
+        const { container } = render(<Status {...baseProps} />);
+
+        expect(container.querySelector('[data-guest-note]')).toBeNull();
     });
 });

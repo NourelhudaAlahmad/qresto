@@ -6,6 +6,7 @@ use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderEvent;
 use App\Models\OrderLine;
+use App\Models\OrderLineOption;
 use App\Models\Payment;
 use App\Models\Restaurant;
 use App\Models\RestaurantTable;
@@ -13,6 +14,7 @@ use App\Models\TableSession;
 use App\Models\User;
 use App\Support\Money;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
 function createGuestOrderStatusContext(
@@ -560,4 +562,102 @@ it('reflects an assigned waiter change on the next request', function (): void {
                     'NR',
                 ),
         );
+});
+
+/**
+ * Another round in the same sitting: a Sharing kofta with two add-ons and
+ * a note, the way #63 describes it.
+ */
+function addConfiguredRound(array $context, string $note = 'no tahini'): Order
+{
+    $order = Order::factory()
+        ->withTableSession($context['session'])
+        ->create([
+            'status' => OrderStatus::PLACED,
+            'placed_at' => now(),
+            'currency' => 'USD',
+            'subtotal' => Money::fromMinor(3600, 'USD'),
+            'total' => Money::fromMinor(3600, 'USD'),
+        ]);
+
+    $line = OrderLine::query()->create([
+        'order_id' => $order->id,
+        'menu_item_id' => $context['item']->id,
+        'name_snapshot' => 'Lamb Kofta',
+        'unit_price' => Money::fromMinor(3600, 'USD'),
+        'qty' => 1,
+        'line_total' => Money::fromMinor(3600, 'USD'),
+        'note' => $note,
+        'station' => null,
+    ]);
+
+    OrderLineOption::factory()->create(['order_line_id' => $line->id, 'kind' => 'variant', 'label_snapshot' => 'Sharing', 'price_delta' => 1400]);
+    OrderLineOption::factory()->create(['order_line_id' => $line->id, 'kind' => 'addon', 'label_snapshot' => 'Extra bread', 'price_delta' => 200]);
+    OrderLineOption::factory()->create(['order_line_id' => $line->id, 'kind' => 'addon', 'label_snapshot' => 'Tahini, extra', 'price_delta' => 150]);
+
+    return $order;
+}
+
+it('shows the size, add-ons and note of each line of the current order (#63)', function (): void {
+    $context = createGuestOrderStatusContext();
+    $round = addConfiguredRound($context);
+
+    $this->withCookie('qresto_table_session', $context['session']->token)
+        ->get(route('guest.orders.status', $round))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('lines.0.name', 'Lamb Kofta')
+            ->where('lines.0.variant', 'Sharing')
+            ->where('lines.0.addons', ['Extra bread', 'Tahini, extra'])
+            ->where('lines.0.note', 'no tahini')
+            ->where('lines.0.total.amount', 3600));
+});
+
+it('lists what was in every round of the sitting, options and notes included (#63)', function (): void {
+    $context = createGuestOrderStatusContext();
+    $second = addConfiguredRound($context);
+
+    $this->withCookie('qresto_table_session', $context['session']->token)
+        ->get(route('guest.orders.status', $second))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('live.sitting.rounds', 2)
+            // The first round: a plain kofta, no options, no note.
+            ->where('live.sitting.rounds.0.lines.0.name', 'Lamb Kofta')
+            ->where('live.sitting.rounds.0.lines.0.variant', null)
+            ->where('live.sitting.rounds.0.lines.0.addons', [])
+            ->where('live.sitting.rounds.0.lines.0.note', null)
+            ->where('live.sitting.rounds.1.current', true)
+            ->where('live.sitting.rounds.1.lines.0.variant', 'Sharing')
+            ->where('live.sitting.rounds.1.lines.0.note', 'no tahini'));
+});
+
+it('loads every round\'s lines without a query per round (#63)', function (): void {
+    $context = createGuestOrderStatusContext();
+    $current = addConfiguredRound($context);
+
+    $countQueries = function () use ($context, $current): int {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $this->withCookie('qresto_table_session', $context['session']->token)
+            ->get(route('guest.orders.status', $current))
+            ->assertOk();
+
+        $count = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        return $count;
+    };
+
+    $countQueries();
+    $twoRounds = $countQueries();
+
+    foreach (range(1, 4) as $round) {
+        addConfiguredRound($context, "note {$round}");
+    }
+
+    $countQueries();
+
+    expect($countQueries())->toBe($twoRounds);
 });

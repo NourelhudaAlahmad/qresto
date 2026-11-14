@@ -1,5 +1,10 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { CircleHelp, ClipboardList, Menu as MenuIcon } from 'lucide-react';
+import {
+    ChevronDown,
+    CircleHelp,
+    ClipboardList,
+    Menu as MenuIcon,
+} from 'lucide-react';
 import { useState } from 'react';
 
 import { Numeric } from '@/components/numeric';
@@ -43,6 +48,10 @@ type OrderLine = {
     name: string;
     qty: number;
     total: Money;
+    // The size and add-ons it was ordered with, and the note (#63).
+    variant: string | null;
+    addons: string[];
+    note: string | null;
 };
 
 type Receipt = {
@@ -73,6 +82,7 @@ type SittingRound = {
     total: Money;
     paid: boolean;
     current: boolean;
+    lines: OrderLine[];
 };
 
 // Every round this table has ordered, and what it still owes (#50).
@@ -130,6 +140,64 @@ function formatTime(value: string | null): string | undefined {
         hour: '2-digit',
         minute: '2-digit',
     }).format(new Date(value));
+}
+
+/**
+ * A round's lines as the guest reads them (#63): the size and add-ons
+ * under the dish, as in the cart, and the note in saffron, as on the
+ * cart, the receipt and the waiter card (#36).
+ */
+function RoundLines({
+    lines,
+    className = '',
+}: {
+    lines: OrderLine[];
+    className?: string;
+}) {
+    return (
+        <div className={`space-y-3 ${className}`}>
+            {lines.map((line) => (
+                <div key={line.id} className="space-y-0.5">
+                    <div className="flex items-baseline justify-between gap-4">
+                        <p className="text-body min-w-0 flex-1 text-[var(--text-secondary)]">
+                            <span
+                                dir="ltr"
+                                className="me-2 font-mono text-[var(--text-tertiary)]"
+                            >
+                                {line.qty}×
+                            </span>
+
+                            {line.name}
+                        </p>
+
+                        <span
+                            dir="ltr"
+                            className="text-body shrink-0 font-mono tabular-nums text-[var(--text-primary)]"
+                        >
+                            {formatMoney(line.total)}
+                        </span>
+                    </div>
+
+                    {(line.variant || line.addons.length > 0) && (
+                        <p className="text-caption ps-7 leading-snug text-[var(--text-secondary)]">
+                            {[line.variant, line.addons.join(', ')]
+                                .filter(Boolean)
+                                .join(' · ')}
+                        </p>
+                    )}
+
+                    {line.note && (
+                        <p
+                            data-guest-note
+                            className="text-caption ps-7 font-medium text-[var(--warning-fg)]"
+                        >
+                            {line.note}
+                        </p>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
 }
 
 export default function Status({
@@ -408,32 +476,7 @@ export default function Status({
                                 </span>
                             </div>
 
-                            <div className="mt-5 space-y-3">
-                                {lines.map((line) => (
-                                    <div
-                                        key={line.id}
-                                        className="flex items-baseline justify-between gap-4"
-                                    >
-                                        <p className="text-body min-w-0 flex-1 text-[var(--text-secondary)]">
-                                            <span
-                                                dir="ltr"
-                                                className="me-2 font-mono text-[var(--text-tertiary)]"
-                                            >
-                                                {line.qty}×
-                                            </span>
-
-                                            {line.name}
-                                        </p>
-
-                                        <span
-                                            dir="ltr"
-                                            className="text-body shrink-0 font-mono tabular-nums text-[var(--text-primary)]"
-                                        >
-                                            {formatMoney(line.total)}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
+                            <RoundLines lines={lines} className="mt-5" />
 
                             <div className="my-5 h-px bg-[var(--border-subtle)]" />
 
@@ -510,45 +553,89 @@ export default function Status({
                                 </div>
 
                                 <ul className="divide-y divide-[var(--border-subtle)]">
-                                    {sitting.rounds.map((round) => (
-                                        <li
-                                            key={round.id}
-                                            className="flex min-h-11 items-center justify-between gap-3 py-2"
-                                        >
-                                            <span className="flex min-w-0 items-center gap-2">
-                                                {round.current ? (
+                                    {sitting.rounds.map((round) => {
+                                        const summary = (
+                                            <>
+                                                <span className="flex min-w-0 items-center gap-2">
                                                     <span className="font-medium text-[var(--text-primary)]">
                                                         <Numeric>
                                                             {round.code}
                                                         </Numeric>
-                                                        {' · '}
-                                                        {g.status.this_round}
+                                                        {round.current
+                                                            ? ` · ${g.status.this_round}`
+                                                            : ''}
                                                     </span>
-                                                ) : (
-                                                    <Link
-                                                        href={`/orders/${round.id}/status`}
-                                                        className="font-medium text-[var(--text-link)] underline-offset-2 hover:underline"
-                                                    >
-                                                        <Numeric>
-                                                            {round.code}
-                                                        </Numeric>
-                                                    </Link>
-                                                )}
-                                                <StatusPill
-                                                    status={round.status}
-                                                />
-                                            </span>
+                                                    <StatusPill
+                                                        status={round.status}
+                                                    />
+                                                </span>
 
-                                            <span className="text-body text-[var(--text-secondary)]">
-                                                <Numeric>
-                                                    {formatMoney(round.total)}
-                                                </Numeric>
-                                                {round.paid
-                                                    ? ` · ${g.status.round_paid}`
-                                                    : ''}
-                                            </span>
-                                        </li>
-                                    ))}
+                                                <span className="text-body text-[var(--text-secondary)]">
+                                                    <Numeric>
+                                                        {formatMoney(
+                                                            round.total,
+                                                        )}
+                                                    </Numeric>
+                                                    {round.paid
+                                                        ? ` · ${g.status.round_paid}`
+                                                        : ''}
+                                                </span>
+                                            </>
+                                        );
+
+                                        // This round's lines are the receipt
+                                        // above; an earlier one opens in place
+                                        // to show what was in it (#63).
+                                        if (round.current) {
+                                            return (
+                                                <li
+                                                    key={round.id}
+                                                    className="flex min-h-11 items-center justify-between gap-3 py-2"
+                                                >
+                                                    {summary}
+                                                </li>
+                                            );
+                                        }
+
+                                        return (
+                                            <li key={round.id}>
+                                                <details className="group">
+                                                    <summary
+                                                        aria-label={fill(
+                                                            g.status
+                                                                .round_items,
+                                                            {
+                                                                code: round.code,
+                                                            },
+                                                        )}
+                                                        className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 py-2 [&::-webkit-details-marker]:hidden"
+                                                    >
+                                                        {summary}
+                                                        <ChevronDown
+                                                            className="size-4 shrink-0 text-[var(--text-tertiary)] transition-transform group-open:rotate-180 motion-reduce:transition-none"
+                                                            aria-hidden="true"
+                                                        />
+                                                    </summary>
+
+                                                    <div className="space-y-3 pb-3">
+                                                        <RoundLines
+                                                            lines={round.lines}
+                                                        />
+
+                                                        <Link
+                                                            href={`/orders/${round.id}/status`}
+                                                            className="text-body inline-flex min-h-11 items-center font-medium text-[var(--text-link)] underline-offset-2 hover:underline"
+                                                        >
+                                                            {
+                                                                g.status
+                                                                    .open_round
+                                                            }
+                                                        </Link>
+                                                    </div>
+                                                </details>
+                                            </li>
+                                        );
+                                    })}
                                 </ul>
 
                                 <div className="flex items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-3">

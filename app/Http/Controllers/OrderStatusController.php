@@ -6,6 +6,8 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Cart;
 use App\Models\Order;
+use App\Models\OrderLine;
+use App\Models\OrderLineOption;
 use App\Models\Payment;
 use App\Models\ServiceRequest;
 use App\Models\TableSession;
@@ -17,6 +19,45 @@ use Inertia\Response;
 
 final class OrderStatusController extends Controller
 {
+    /**
+     * Eager loads for a round's lines with their option snapshots (#63):
+     * only what the guest sees, so option prices never need a currency.
+     *
+     * @return array<string, \Closure>
+     */
+    private function linesWithOptions(): array
+    {
+        return [
+            'lines' => fn ($query) => $query->orderBy('id'),
+            'lines.options' => fn ($query) => $query
+                ->select(['id', 'order_line_id', 'kind', 'label_snapshot'])
+                ->orderBy('id'),
+        ];
+    }
+
+    /**
+     * One line as the guest reads it, with the size and add-ons it was
+     * ordered with and the note the kitchen got. Money is built from the
+     * order's currency: reading it off the line queries the order per line.
+     *
+     * @return array{id: int, name: string, qty: int, total: array<string, mixed>, variant: string|null, addons: list<string>, note: string|null}
+     */
+    private function line(OrderLine $line, string $currency): array
+    {
+        return [
+            'id' => $line->id,
+            'name' => $line->name_snapshot,
+            'qty' => $line->qty,
+            'total' => Money::fromMinor((int) $line->getRawOriginal('line_total'), $currency)->jsonSerialize(),
+            'variant' => $line->options->firstWhere('kind', 'variant')?->label_snapshot,
+            'addons' => array_values($line->options
+                ->where('kind', 'addon')
+                ->map(fn (OrderLineOption $option): string => $option->label_snapshot)
+                ->all()),
+            'note' => filled($line->note) ? $line->note : null,
+        ];
+    }
+
     public function show(
         Request $request,
         Order $order,
@@ -78,22 +119,10 @@ final class OrderStatusController extends Controller
             },
 
             'lines' => function () use ($order): array {
-                $order->loadMissing([
-                    'lines' => fn ($query) => $query
-                        ->orderBy('id'),
-                ]);
+                $order->loadMissing($this->linesWithOptions());
 
                 return $order->lines
-                    ->map(
-                        static fn ($line): array => [
-                            'id' => $line->id,
-                            'name' => $line->name_snapshot,
-                            'qty' => $line->qty,
-                            'total' => $line
-                                ->line_total
-                                ->jsonSerialize(),
-                        ],
-                    )
+                    ->map(fn (OrderLine $line): array => $this->line($line, $order->currency))
                     ->values()
                     ->all();
             },
@@ -203,7 +232,9 @@ final class OrderStatusController extends Controller
             ->where('restaurant_id', $session->restaurant_id)
             ->where('table_session_id', $session->id)
             ->where('status', '!=', OrderStatus::CANCELLED->value)
-            ->with('payments')
+            // Every round's lines and options in two queries, however
+            // many rounds the sitting has (#63).
+            ->with(['payments', ...$this->linesWithOptions()])
             ->orderBy('id')
             ->get();
 
@@ -227,6 +258,10 @@ final class OrderStatusController extends Controller
                     'total' => $order->total->jsonSerialize(),
                     'paid' => (bool) $order->is_paid,
                     'current' => $order->id === $current->id,
+                    'lines' => $order->lines
+                        ->map(fn (OrderLine $line): array => $this->line($line, $order->currency))
+                        ->values()
+                        ->all(),
                 ])
                 ->values()
                 ->all(),
