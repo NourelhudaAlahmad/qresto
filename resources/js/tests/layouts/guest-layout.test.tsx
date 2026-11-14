@@ -34,40 +34,53 @@ function mount() {
     };
 }
 
-describe('Guest layout, as the design canvas draws the phone', () => {
-    it('on wider screens: a clipped 390 × 812 shell around a screen that scrolls on its own', () => {
+describe('Guest layout: mobile-first, not mobile-only (#60)', () => {
+    it('drops the phone shell: no 390px clamp, no 812px height, no device frame', () => {
         const { shell, frame, page } = mount();
+        const classes = [shell, frame, page]
+            .map((el) => el?.className ?? '')
+            .join(' ');
 
-        expect(shell).toHaveClass(
-            'max-w-[390px]',
-            'sm:h-[min(812px,100%)]',
-            'sm:overflow-hidden',
-            'sm:rounded-[38px]',
-        );
-        expect(frame).toHaveClass(
-            'sm:absolute',
-            'sm:inset-0',
-            'sm:overflow-y-auto',
-            'sm:[scrollbar-width:none]',
-        );
-        // One scroll area only: the page itself does not scroll.
-        expect(page).toHaveClass('sm:h-[100dvh]', 'sm:overflow-hidden');
+        expect(classes).not.toContain('390px');
+        expect(classes).not.toContain('812px');
+        expect(classes).not.toContain('rounded-[38px]');
+        expect(classes).not.toContain('shadow-[');
+        expect(classes).not.toMatch(/(^|\s)(sm:)?overflow-hidden(\s|$)/);
     });
 
-    it('on a phone: a plain full-screen page, nothing clipped or rounded', () => {
-        const { shell, frame } = mount();
+    it('lets the page scroll: the frame is not a clipped scroll area of its own', () => {
+        const { frame, page } = mount();
 
-        const unprefixed = (el: Element | null) =>
-            (el?.className.split(/\s+/) ?? []).filter((c) => !c.includes(':'));
-
-        expect(unprefixed(shell)).not.toContain('overflow-hidden');
-        expect(
-            unprefixed(shell).filter((c) => c.startsWith('rounded')),
-        ).toEqual([]);
+        expect(frame?.className).not.toMatch(/absolute|overflow-y-auto/);
+        expect(page?.className).not.toContain('sm:h-[100dvh]');
         expect(frame).toHaveClass('min-h-[100dvh]');
     });
 
-    it('keeps every in-restaurant guest screen inside the 390px GuestLayout (#53)', () => {
+    it('keeps a readable column on wide screens, without hiding overflow from sticky docks', () => {
+        const { shell } = mount();
+
+        expect(shell).toHaveClass('w-full', 'mx-auto', 'sm:max-w-[40rem]');
+        // clip, not hidden: hidden would turn the shell into a scroll
+        // container and break sticky headers and docks.
+        expect(shell).toHaveClass('sm:overflow-x-clip');
+    });
+
+    it('on a phone: the plain full-width page it always was', () => {
+        const { shell } = mount();
+
+        const unprefixed = (shell?.className.split(/\s+/) ?? []).filter(
+            (c) => !c.includes(':'),
+        );
+
+        expect(unprefixed).toEqual(
+            expect.arrayContaining(['relative', 'mx-auto', 'w-full']),
+        );
+        expect(unprefixed.filter((c) => c.startsWith('max-w'))).toEqual([]);
+        expect(unprefixed.filter((c) => c.startsWith('rounded'))).toEqual([]);
+        expect(unprefixed.filter((c) => c.startsWith('border'))).toEqual([]);
+    });
+
+    it('keeps every in-restaurant guest screen inside GuestLayout, sized to the viewport, not a shell', () => {
         const guestPagesDir = path.resolve(
             import.meta.dirname,
             '../../pages/guest',
@@ -88,6 +101,11 @@ describe('Guest layout, as the design canvas draws the phone', () => {
             expect(source, `${file} must not use LandingLayout`).not.toContain(
                 'landing-layout',
             );
+            // The shell's 24px padding is gone; nothing sizes itself to it.
+            expect(
+                source,
+                `${file} must not size itself to the old phone shell`,
+            ).not.toContain('100dvh-48px');
         }
     });
 });

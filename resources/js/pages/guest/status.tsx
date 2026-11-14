@@ -287,7 +287,7 @@ export default function Status({
         <GuestLayout>
             <Head title={fill(g.status.head, { code: order.code })} />
 
-            <div className="flex h-[100dvh] min-h-0 flex-col bg-[var(--surface-page)] sm:h-[calc(100dvh-48px)]">
+            <div className="flex h-[100dvh] min-h-0 flex-col bg-[var(--surface-page)]">
                 <header className="shrink-0 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-5 pb-4 pt-4">
                     <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">

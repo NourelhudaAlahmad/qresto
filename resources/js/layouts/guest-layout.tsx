@@ -5,14 +5,19 @@ import { LocaleSync } from '@/components/locale-sync';
 import { checkScreen } from '@/lib/non-negotiables';
 
 /**
- * The guest app is mobile-only (design: 390 × 812).
+ * The in-restaurant guest screens, mobile-first rather than mobile-only
+ * (#60). The design draws them at 390 × 812, but that is an artboard, not
+ * a limit: guests also open their table link on a tablet, and staff test
+ * it on a laptop.
  *
- * On a phone it is simply the page: full screen, the browser scrolls it.
+ * On a phone the screen is the page, exactly as before: full width, full
+ * height, the browser scrolls it.
  *
- * On a wider screen it is drawn as the design canvas draws it: a fixed
- * phone shell (rounded, clipped) holding a screen that scrolls on its own
- * with the scrollbar hidden, as on a real phone. The page itself never
- * scrolls, so there is only ever one scroll area and it is the phone.
+ * Wider, it stays a single column at a readable measure (40rem), centred
+ * on the same page background, with a hairline either side so headers
+ * and docks end somewhere deliberate. No device frame, no clipping: the
+ * page scrolls normally, and sticky headers and docks stick to the
+ * viewport. Laying screens out across a wide viewport is #61.
  */
 export default function GuestLayout({ children }: PropsWithChildren) {
     const frame = useRef<HTMLDivElement>(null);
@@ -21,17 +26,19 @@ export default function GuestLayout({ children }: PropsWithChildren) {
     useLayoutEffect(() => checkScreen(frame.current));
 
     return (
-        <div className="min-h-[100dvh] bg-[var(--ink-100)] sm:flex sm:h-[100dvh] sm:items-center sm:justify-center sm:overflow-hidden sm:p-6">
+        <div className="min-h-[100dvh] bg-[var(--surface-page)]">
             <LocaleSync />
 
+            {/* clip, not hidden: hidden would make this a scroll container
+                and the sticky headers and docks would stop sticking. */}
             <div
                 data-guest-shell
-                className="relative mx-auto w-full max-w-[390px] bg-[var(--surface-page)] sm:h-[min(812px,100%)] sm:overflow-hidden sm:rounded-[38px] sm:border sm:border-[var(--ink-200)] sm:shadow-[0_2px_6px_rgba(66,60,53,0.10),0_32px_64px_rgba(66,60,53,0.22)]"
+                className="relative mx-auto w-full bg-[var(--surface-page)] sm:max-w-[40rem] sm:overflow-x-clip sm:border-x sm:border-[var(--border-subtle)]"
             >
                 <div
                     ref={frame}
                     data-guest-frame
-                    className="flex min-h-[100dvh] flex-col sm:absolute sm:inset-0 sm:min-h-0 sm:overflow-y-auto sm:overflow-x-hidden sm:overscroll-contain sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden"
+                    className="flex min-h-[100dvh] flex-col"
                 >
                     {children}
                 </div>
