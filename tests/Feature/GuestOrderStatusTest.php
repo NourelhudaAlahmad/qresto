@@ -650,6 +650,10 @@ it('loads every round\'s lines without a query per round (#63)', function (): vo
         return $count;
     };
 
+    // The session's throttled last_seen_at touch fires when the clock
+    // crosses its window, which would add a query to either count at random.
+    $this->freezeTime();
+
     $countQueries();
     $twoRounds = $countQueries();
 

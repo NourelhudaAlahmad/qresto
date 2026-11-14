@@ -330,3 +330,42 @@ describe('Kitchen pass connection (#58)', () => {
         expect(screen.queryByTestId('offline-banner')).toBeNull();
     });
 });
+
+describe('fills the screen (#64)', () => {
+    it('is a full-viewport shell: dark to the edges, no rounded card', () => {
+        const { container } = render(<Pass {...props} />);
+        const screenShell = container.querySelector('[data-surface="pass"]');
+
+        expect(screenShell).toHaveClass(
+            'min-h-[100dvh]',
+            'w-full',
+            'flex',
+            'flex-col',
+            'bg-[var(--ink-950)]',
+        );
+        expect(screenShell?.className).not.toMatch(/rounded/);
+    });
+
+    it('lets the ticket grid take the height, on the same breakpoints', () => {
+        const { container } = render(<Pass {...props} />);
+        const grid = container.querySelector('[data-pass-grid]');
+
+        expect(grid).toHaveClass(
+            'flex-1',
+            'content-start',
+            'min-[720px]:grid-cols-2',
+            'min-[1100px]:grid-cols-3',
+            'min-[1600px]:grid-cols-4',
+        );
+        expect(grid?.parentElement).toHaveClass('flex-1');
+    });
+
+    it('centres the empty state in the screen rather than a short card', () => {
+        const { container } = render(<Pass {...props} tickets={[]} />);
+        const empty = container.querySelector('[data-kitchen-empty]');
+
+        expect(empty).toHaveClass('flex-1', 'items-center', 'justify-center');
+        expect(empty).toHaveTextContent('Nothing on the pass');
+        expect(empty?.parentElement).toHaveClass('flex-1');
+    });
+});

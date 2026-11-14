@@ -77,3 +77,41 @@ describe('Runner view (#34)', () => {
         ).toBeInTheDocument();
     });
 });
+
+describe('fills the screen (#64)', () => {
+    it('is a full-viewport shell like the pass: dark to the edges, no rounded card', () => {
+        const { container } = render(<Runner {...props} />);
+        const screenShell = container.querySelector('[data-surface="runner"]');
+
+        expect(screenShell).toHaveClass(
+            'min-h-[100dvh]',
+            'w-full',
+            'flex',
+            'flex-col',
+            'bg-[var(--ink-950)]',
+        );
+        expect(screenShell?.className).not.toMatch(/rounded/);
+    });
+
+    it('centres the empty state in the screen', () => {
+        const { container } = render(<Runner {...props} tickets={[]} />);
+        const empty = container.querySelector('[data-kitchen-empty]');
+
+        expect(empty).toHaveClass('flex-1', 'items-center', 'justify-center');
+        expect(empty?.parentElement).toHaveClass('flex-1');
+    });
+
+    it('carries its own two-tap sign-out, having no staff layout', () => {
+        render(<Runner {...props} signedInAs="Sami Runner" />);
+
+        expect(
+            screen.getByText('Signed in as Sami Runner'),
+        ).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+        expect(post).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+        expect(post).toHaveBeenCalledWith('/logout');
+    });
+});

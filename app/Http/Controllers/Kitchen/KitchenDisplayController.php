@@ -42,6 +42,8 @@ class KitchenDisplayController extends Controller
                 'tickets' => fn (): array => $this->tickets($user, null, [OrderStatus::READY]),
                 'pollIntervalMs' => (int) config('qresto.live.kds_interval', 4) * 1000,
                 'now' => now()->valueOf(),
+                // Full screen with no staff layout (#64): its sign-out is its own.
+                'signedInAs' => $user->name,
             ]);
         }
 

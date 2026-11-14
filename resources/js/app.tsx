@@ -23,9 +23,10 @@ createInertiaApp({
             case name === 'auth/staff-login':
                 return null;
 
-            // The pass is a dark, full-screen display behind a hot line; it
-            // ignores the standard staff chrome (#33).
+            // The pass and the runner are dark, full-screen wall displays;
+            // they ignore the standard staff chrome (#33, #64).
             case name === 'staff/kitchen/pass':
+            case name === 'staff/kitchen/runner':
                 return null;
 
             // Error pages stand alone: no shell, no navigation to break.

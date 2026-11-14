@@ -1,6 +1,12 @@
 import { Head, router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import {
+    KitchenScreen,
+    KitchenScreenBody,
+    KitchenScreenEmpty,
+    KitchenSignOut,
+} from '@/components/qresto/kitchen-screen';
 import { useUpdatedAgo } from '@/components/qresto/LiveIndicator';
 import { OfflineBanner } from '@/components/qresto/offline-banner';
 import { OrderTicket } from '@/components/qresto/order-ticket';
@@ -82,7 +88,7 @@ function readCookie(name: string): string {
 /**
  * The kitchen pass (#33): dark, large type, touch-bumped, viewed from two
  * metres behind a hot line. Nothing is smaller than 15px and nothing needs
- * hover. Laid out as the design draws it: a dark panel in the staff frame.
+ * hover. A full-screen wall display (#64).
  */
 export default function Pass({
     station,
@@ -96,9 +102,6 @@ export default function Pass({
     const {
         staff: { pass: t },
     } = useI18n();
-    // Signing out drops the station mid-service, so it takes two taps (#52).
-    const [confirmingSignOut, setConfirmingSignOut] = useState(false);
-
     // Bumped tickets leave at once; a refused bump brings them back.
     const [bumped, setBumped] = useState<Set<number>>(new Set());
     const visible = tickets.filter((ticket) => !bumped.has(ticket.id));
@@ -217,13 +220,12 @@ export default function Pass({
         <>
             <Head title={t.head} />
 
-            {/* The design draws the pass as a dark panel inside the staff
-                frame: "Kitchen display · Pass screen" in the topbar. */}
-            <section
-                data-surface="pass"
-                data-connection={isDisconnected ? 'offline' : 'live'}
-                aria-label={t.head}
-                className="text-body rounded-[var(--radius-xl)] bg-[var(--ink-950)] p-6 text-[var(--ink-25)]"
+            {/* A wall display with no staff layout (#33): the shell is the
+                page, dark to the edges and a full viewport tall (#64). */}
+            <KitchenScreen
+                surface="pass"
+                label={t.head}
+                connection={isDisconnected ? 'offline' : 'live'}
             >
                 {/* A frozen board looks exactly like a quiet one; say so from
                     across the kitchen (#58). */}
@@ -263,56 +265,7 @@ export default function Pass({
                         {t.bump_hint}
                     </p>
 
-                    {/* Shared equipment: who is signed in, and a way out that a
-                        stray tap mid-service cannot take (#52). Kept to the
-                        header, away from the bump controls. */}
-                    <div className="flex flex-wrap items-center gap-3 border-s border-[var(--alpha-paper-08)] ps-4">
-                        {signedInAs && (
-                            <p className="text-body text-[var(--ink-400)]">
-                                {fill(t.signed_in_as, { name: signedInAs })}
-                            </p>
-                        )}
-
-                        {confirmingSignOut ? (
-                            <div
-                                role="group"
-                                aria-label={t.confirm}
-                                className="flex flex-wrap items-center gap-3"
-                            >
-                                <p className="text-body">
-                                    <span className="font-semibold">
-                                        {t.confirm}
-                                    </span>{' '}
-                                    <span className="text-[var(--ink-400)]">
-                                        {t.confirm_hint}
-                                    </span>
-                                </p>
-                                <button
-                                    type="button"
-                                    autoFocus
-                                    onClick={() => setConfirmingSignOut(false)}
-                                    className="text-body min-h-11 min-w-11 rounded-[var(--radius-pill)] border border-[var(--alpha-paper-08)] px-5 font-semibold"
-                                >
-                                    {t.stay}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => router.post('/logout')}
-                                    className="text-body min-h-11 min-w-11 rounded-[var(--radius-pill)] bg-[var(--danger-solid)] px-5 font-semibold text-[var(--ink-25)]"
-                                >
-                                    {t.sign_out}
-                                </button>
-                            </div>
-                        ) : (
-                            <button
-                                type="button"
-                                onClick={() => setConfirmingSignOut(true)}
-                                className="text-body min-h-11 min-w-11 rounded-[var(--radius-pill)] border border-[var(--alpha-paper-08)] px-5 font-semibold"
-                            >
-                                {t.sign_out}
-                            </button>
-                        )}
-                    </div>
+                    <KitchenSignOut signedInAs={signedInAs} />
                 </header>
 
                 {/* Station filter: one station's work only. Touch-sized. */}
@@ -350,15 +303,17 @@ export default function Pass({
                     })}
                 </nav>
 
-                <div className="mt-5">
+                <KitchenScreenBody className="mt-5">
                     {visible.length === 0 ? (
-                        <p className="font-display text-title-1 py-24 text-center text-[var(--ink-400)]">
-                            {t.empty}
-                        </p>
+                        <KitchenScreenEmpty>{t.empty}</KitchenScreenEmpty>
                     ) : (
-                        // Two across on a tablet, three at 1180, four on a
-                        // 27-inch pass screen.
-                        <ol className="grid grid-cols-1 items-start gap-5 min-[720px]:grid-cols-2 min-[1100px]:grid-cols-3 min-[1600px]:grid-cols-4">
+                        // Two across on a tablet, three at 1100, four on a
+                        // 27-inch pass screen; the grid takes the height the
+                        // header leaves, so the footer sits at the bottom.
+                        <ol
+                            data-pass-grid
+                            className="grid flex-1 grid-cols-1 content-start items-start gap-5 min-[720px]:grid-cols-2 min-[1100px]:grid-cols-3 min-[1600px]:grid-cols-4"
+                        >
                             {visible.map((ticket, index) => (
                                 <li
                                     key={ticket.id}
@@ -409,14 +364,14 @@ export default function Pass({
                             ))}
                         </ol>
                     )}
-                </div>
+                </KitchenScreenBody>
 
                 <footer className="text-body mt-6 flex flex-col gap-1 border-t border-[var(--alpha-paper-08)] pt-4 text-[var(--ink-400)]">
                     <p>{t.footer_notes}</p>
                     <p>{t.footer_runner}</p>
                     <p>{t.footer_cashier}</p>
                 </footer>
-            </section>
+            </KitchenScreen>
         </>
     );
 }

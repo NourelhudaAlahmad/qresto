@@ -90,3 +90,17 @@ it('titles the runner\'s screen for the runner', function () {
         ->get('/app/pass')
         ->assertInertia(fn ($page) => $page->where('staffLayout.pageSubtitle', 'Runner · ready to collect'));
 });
+
+it('names who is signed in, since the full-screen runner has no staff layout (#64)', function () {
+    $this->actingAs($this->runner)
+        ->get('/app/pass')
+        ->assertInertia(fn ($page) => $page
+            ->component('staff/kitchen/runner')
+            ->where('signedInAs', $this->runner->name));
+});
+
+it('renders the pass and the runner full screen, outside the staff layout (#64)', function () {
+    $resolver = file_get_contents(resource_path('js/app.tsx'));
+
+    expect($resolver)->toMatch("/case name === 'staff\/kitchen\/pass':\s*case name === 'staff\/kitchen\/runner':\s*return null;/");
+});

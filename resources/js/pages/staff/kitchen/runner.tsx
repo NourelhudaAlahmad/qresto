@@ -1,6 +1,12 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 
+import {
+    KitchenScreen,
+    KitchenScreenBody,
+    KitchenScreenEmpty,
+    KitchenSignOut,
+} from '@/components/qresto/kitchen-screen';
 import { OrderTicket } from '@/components/qresto/order-ticket';
 import { showToast } from '@/components/qresto/toast';
 import { useLiveData } from '@/hooks/useLiveData';
@@ -22,14 +28,16 @@ type Ticket = {
 type Props = {
     tickets: Ticket[];
     pollIntervalMs: number;
+    signedInAs?: string;
 };
 
 /**
  * The runner's view (#34): "this grid filtered to Ready, one column, 60px
  * type". The same KDS collection and the same bump endpoint as the pass;
  * the runner's one action, Collected, takes a plate from ready to served.
+ * A full-screen wall display like the pass (#64).
  */
-export default function Runner({ tickets, pollIntervalMs }: Props) {
+export default function Runner({ tickets, pollIntervalMs, signedInAs }: Props) {
     const {
         staff: { runner: t },
     } = useI18n();
@@ -81,12 +89,8 @@ export default function Runner({ tickets, pollIntervalMs }: Props) {
         <>
             <Head title={t.head} />
 
-            <section
-                data-surface="runner"
-                aria-label={t.head}
-                className="text-body rounded-[var(--radius-xl)] bg-[var(--ink-950)] p-6 text-[var(--ink-25)]"
-            >
-                <header className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <KitchenScreen surface="runner" label={t.head}>
+                <header className="flex flex-wrap items-center gap-x-4 gap-y-3">
                     <h2 className="font-display text-title-1 font-semibold">
                         {t.head}
                     </h2>
@@ -98,50 +102,58 @@ export default function Runner({ tickets, pollIntervalMs }: Props) {
                             { count: visible.length },
                         )}
                     </p>
+
+                    <span className="flex-1" />
+
+                    {/* The runner's only screen, so its way out lives here. */}
+                    <KitchenSignOut signedInAs={signedInAs} />
                 </header>
 
-                {visible.length === 0 ? (
-                    <p className="font-display text-title-1 py-24 text-center text-[var(--ink-400)]">
-                        {t.empty}
-                    </p>
-                ) : (
-                    // One column, so it reads across a room.
-                    <ol className="mx-auto mt-5 flex max-w-[880px] flex-col gap-5">
-                        {visible.map((ticket) => (
-                            <li
-                                key={ticket.id}
-                                data-ticket={ticket.code}
-                                className="animate-[qr-rise_var(--dur-base)_var(--ease-enter)] motion-reduce:animate-none"
-                            >
-                                <OrderTicket
-                                    variant="dark"
-                                    size="runner"
-                                    code={ticket.code}
-                                    elapsed={formatMinutes(
-                                        ticket.elapsed_minutes,
-                                    )}
-                                    table={tableLabel(ticket)}
-                                    guest={ticket.guest ?? t.guest}
-                                    status={ticket.status as OrderStatus}
-                                    items={ticket.lines.map((line) => ({
-                                        qty: `${line.qty}×`,
-                                        name: line.name,
-                                        note: line.note ?? undefined,
-                                    }))}
-                                    paid={false}
-                                    total=""
-                                    advanceLabel={t.collected}
-                                    advanceAriaLabel={fill(t.collected_aria, {
-                                        code: ticket.code,
-                                        table: tableLabel(ticket),
-                                    })}
-                                    onAdvance={() => collect(ticket)}
-                                />
-                            </li>
-                        ))}
-                    </ol>
-                )}
-            </section>
+                <KitchenScreenBody className="mt-5">
+                    {visible.length === 0 ? (
+                        <KitchenScreenEmpty>{t.empty}</KitchenScreenEmpty>
+                    ) : (
+                        // One column, so it reads across a room.
+                        <ol className="mx-auto flex w-full max-w-[880px] flex-col gap-5">
+                            {visible.map((ticket) => (
+                                <li
+                                    key={ticket.id}
+                                    data-ticket={ticket.code}
+                                    className="animate-[qr-rise_var(--dur-base)_var(--ease-enter)] motion-reduce:animate-none"
+                                >
+                                    <OrderTicket
+                                        variant="dark"
+                                        size="runner"
+                                        code={ticket.code}
+                                        elapsed={formatMinutes(
+                                            ticket.elapsed_minutes,
+                                        )}
+                                        table={tableLabel(ticket)}
+                                        guest={ticket.guest ?? t.guest}
+                                        status={ticket.status as OrderStatus}
+                                        items={ticket.lines.map((line) => ({
+                                            qty: `${line.qty}×`,
+                                            name: line.name,
+                                            note: line.note ?? undefined,
+                                        }))}
+                                        paid={false}
+                                        total=""
+                                        advanceLabel={t.collected}
+                                        advanceAriaLabel={fill(
+                                            t.collected_aria,
+                                            {
+                                                code: ticket.code,
+                                                table: tableLabel(ticket),
+                                            },
+                                        )}
+                                        onAdvance={() => collect(ticket)}
+                                    />
+                                </li>
+                            ))}
+                        </ol>
+                    )}
+                </KitchenScreenBody>
+            </KitchenScreen>
         </>
     );
 }
