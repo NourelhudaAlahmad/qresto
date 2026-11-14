@@ -68,11 +68,9 @@ type Translations = {
     no_allergens: string;
     allergens_nearby: string;
     choose_size: string;
-    no_size_options: string;
     add_on: string;
     optional: string;
     sold_out: string;
-    no_addons: string;
     kitchen_note: string;
     note_placeholder: string;
     note_promise: string;
@@ -296,140 +294,136 @@ export default function MealPage({ restaurant, item, translations }: Props) {
                             </div>
                         </section>
 
-                        <Divider />
+                        {/* A section with nothing in it does not exist (#62). */}
+                        {item.variants.length > 0 && (
+                            <>
+                                <Divider />
 
-                        <section className="space-y-3">
-                            <h2 className="text-lg font-semibold">
-                                {translations.choose_size}
-                            </h2>
+                                <section className="space-y-3">
+                                    <h2 className="text-lg font-semibold">
+                                        {translations.choose_size}
+                                    </h2>
 
-                            {item.variants.length > 0 ? (
-                                <RadioGroup
-                                    value={
-                                        data.menu_item_variant_id !== null
-                                            ? String(data.menu_item_variant_id)
-                                            : undefined
-                                    }
-                                    onValueChange={(value) =>
-                                        setData(
-                                            'menu_item_variant_id',
-                                            Number(value),
-                                        )
-                                    }
-                                    className="space-y-2"
-                                >
-                                    {item.variants.map((variant) => (
-                                        <RadioCard
-                                            key={variant.id}
-                                            value={String(variant.id)}
-                                            disabled={!item.available}
-                                            title={variant.label}
-                                            description={formatDelta(
-                                                variant.price_delta,
-                                            )}
-                                        />
-                                    ))}
-                                </RadioGroup>
-                            ) : (
-                                <div className="border-border-default bg-surface-card flex min-h-14 items-center rounded-md border px-4">
-                                    <span className="text-text-secondary text-body">
-                                        {translations.no_size_options}
-                                    </span>
-                                </div>
-                            )}
+                                    <RadioGroup
+                                        value={
+                                            data.menu_item_variant_id !== null
+                                                ? String(
+                                                      data.menu_item_variant_id,
+                                                  )
+                                                : undefined
+                                        }
+                                        onValueChange={(value) =>
+                                            setData(
+                                                'menu_item_variant_id',
+                                                Number(value),
+                                            )
+                                        }
+                                        className="space-y-2"
+                                    >
+                                        {item.variants.map((variant) => (
+                                            <RadioCard
+                                                key={variant.id}
+                                                value={String(variant.id)}
+                                                disabled={!item.available}
+                                                title={variant.label}
+                                                description={formatDelta(
+                                                    variant.price_delta,
+                                                )}
+                                            />
+                                        ))}
+                                    </RadioGroup>
 
-                            {errors.menu_item_variant_id ? (
-                                <p className="text-body text-red-600">
-                                    {errors.menu_item_variant_id}
-                                </p>
-                            ) : null}
-                        </section>
+                                    {errors.menu_item_variant_id ? (
+                                        <p className="text-body text-red-600">
+                                            {errors.menu_item_variant_id}
+                                        </p>
+                                    ) : null}
+                                </section>
+                            </>
+                        )}
 
-                        <Divider />
+                        {item.addons.length > 0 && (
+                            <>
+                                <Divider />
 
-                        <section className="space-y-3">
-                            <div className="flex items-baseline gap-2">
-                                <h2 className="text-lg font-semibold">
-                                    {translations.add_on}
-                                </h2>
+                                <section className="space-y-3">
+                                    <div className="flex items-baseline gap-2">
+                                        <h2 className="text-lg font-semibold">
+                                            {translations.add_on}
+                                        </h2>
 
-                                <span className="text-text-secondary text-caption">
-                                    {translations.optional}
-                                </span>
-                            </div>
+                                        <span className="text-text-secondary text-caption">
+                                            {translations.optional}
+                                        </span>
+                                    </div>
 
-                            {item.addons.length > 0 ? (
-                                <div className="space-y-2">
-                                    {item.addons.map((addon) => {
-                                        const checked = data.addon_ids.includes(
-                                            addon.id,
-                                        );
+                                    <div className="space-y-2">
+                                        {item.addons.map((addon) => {
+                                            const checked =
+                                                data.addon_ids.includes(
+                                                    addon.id,
+                                                );
 
-                                        return (
-                                            <label
-                                                key={addon.id}
-                                                className={[
-                                                    'border-border-default bg-surface-card flex min-h-14 items-center gap-3 rounded-md border px-4',
-                                                    addon.available &&
-                                                    item.available
-                                                        ? 'cursor-pointer'
-                                                        : 'cursor-not-allowed opacity-60',
-                                                    checked
-                                                        ? 'border-border-brand bg-surface-brand-soft'
-                                                        : '',
-                                                ].join(' ')}
-                                            >
-                                                <Checkbox
-                                                    checked={checked}
-                                                    disabled={
-                                                        !addon.available ||
-                                                        !item.available
-                                                    }
-                                                    onCheckedChange={() =>
-                                                        toggleAddon(addon)
-                                                    }
-                                                />
+                                            return (
+                                                <label
+                                                    key={addon.id}
+                                                    className={[
+                                                        'border-border-default bg-surface-card flex min-h-14 items-center gap-3 rounded-md border px-4',
+                                                        addon.available &&
+                                                        item.available
+                                                            ? 'cursor-pointer'
+                                                            : 'cursor-not-allowed opacity-60',
+                                                        checked
+                                                            ? 'border-border-brand bg-surface-brand-soft'
+                                                            : '',
+                                                    ].join(' ')}
+                                                >
+                                                    <Checkbox
+                                                        checked={checked}
+                                                        disabled={
+                                                            !addon.available ||
+                                                            !item.available
+                                                        }
+                                                        onCheckedChange={() =>
+                                                            toggleAddon(addon)
+                                                        }
+                                                    />
 
-                                                <span className="min-w-0 flex-1">
-                                                    <span className="text-label text-text-primary block font-medium">
-                                                        {addon.label}
+                                                    <span className="min-w-0 flex-1">
+                                                        <span className="text-label text-text-primary block font-medium">
+                                                            {addon.label}
+                                                        </span>
+
+                                                        {!addon.available ? (
+                                                            <span className="text-caption text-text-secondary mt-0.5 block">
+                                                                {
+                                                                    translations.sold_out
+                                                                }
+                                                            </span>
+                                                        ) : null}
                                                     </span>
 
-                                                    {!addon.available ? (
-                                                        <span className="text-caption text-text-secondary mt-0.5 block">
-                                                            {
-                                                                translations.sold_out
-                                                            }
-                                                        </span>
-                                                    ) : null}
-                                                </span>
+                                                    <span
+                                                        dir="ltr"
+                                                        className="text-body font-mono tabular-nums"
+                                                    >
+                                                        {formatDelta(
+                                                            addon.price_delta,
+                                                        )}
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
 
-                                                <span
-                                                    dir="ltr"
-                                                    className="text-body font-mono tabular-nums"
-                                                >
-                                                    {formatDelta(
-                                                        addon.price_delta,
-                                                    )}
-                                                </span>
-                                            </label>
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <div className="border-border-default bg-surface-card flex min-h-14 items-center rounded-md border px-4">
-                                    <span className="text-text-secondary text-body">
-                                        {translations.no_addons}
-                                    </span>
-                                </div>
-                            )}
-
-                            {errors.addon_ids ? (
-                                <p className="text-body text-red-600">
-                                    {errors.addon_ids}
-                                </p>
-                            ) : null}
-                        </section>
+                                    {errors.addon_ids ? (
+                                        <p className="text-body text-red-600">
+                                            {errors.addon_ids}
+                                        </p>
+                                    ) : null}
+                                </section>
+                            </>
+                        )}
 
                         <Divider />
 

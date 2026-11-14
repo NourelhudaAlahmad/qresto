@@ -40,11 +40,9 @@ const translations = {
     no_allergens: 'No listed allergens',
     allergens_nearby: 'May contain',
     choose_size: 'Choose size',
-    no_size_options: 'No size options',
     add_on: 'Add-ons',
     optional: 'Optional',
     sold_out: 'Sold out',
-    no_addons: 'No add-ons',
     kitchen_note: 'Kitchen note',
     note_placeholder: 'Add a note',
     note_promise: 'We will do our best to follow your request.',
@@ -139,6 +137,65 @@ describe('Guest meal page', () => {
         fireEvent.click(addButton);
 
         expect(post).not.toHaveBeenCalled();
+    });
+});
+
+describe('option sections (#62)', () => {
+    const usd = (amount: number) => ({
+        amount,
+        currency: 'USD',
+        formatted: `$${(amount / 100).toFixed(2)}`,
+    });
+
+    const variants = [
+        { id: 1, label: 'Single', price_delta: usd(0), is_default: true },
+        { id: 2, label: 'Sharing', price_delta: usd(1400), is_default: false },
+    ];
+
+    const addons = [
+        { id: 5, label: 'Extra bread', price_delta: usd(200), available: true },
+    ];
+
+    const withOptions = (options: {
+        variants?: typeof variants;
+        addons?: typeof addons;
+    }) => ({ ...baseProps, item: { ...baseProps.item, ...options } });
+
+    // The thin rules between the screen's sections.
+    const rules = (container: HTMLElement) =>
+        container.querySelectorAll('.bg-border-default.h-px');
+
+    it('shows neither section, nor an empty box, for a dish with no options', () => {
+        const { container } = render(<MealPage {...baseProps} />);
+
+        expect(screen.queryByText('Choose size')).toBeNull();
+        expect(screen.queryByText('Add-ons')).toBeNull();
+        expect(screen.queryByText(/No size options|No add-ons/)).toBeNull();
+        // Only the rule before the kitchen note is left: no orphan.
+        expect(rules(container)).toHaveLength(1);
+        expect(screen.getByText('Kitchen note')).toBeInTheDocument();
+    });
+
+    it('shows only the size section for a dish with sizes and no add-ons', () => {
+        const { container } = render(
+            <MealPage {...withOptions({ variants })} />,
+        );
+
+        expect(screen.getByText('Choose size')).toBeInTheDocument();
+        expect(screen.getByText('Sharing')).toBeInTheDocument();
+        expect(screen.queryByText('Add-ons')).toBeNull();
+        expect(rules(container)).toHaveLength(2);
+    });
+
+    it('shows both sections for a dish with sizes and add-ons', () => {
+        const { container } = render(
+            <MealPage {...withOptions({ variants, addons })} />,
+        );
+
+        expect(screen.getByText('Choose size')).toBeInTheDocument();
+        expect(screen.getByText('Add-ons')).toBeInTheDocument();
+        expect(screen.getByText('Extra bread')).toBeInTheDocument();
+        expect(rules(container)).toHaveLength(3);
     });
 });
 
