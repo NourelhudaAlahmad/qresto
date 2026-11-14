@@ -189,12 +189,13 @@ export default function MealPage({ restaurant, item, translations }: Props) {
     };
 
     return (
-        <GuestLayout>
+        <GuestLayout wide>
             <Head title={`${item.name} · ${restaurant.name}`} />
 
-            <div className="mx-auto flex min-h-dvh w-full max-w-[486px] flex-col overflow-hidden bg-white shadow-sm">
-                <main className="min-h-0 flex-1 overflow-y-auto">
-                    <section className="relative h-[300px] overflow-hidden bg-stone-200">
+            <div className="mx-auto flex min-h-dvh w-full max-w-[486px] flex-col overflow-hidden bg-white shadow-sm lg:max-w-none lg:shadow-none">
+                <main className="min-h-0 flex-1 overflow-y-auto lg:grid lg:grid-cols-2 lg:items-start lg:gap-8 lg:px-[var(--gutter-desktop)] lg:py-8">
+                    {/* Wide: the photo beside the options, not above them (#61). */}
+                    <section className="relative h-[300px] overflow-hidden bg-stone-200 lg:h-[420px] lg:rounded-[var(--radius-lg)]">
                         {item.photo ? (
                             <img
                                 src={item.photo}
@@ -234,7 +235,7 @@ export default function MealPage({ restaurant, item, translations }: Props) {
                         </div>
                     </section>
 
-                    <div className="space-y-6 px-5 py-6">
+                    <div className="space-y-6 px-5 py-6 lg:px-0 lg:py-0">
                         <section className="space-y-4">
                             <div className="flex items-baseline justify-between gap-4">
                                 <span
@@ -473,8 +474,9 @@ export default function MealPage({ restaurant, item, translations }: Props) {
                     </div>
                 </main>
 
-                <StickyDock>
-                    <div className="flex w-full items-center gap-3">
+                <StickyDock className="lg:px-[var(--gutter-desktop)]">
+                    {/* Wide: under the options column. */}
+                    <div className="flex w-full items-center gap-3 lg:ms-auto lg:w-[calc(50%-1rem)]">
                         <QuantityStepper
                             value={data.qty}
                             min={1}

@@ -64,7 +64,7 @@ export default function Tables({ current_table_id, tables }: TablesProps) {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                         {tables.map((table) => {
                             const isCurrent = table.id === current_table_id;
 

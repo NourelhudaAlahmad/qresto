@@ -604,7 +604,7 @@ export default function CheckoutPage({
     const tipLabel = tipPct === 0 ? t.tip : fill(t.tip_pct, { pct: tipPct });
 
     return (
-        <GuestLayout>
+        <GuestLayout wide>
             <Head title={t.title} />
 
             <div className="flex min-h-dvh flex-col bg-[var(--surface-page)]">
@@ -614,7 +614,7 @@ export default function CheckoutPage({
                 >
                     <div className="flex-1">
                         <header className="border-border-subtle bg-surface-page sticky top-0 z-20 shrink-0 border-b">
-                            <div className="mx-auto flex w-full max-w-md items-center gap-3 px-5 py-4">
+                            <div className="mx-auto flex w-full max-w-md items-center gap-3 px-5 py-4 lg:max-w-none lg:px-[var(--gutter-desktop)]">
                                 <button
                                     type="button"
                                     aria-label={t.back}
@@ -643,18 +643,21 @@ export default function CheckoutPage({
                             </div>
                         </header>
 
-                        <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-5 py-5 pb-8">
+                        <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-5 py-5 pb-8 lg:grid lg:max-w-none lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-8 lg:px-[var(--gutter-desktop)] lg:py-8">
+                            {/* Wide (#61): how to pay on one side; tip, promo, split and
+                                the total on the other. Below lg the column wrappers are
+                                display: contents, so a phone keeps its single column. */}
                             {earlier_rounds > 0 && (
                                 <p
                                     role="note"
-                                    className="text-body rounded-[var(--radius-md)] bg-[var(--surface-sunken)] px-4 py-3 text-[var(--text-secondary)]"
+                                    className="text-body rounded-[var(--radius-md)] bg-[var(--surface-sunken)] px-4 py-3 text-[var(--text-secondary)] lg:col-span-2"
                                 >
                                     {t.new_round}
                                 </p>
                             )}
 
                             {requires3ds ? (
-                                <Card className="flex flex-col gap-4 p-5">
+                                <Card className="flex flex-col gap-4 p-5 lg:col-span-2 lg:mx-auto lg:w-full lg:max-w-md">
                                     <div className="flex items-start gap-3">
                                         <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--herb-50)] text-[var(--herb-700)]">
                                             <ShieldIcon />
@@ -696,42 +699,94 @@ export default function CheckoutPage({
                                 </Card>
                             ) : (
                                 <>
-                                    {stripeOn ? (
-                                        wallets.applePay ||
-                                        wallets.googlePay ? (
+                                    <div className="contents lg:flex lg:flex-col lg:gap-5">
+                                        {stripeOn ? (
+                                            wallets.applePay ||
+                                            wallets.googlePay ? (
+                                                <>
+                                                    <section className="grid grid-cols-2 gap-2">
+                                                        {wallets.applePay ? (
+                                                            <Button
+                                                                variant="secondary"
+                                                                type="button"
+                                                                fullWidth
+                                                                onClick={
+                                                                    wallets.show
+                                                                }
+                                                                className="h-12 bg-black text-white hover:bg-black"
+                                                            >
+                                                                <span className="text-body-lg font-semibold">
+                                                                    Apple Pay
+                                                                </span>
+                                                            </Button>
+                                                        ) : null}
+
+                                                        {wallets.googlePay ? (
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                fullWidth
+                                                                onClick={
+                                                                    wallets.show
+                                                                }
+                                                                className="h-12"
+                                                            >
+                                                                <span className="text-body font-semibold">
+                                                                    Google Pay
+                                                                </span>
+                                                            </Button>
+                                                        ) : null}
+                                                    </section>
+
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="bg-border-subtle h-px flex-1" />
+
+                                                        <span className="text-caption text-text-tertiary whitespace-nowrap">
+                                                            {t.or_choose}
+                                                        </span>
+
+                                                        <span className="bg-border-subtle h-px flex-1" />
+                                                    </div>
+                                                </>
+                                            ) : null
+                                        ) : (
                                             <>
                                                 <section className="grid grid-cols-2 gap-2">
-                                                    {wallets.applePay ? (
-                                                        <Button
-                                                            variant="secondary"
-                                                            type="button"
-                                                            fullWidth
-                                                            onClick={
-                                                                wallets.show
-                                                            }
-                                                            className="h-12 bg-black text-white hover:bg-black"
-                                                        >
-                                                            <span className="text-body-lg font-semibold">
-                                                                Apple Pay
-                                                            </span>
-                                                        </Button>
-                                                    ) : null}
+                                                    <Button
+                                                        variant="secondary"
+                                                        type="button"
+                                                        disabled
+                                                        fullWidth
+                                                        title={fill(
+                                                            t.wallet_soon,
+                                                            {
+                                                                wallet: 'Apple Pay',
+                                                            },
+                                                        )}
+                                                        className="h-12 bg-black text-white opacity-100 disabled:bg-black disabled:text-white disabled:opacity-100"
+                                                    >
+                                                        <span className="text-body-lg font-semibold">
+                                                            Apple Pay
+                                                        </span>
+                                                    </Button>
 
-                                                    {wallets.googlePay ? (
-                                                        <Button
-                                                            type="button"
-                                                            variant="outline"
-                                                            fullWidth
-                                                            onClick={
-                                                                wallets.show
-                                                            }
-                                                            className="h-12"
-                                                        >
-                                                            <span className="text-body font-semibold">
-                                                                Google Pay
-                                                            </span>
-                                                        </Button>
-                                                    ) : null}
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        disabled
+                                                        fullWidth
+                                                        title={fill(
+                                                            t.wallet_soon,
+                                                            {
+                                                                wallet: 'Google Pay',
+                                                            },
+                                                        )}
+                                                        className="h-12 opacity-100 disabled:opacity-100"
+                                                    >
+                                                        <span className="text-body font-semibold">
+                                                            Google Pay
+                                                        </span>
+                                                    </Button>
                                                 </section>
 
                                                 <div className="flex items-center gap-3">
@@ -744,560 +799,531 @@ export default function CheckoutPage({
                                                     <span className="bg-border-subtle h-px flex-1" />
                                                 </div>
                                             </>
-                                        ) : null
-                                    ) : (
-                                        <>
-                                            <section className="grid grid-cols-2 gap-2">
-                                                <Button
-                                                    variant="secondary"
-                                                    type="button"
-                                                    disabled
-                                                    fullWidth
-                                                    title={fill(t.wallet_soon, {
-                                                        wallet: 'Apple Pay',
-                                                    })}
-                                                    className="h-12 bg-black text-white opacity-100 disabled:bg-black disabled:text-white disabled:opacity-100"
-                                                >
-                                                    <span className="text-body-lg font-semibold">
-                                                        Apple Pay
-                                                    </span>
-                                                </Button>
+                                        )}
 
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    disabled
-                                                    fullWidth
-                                                    title={fill(t.wallet_soon, {
-                                                        wallet: 'Google Pay',
-                                                    })}
-                                                    className="h-12 opacity-100 disabled:opacity-100"
-                                                >
-                                                    <span className="text-body font-semibold">
-                                                        Google Pay
-                                                    </span>
-                                                </Button>
-                                            </section>
-
-                                            <div className="flex items-center gap-3">
-                                                <span className="bg-border-subtle h-px flex-1" />
-
-                                                <span className="text-caption text-text-tertiary whitespace-nowrap">
-                                                    {t.or_choose}
-                                                </span>
-
-                                                <span className="bg-border-subtle h-px flex-1" />
-                                            </div>
-                                        </>
-                                    )}
-
-                                    <section>
-                                        <RadioGroup
-                                            value={method}
-                                            onValueChange={selectMethod}
-                                            className="flex flex-col gap-2.5"
-                                        >
-                                            {availableMethods.has('card') ? (
-                                                <div className="relative">
-                                                    <RadioCard
-                                                        value="card"
-                                                        title={t.card_title}
-                                                        description={
-                                                            t.card_description
-                                                        }
-                                                        className="min-h-[72px] pe-14"
-                                                    />
-
-                                                    <span
-                                                        aria-hidden="true"
-                                                        className="text-text-secondary pointer-events-none absolute end-4 top-1/2 -translate-y-1/2"
-                                                    >
-                                                        <CardIcon />
-                                                    </span>
-                                                </div>
-                                            ) : null}
-
-                                            {method === 'card' &&
-                                            availableMethods.has('card') ? (
-                                                <div className="border-border-subtle bg-surface-subtle -mt-1 rounded-md border p-4">
-                                                    {stripeOn ? (
-                                                        <StripeCardFields
-                                                            ref={stripeCard}
-                                                            stripe={stripe}
-                                                            errors={errors}
-                                                            restaurantName={
-                                                                restaurant.name
+                                        <section>
+                                            <RadioGroup
+                                                value={method}
+                                                onValueChange={selectMethod}
+                                                className="flex flex-col gap-2.5"
+                                            >
+                                                {availableMethods.has(
+                                                    'card',
+                                                ) ? (
+                                                    <div className="relative">
+                                                        <RadioCard
+                                                            value="card"
+                                                            title={t.card_title}
+                                                            description={
+                                                                t.card_description
                                                             }
-                                                            labels={t}
+                                                            className="min-h-[72px] pe-14"
                                                         />
-                                                    ) : (
-                                                        <div className="flex flex-col gap-3">
-                                                            <label className="flex flex-col gap-1.5">
-                                                                <span className="text-caption text-text-secondary">
-                                                                    {
-                                                                        t.card_number
-                                                                    }
-                                                                </span>
 
-                                                                <div className="relative">
-                                                                    <Input
-                                                                        value={
-                                                                            cardNumber
-                                                                        }
-                                                                        onChange={(
-                                                                            event,
-                                                                        ) =>
-                                                                            setCardNumber(
-                                                                                formatCardNumber(
-                                                                                    event
-                                                                                        .target
-                                                                                        .value,
-                                                                                ),
-                                                                            )
-                                                                        }
-                                                                        inputMode="numeric"
-                                                                        autoComplete="cc-number"
-                                                                        dir="ltr"
-                                                                        placeholder="4242 4242 4242 4242"
-                                                                        className="pe-16"
-                                                                        aria-invalid={
-                                                                            errors.card_number
-                                                                                ? true
-                                                                                : undefined
-                                                                        }
-                                                                    />
+                                                        <span
+                                                            aria-hidden="true"
+                                                            className="text-text-secondary pointer-events-none absolute end-4 top-1/2 -translate-y-1/2"
+                                                        >
+                                                            <CardIcon />
+                                                        </span>
+                                                    </div>
+                                                ) : null}
 
-                                                                    <span className="text-caption text-text-secondary pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 font-semibold">
-                                                                        VISA
+                                                {method === 'card' &&
+                                                availableMethods.has('card') ? (
+                                                    <div className="border-border-subtle bg-surface-subtle -mt-1 rounded-md border p-4">
+                                                        {stripeOn ? (
+                                                            <StripeCardFields
+                                                                ref={stripeCard}
+                                                                stripe={stripe}
+                                                                errors={errors}
+                                                                restaurantName={
+                                                                    restaurant.name
+                                                                }
+                                                                labels={t}
+                                                            />
+                                                        ) : (
+                                                            <div className="flex flex-col gap-3">
+                                                                <label className="flex flex-col gap-1.5">
+                                                                    <span className="text-caption text-text-secondary">
+                                                                        {
+                                                                            t.card_number
+                                                                        }
                                                                     </span>
+
+                                                                    <div className="relative">
+                                                                        <Input
+                                                                            value={
+                                                                                cardNumber
+                                                                            }
+                                                                            onChange={(
+                                                                                event,
+                                                                            ) =>
+                                                                                setCardNumber(
+                                                                                    formatCardNumber(
+                                                                                        event
+                                                                                            .target
+                                                                                            .value,
+                                                                                    ),
+                                                                                )
+                                                                            }
+                                                                            inputMode="numeric"
+                                                                            autoComplete="cc-number"
+                                                                            dir="ltr"
+                                                                            placeholder="4242 4242 4242 4242"
+                                                                            className="pe-16"
+                                                                            aria-invalid={
+                                                                                errors.card_number
+                                                                                    ? true
+                                                                                    : undefined
+                                                                            }
+                                                                        />
+
+                                                                        <span className="text-caption text-text-secondary pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 font-semibold">
+                                                                            VISA
+                                                                        </span>
+                                                                    </div>
+
+                                                                    {errors.card_number ? (
+                                                                        <span
+                                                                            role="alert"
+                                                                            className="text-caption text-danger"
+                                                                        >
+                                                                            {
+                                                                                errors.card_number
+                                                                            }
+                                                                        </span>
+                                                                    ) : null}
+                                                                </label>
+
+                                                                <div className="grid grid-cols-2 gap-3">
+                                                                    <label className="flex flex-col gap-1.5">
+                                                                        <span className="text-caption text-text-secondary">
+                                                                            {
+                                                                                t.card_expiry
+                                                                            }
+                                                                        </span>
+
+                                                                        <Input
+                                                                            value={
+                                                                                cardExpiry
+                                                                            }
+                                                                            onChange={(
+                                                                                event,
+                                                                            ) =>
+                                                                                setCardExpiry(
+                                                                                    formatExpiry(
+                                                                                        event
+                                                                                            .target
+                                                                                            .value,
+                                                                                    ),
+                                                                                )
+                                                                            }
+                                                                            inputMode="numeric"
+                                                                            autoComplete="cc-exp"
+                                                                            dir="ltr"
+                                                                            placeholder="09 / 28"
+                                                                            aria-invalid={
+                                                                                errors.card_expiry
+                                                                                    ? true
+                                                                                    : undefined
+                                                                            }
+                                                                        />
+
+                                                                        {errors.card_expiry ? (
+                                                                            <span
+                                                                                role="alert"
+                                                                                className="text-caption text-danger"
+                                                                            >
+                                                                                {
+                                                                                    errors.card_expiry
+                                                                                }
+                                                                            </span>
+                                                                        ) : null}
+                                                                    </label>
+
+                                                                    <label className="flex flex-col gap-1.5">
+                                                                        <span className="text-caption text-text-secondary">
+                                                                            {
+                                                                                t.card_cvc
+                                                                            }
+                                                                        </span>
+
+                                                                        <Input
+                                                                            ref={
+                                                                                cvcRef
+                                                                            }
+                                                                            value={
+                                                                                cardCvc
+                                                                            }
+                                                                            onChange={(
+                                                                                event,
+                                                                            ) =>
+                                                                                setCardCvc(
+                                                                                    event.target.value
+                                                                                        .replace(
+                                                                                            /\D/g,
+                                                                                            '',
+                                                                                        )
+                                                                                        .slice(
+                                                                                            0,
+                                                                                            4,
+                                                                                        ),
+                                                                                )
+                                                                            }
+                                                                            inputMode="numeric"
+                                                                            autoComplete="cc-csc"
+                                                                            dir="ltr"
+                                                                            placeholder="123"
+                                                                            aria-invalid={
+                                                                                errors.card_cvc
+                                                                                    ? true
+                                                                                    : undefined
+                                                                            }
+                                                                        />
+
+                                                                        {errors.card_cvc ? (
+                                                                            <span
+                                                                                role="alert"
+                                                                                className="text-caption text-danger"
+                                                                            >
+                                                                                {
+                                                                                    errors.card_cvc
+                                                                                }
+                                                                            </span>
+                                                                        ) : null}
+                                                                    </label>
                                                                 </div>
 
-                                                                {errors.card_number ? (
-                                                                    <span
-                                                                        role="alert"
-                                                                        className="text-caption text-danger"
-                                                                    >
-                                                                        {
-                                                                            errors.card_number
-                                                                        }
-                                                                    </span>
-                                                                ) : null}
-                                                            </label>
+                                                                <div className="text-caption text-text-tertiary flex items-center gap-2 pt-1">
+                                                                    <LockIcon />
 
-                                                            <div className="grid grid-cols-2 gap-3">
-                                                                <label className="flex flex-col gap-1.5">
-                                                                    <span className="text-caption text-text-secondary">
-                                                                        {
-                                                                            t.card_expiry
-                                                                        }
-                                                                    </span>
-
-                                                                    <Input
-                                                                        value={
-                                                                            cardExpiry
-                                                                        }
-                                                                        onChange={(
-                                                                            event,
-                                                                        ) =>
-                                                                            setCardExpiry(
-                                                                                formatExpiry(
-                                                                                    event
-                                                                                        .target
-                                                                                        .value,
-                                                                                ),
-                                                                            )
-                                                                        }
-                                                                        inputMode="numeric"
-                                                                        autoComplete="cc-exp"
-                                                                        dir="ltr"
-                                                                        placeholder="09 / 28"
-                                                                        aria-invalid={
-                                                                            errors.card_expiry
-                                                                                ? true
-                                                                                : undefined
-                                                                        }
-                                                                    />
-
-                                                                    {errors.card_expiry ? (
-                                                                        <span
-                                                                            role="alert"
-                                                                            className="text-caption text-danger"
-                                                                        >
+                                                                    <span>
+                                                                        {fill(
+                                                                            t.card_safe,
                                                                             {
-                                                                                errors.card_expiry
-                                                                            }
-                                                                        </span>
-                                                                    ) : null}
-                                                                </label>
-
-                                                                <label className="flex flex-col gap-1.5">
-                                                                    <span className="text-caption text-text-secondary">
-                                                                        {
-                                                                            t.card_cvc
-                                                                        }
+                                                                                restaurant:
+                                                                                    restaurant.name,
+                                                                            },
+                                                                        )}
                                                                     </span>
-
-                                                                    <Input
-                                                                        ref={
-                                                                            cvcRef
-                                                                        }
-                                                                        value={
-                                                                            cardCvc
-                                                                        }
-                                                                        onChange={(
-                                                                            event,
-                                                                        ) =>
-                                                                            setCardCvc(
-                                                                                event.target.value
-                                                                                    .replace(
-                                                                                        /\D/g,
-                                                                                        '',
-                                                                                    )
-                                                                                    .slice(
-                                                                                        0,
-                                                                                        4,
-                                                                                    ),
-                                                                            )
-                                                                        }
-                                                                        inputMode="numeric"
-                                                                        autoComplete="cc-csc"
-                                                                        dir="ltr"
-                                                                        placeholder="123"
-                                                                        aria-invalid={
-                                                                            errors.card_cvc
-                                                                                ? true
-                                                                                : undefined
-                                                                        }
-                                                                    />
-
-                                                                    {errors.card_cvc ? (
-                                                                        <span
-                                                                            role="alert"
-                                                                            className="text-caption text-danger"
-                                                                        >
-                                                                            {
-                                                                                errors.card_cvc
-                                                                            }
-                                                                        </span>
-                                                                    ) : null}
-                                                                </label>
+                                                                </div>
                                                             </div>
+                                                        )}
+                                                    </div>
+                                                ) : null}
 
-                                                            <div className="text-caption text-text-tertiary flex items-center gap-2 pt-1">
-                                                                <LockIcon />
+                                                {availableMethods.has(
+                                                    'cash',
+                                                ) ? (
+                                                    <div className="relative">
+                                                        <RadioCard
+                                                            value="cash"
+                                                            title={t.cash_title}
+                                                            description={
+                                                                t.cash_description
+                                                            }
+                                                            className="min-h-[72px] pe-14"
+                                                        />
 
-                                                                <span>
-                                                                    {fill(
-                                                                        t.card_safe,
-                                                                        {
-                                                                            restaurant:
-                                                                                restaurant.name,
-                                                                        },
-                                                                    )}
-                                                                </span>
-                                                            </div>
+                                                        <span
+                                                            aria-hidden="true"
+                                                            className="text-text-secondary pointer-events-none absolute end-4 top-1/2 -translate-y-1/2"
+                                                        >
+                                                            <CashIcon />
+                                                        </span>
+                                                    </div>
+                                                ) : null}
+
+                                                {availableMethods.has('pos') ? (
+                                                    <div className="relative">
+                                                        <RadioCard
+                                                            value="pos"
+                                                            title={t.pos_title}
+                                                            description={
+                                                                t.pos_description
+                                                            }
+                                                            className="min-h-[72px] pe-14"
+                                                        />
+
+                                                        <span
+                                                            aria-hidden="true"
+                                                            className="text-text-secondary pointer-events-none absolute end-4 top-1/2 -translate-y-1/2"
+                                                        >
+                                                            <TerminalIcon />
+                                                        </span>
+                                                    </div>
+                                                ) : null}
+                                            </RadioGroup>
+                                        </section>
+
+                                        {isDeferred ? (
+                                            <div className="rounded-md border border-[var(--saffron-300)] bg-[var(--saffron-50)] px-4 py-3">
+                                                <p className="text-label text-text-primary font-semibold">
+                                                    {t.deferred_title}
+                                                </p>
+
+                                                <p className="text-caption text-text-secondary mt-1 leading-relaxed">
+                                                    {t.deferred_body}
+                                                </p>
+                                            </div>
+                                        ) : null}
+                                    </div>
+
+                                    <div className="contents lg:sticky lg:top-24 lg:flex lg:flex-col lg:gap-5">
+                                        <div className="bg-border-subtle h-px lg:hidden" />
+
+                                        <section className="flex flex-col gap-3">
+                                            <div className="flex items-baseline justify-between gap-3">
+                                                <h2 className="text-label text-text-primary font-semibold">
+                                                    {t.tip_title}
+                                                </h2>
+
+                                                <span className="text-caption text-text-tertiary">
+                                                    {t.tip_shared}
+                                                </span>
+                                            </div>
+
+                                            <div className="grid grid-cols-4 gap-2">
+                                                {tip_presets.map((preset) => (
+                                                    <ChipFilter
+                                                        key={preset}
+                                                        active={
+                                                            tipPct === preset
+                                                        }
+                                                        onClick={() =>
+                                                            setTipPct(preset)
+                                                        }
+                                                    >
+                                                        {preset === 0
+                                                            ? t.tip_none
+                                                            : `${preset}%`}
+                                                    </ChipFilter>
+                                                ))}
+                                            </div>
+                                        </section>
+
+                                        <section className="grid grid-cols-2 gap-2">
+                                            <button
+                                                type="button"
+                                                aria-expanded={promoOpen}
+                                                onClick={() =>
+                                                    setPromoOpen(
+                                                        (current) => !current,
+                                                    )
+                                                }
+                                                className="border-border-default bg-surface-card text-label text-text-primary hover:bg-action-ghost-hover flex min-h-11 items-center justify-center gap-2 rounded-full border border-dashed px-3 font-medium transition-colors"
+                                            >
+                                                <PercentIcon />
+
+                                                <span>
+                                                    {promo.code
+                                                        ? promo.code
+                                                        : t.promo}
+                                                </span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                aria-pressed={splitEnabled}
+                                                onClick={() =>
+                                                    setSplitEnabled(
+                                                        (current) => !current,
+                                                    )
+                                                }
+                                                className={`text-label flex min-h-11 items-center justify-center rounded-full border px-3 font-medium transition-colors ${
+                                                    splitEnabled
+                                                        ? 'border-transparent bg-[var(--ink-900)] text-white'
+                                                        : 'border-border-default bg-surface-card text-text-primary hover:bg-action-ghost-hover'
+                                                }`}
+                                            >
+                                                {t.split_toggle}
+                                            </button>
+                                        </section>
+
+                                        {promoOpen ? (
+                                            <Card className="flex flex-col gap-3 p-4">
+                                                {promo.code ? (
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div className="min-w-0">
+                                                            <p className="text-label text-text-primary truncate font-semibold">
+                                                                {promo.code}
+                                                            </p>
+
+                                                            <p className="text-caption text-text-secondary mt-0.5">
+                                                                {
+                                                                    t.promo_applied
+                                                                }
+                                                            </p>
                                                         </div>
-                                                    )}
-                                                </div>
-                                            ) : null}
 
-                                            {availableMethods.has('cash') ? (
-                                                <div className="relative">
-                                                    <RadioCard
-                                                        value="cash"
-                                                        title={t.cash_title}
-                                                        description={
-                                                            t.cash_description
-                                                        }
-                                                        className="min-h-[72px] pe-14"
-                                                    />
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            loading={promoBusy}
+                                                            onClick={
+                                                                removePromo
+                                                            }
+                                                        >
+                                                            {t.promo_remove}
+                                                        </Button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex gap-2">
+                                                        <Input
+                                                            value={promoCode}
+                                                            onChange={(event) =>
+                                                                setPromoCode(
+                                                                    event.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            placeholder={
+                                                                t.promo_placeholder
+                                                            }
+                                                            aria-label={t.promo}
+                                                            aria-invalid={
+                                                                errors.promo_code
+                                                                    ? true
+                                                                    : undefined
+                                                            }
+                                                        />
 
-                                                    <span
-                                                        aria-hidden="true"
-                                                        className="text-text-secondary pointer-events-none absolute end-4 top-1/2 -translate-y-1/2"
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            loading={promoBusy}
+                                                            disabled={
+                                                                !promoCode.trim()
+                                                            }
+                                                            onClick={applyPromo}
+                                                        >
+                                                            {t.promo_apply}
+                                                        </Button>
+                                                    </div>
+                                                )}
+
+                                                {errors.promo_code ? (
+                                                    <p
+                                                        role="alert"
+                                                        className="text-caption text-danger"
                                                     >
-                                                        <CashIcon />
-                                                    </span>
-                                                </div>
-                                            ) : null}
+                                                        {errors.promo_code}
+                                                    </p>
+                                                ) : null}
+                                            </Card>
+                                        ) : null}
 
-                                            {availableMethods.has('pos') ? (
-                                                <div className="relative">
-                                                    <RadioCard
-                                                        value="pos"
-                                                        title={t.pos_title}
-                                                        description={
-                                                            t.pos_description
-                                                        }
-                                                        className="min-h-[72px] pe-14"
-                                                    />
+                                        {splitEnabled ? (
+                                            <Card className="flex flex-col gap-4 p-4">
+                                                <div className="flex items-center justify-between gap-4">
+                                                    <div>
+                                                        <h2 className="text-label text-text-primary font-semibold">
+                                                            {t.split_title}
+                                                        </h2>
 
-                                                    <span
-                                                        aria-hidden="true"
-                                                        className="text-text-secondary pointer-events-none absolute end-4 top-1/2 -translate-y-1/2"
-                                                    >
-                                                        <TerminalIcon />
-                                                    </span>
-                                                </div>
-                                            ) : null}
-                                        </RadioGroup>
-                                    </section>
-
-                                    {isDeferred ? (
-                                        <div className="rounded-md border border-[var(--saffron-300)] bg-[var(--saffron-50)] px-4 py-3">
-                                            <p className="text-label text-text-primary font-semibold">
-                                                {t.deferred_title}
-                                            </p>
-
-                                            <p className="text-caption text-text-secondary mt-1 leading-relaxed">
-                                                {t.deferred_body}
-                                            </p>
-                                        </div>
-                                    ) : null}
-
-                                    <div className="bg-border-subtle h-px" />
-
-                                    <section className="flex flex-col gap-3">
-                                        <div className="flex items-baseline justify-between gap-3">
-                                            <h2 className="text-label text-text-primary font-semibold">
-                                                {t.tip_title}
-                                            </h2>
-
-                                            <span className="text-caption text-text-tertiary">
-                                                {t.tip_shared}
-                                            </span>
-                                        </div>
-
-                                        <div className="grid grid-cols-4 gap-2">
-                                            {tip_presets.map((preset) => (
-                                                <ChipFilter
-                                                    key={preset}
-                                                    active={tipPct === preset}
-                                                    onClick={() =>
-                                                        setTipPct(preset)
-                                                    }
-                                                >
-                                                    {preset === 0
-                                                        ? t.tip_none
-                                                        : `${preset}%`}
-                                                </ChipFilter>
-                                            ))}
-                                        </div>
-                                    </section>
-
-                                    <section className="grid grid-cols-2 gap-2">
-                                        <button
-                                            type="button"
-                                            aria-expanded={promoOpen}
-                                            onClick={() =>
-                                                setPromoOpen(
-                                                    (current) => !current,
-                                                )
-                                            }
-                                            className="border-border-default bg-surface-card text-label text-text-primary hover:bg-action-ghost-hover flex min-h-11 items-center justify-center gap-2 rounded-full border border-dashed px-3 font-medium transition-colors"
-                                        >
-                                            <PercentIcon />
-
-                                            <span>
-                                                {promo.code
-                                                    ? promo.code
-                                                    : t.promo}
-                                            </span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            aria-pressed={splitEnabled}
-                                            onClick={() =>
-                                                setSplitEnabled(
-                                                    (current) => !current,
-                                                )
-                                            }
-                                            className={`text-label flex min-h-11 items-center justify-center rounded-full border px-3 font-medium transition-colors ${
-                                                splitEnabled
-                                                    ? 'border-transparent bg-[var(--ink-900)] text-white'
-                                                    : 'border-border-default bg-surface-card text-text-primary hover:bg-action-ghost-hover'
-                                            }`}
-                                        >
-                                            {t.split_toggle}
-                                        </button>
-                                    </section>
-
-                                    {promoOpen ? (
-                                        <Card className="flex flex-col gap-3 p-4">
-                                            {promo.code ? (
-                                                <div className="flex items-center justify-between gap-3">
-                                                    <div className="min-w-0">
-                                                        <p className="text-label text-text-primary truncate font-semibold">
-                                                            {promo.code}
-                                                        </p>
-
-                                                        <p className="text-caption text-text-secondary mt-0.5">
-                                                            {t.promo_applied}
+                                                        <p className="text-caption text-text-secondary mt-1">
+                                                            {t.split_body}
                                                         </p>
                                                     </div>
 
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
+                                                    <QuantityStepper
+                                                        value={splitWays}
+                                                        min={2}
+                                                        max={8}
                                                         size="sm"
-                                                        loading={promoBusy}
-                                                        onClick={removePromo}
-                                                    >
-                                                        {t.promo_remove}
-                                                    </Button>
-                                                </div>
-                                            ) : (
-                                                <div className="flex gap-2">
-                                                    <Input
-                                                        value={promoCode}
-                                                        onChange={(event) =>
-                                                            setPromoCode(
-                                                                event.target
-                                                                    .value,
-                                                            )
-                                                        }
-                                                        placeholder={
-                                                            t.promo_placeholder
-                                                        }
-                                                        aria-label={t.promo}
-                                                        aria-invalid={
-                                                            errors.promo_code
-                                                                ? true
-                                                                : undefined
-                                                        }
+                                                        onChange={setSplitWays}
                                                     />
-
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        loading={promoBusy}
-                                                        disabled={
-                                                            !promoCode.trim()
-                                                        }
-                                                        onClick={applyPromo}
-                                                    >
-                                                        {t.promo_apply}
-                                                    </Button>
                                                 </div>
-                                            )}
 
-                                            {errors.promo_code ? (
-                                                <p
-                                                    role="alert"
-                                                    className="text-caption text-danger"
-                                                >
-                                                    {errors.promo_code}
+                                                <div className="border-border-subtle flex items-center justify-between border-t pt-3">
+                                                    <span className="text-body text-text-secondary">
+                                                        {t.split_share}
+                                                    </span>
+
+                                                    <strong className="text-title-3 text-text-primary">
+                                                        <Numeric>
+                                                            {formatMoney(
+                                                                shareMoney,
+                                                            )}
+                                                        </Numeric>
+                                                    </strong>
+                                                </div>
+
+                                                <p className="text-caption text-text-tertiary leading-relaxed">
+                                                    {fill(t.split_note, {
+                                                        table: table.number,
+                                                    })}
                                                 </p>
-                                            ) : null}
+                                            </Card>
+                                        ) : null}
+
+                                        <Card className="p-4">
+                                            <PriceSummary
+                                                subtotal={formatMoney(
+                                                    cart.subtotal,
+                                                )}
+                                                service={formatMoney(
+                                                    cart.service_amount,
+                                                )}
+                                                subtotalLabel={t.subtotal}
+                                                serviceLabel={serviceLabel}
+                                                discountLabel={t.discount}
+                                                splitLabel={t.split}
+                                                totalLabel={t.total}
+                                                discount={
+                                                    discountMinor > 0
+                                                        ? formatMoney(
+                                                              cart.discount_amount,
+                                                          )
+                                                        : undefined
+                                                }
+                                                tip={formatMoney(tipMoney)}
+                                                tipLabel={tipLabel}
+                                                split={
+                                                    splitEnabled
+                                                        ? fill(
+                                                              t.split_summary,
+                                                              {
+                                                                  ways: splitWays,
+                                                                  share: formatMoney(
+                                                                      shareMoney,
+                                                                  ),
+                                                              },
+                                                          )
+                                                        : undefined
+                                                }
+                                                total={formatMoney(totalMoney)}
+                                            />
                                         </Card>
-                                    ) : null}
 
-                                    {splitEnabled ? (
-                                        <Card className="flex flex-col gap-4 p-4">
-                                            <div className="flex items-center justify-between gap-4">
-                                                <div>
-                                                    <h2 className="text-label text-text-primary font-semibold">
-                                                        {t.split_title}
-                                                    </h2>
-
-                                                    <p className="text-caption text-text-secondary mt-1">
-                                                        {t.split_body}
-                                                    </p>
-                                                </div>
-
-                                                <QuantityStepper
-                                                    value={splitWays}
-                                                    min={2}
-                                                    max={8}
-                                                    size="sm"
-                                                    onChange={setSplitWays}
-                                                />
-                                            </div>
-
-                                            <div className="border-border-subtle flex items-center justify-between border-t pt-3">
-                                                <span className="text-body text-text-secondary">
-                                                    {t.split_share}
-                                                </span>
-
-                                                <strong className="text-title-3 text-text-primary">
-                                                    <Numeric>
-                                                        {formatMoney(
-                                                            shareMoney,
-                                                        )}
-                                                    </Numeric>
-                                                </strong>
-                                            </div>
-
-                                            <p className="text-caption text-text-tertiary leading-relaxed">
-                                                {fill(t.split_note, {
-                                                    table: table.number,
-                                                })}
+                                        {errors.cart ? (
+                                            <p
+                                                role="alert"
+                                                className="text-caption text-danger"
+                                            >
+                                                {errors.cart}
                                             </p>
-                                        </Card>
-                                    ) : null}
+                                        ) : null}
 
-                                    <Card className="p-4">
-                                        <PriceSummary
-                                            subtotal={formatMoney(
-                                                cart.subtotal,
-                                            )}
-                                            service={formatMoney(
-                                                cart.service_amount,
-                                            )}
-                                            subtotalLabel={t.subtotal}
-                                            serviceLabel={serviceLabel}
-                                            discountLabel={t.discount}
-                                            splitLabel={t.split}
-                                            totalLabel={t.total}
-                                            discount={
-                                                discountMinor > 0
-                                                    ? formatMoney(
-                                                          cart.discount_amount,
-                                                      )
-                                                    : undefined
-                                            }
-                                            tip={formatMoney(tipMoney)}
-                                            tipLabel={tipLabel}
-                                            split={
-                                                splitEnabled
-                                                    ? fill(t.split_summary, {
-                                                          ways: splitWays,
-                                                          share: formatMoney(
-                                                              shareMoney,
-                                                          ),
-                                                      })
-                                                    : undefined
-                                            }
-                                            total={formatMoney(totalMoney)}
-                                        />
-                                    </Card>
-
-                                    {errors.cart ? (
-                                        <p
-                                            role="alert"
-                                            className="text-caption text-danger"
-                                        >
-                                            {errors.cart}
-                                        </p>
-                                    ) : null}
-
-                                    {errors.method ? (
-                                        <p
-                                            role="alert"
-                                            className="text-caption text-danger"
-                                        >
-                                            {errors.method}
-                                        </p>
-                                    ) : null}
+                                        {errors.method ? (
+                                            <p
+                                                role="alert"
+                                                className="text-caption text-danger"
+                                            >
+                                                {errors.method}
+                                            </p>
+                                        ) : null}
+                                    </div>
                                 </>
                             )}
                         </main>
                     </div>
 
                     {!requires3ds ? (
-                        <StickyDock className="px-5">
-                            <div className="mx-auto flex w-full max-w-md flex-col gap-2">
+                        <StickyDock className="px-5 lg:px-[var(--gutter-desktop)]">
+                            <div className="mx-auto flex w-full max-w-md flex-col gap-2 lg:me-0 lg:ms-auto lg:w-[24rem]">
                                 <Button
                                     type="submit"
                                     size="lg"

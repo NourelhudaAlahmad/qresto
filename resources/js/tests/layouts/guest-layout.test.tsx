@@ -95,8 +95,8 @@ describe('Guest layout: mobile-first, not mobile-only (#60)', () => {
             expect(source, `${file} must keep GuestLayout`).toContain(
                 "from '@/layouts/guest-layout'",
             );
-            expect(source, `${file} must render <GuestLayout>`).toContain(
-                '<GuestLayout>',
+            expect(source, `${file} must render <GuestLayout>`).toMatch(
+                /<GuestLayout[\s>]/,
             );
             expect(source, `${file} must not use LandingLayout`).not.toContain(
                 'landing-layout',
@@ -106,6 +106,73 @@ describe('Guest layout: mobile-first, not mobile-only (#60)', () => {
                 source,
                 `${file} must not size itself to the old phone shell`,
             ).not.toContain('100dvh-48px');
+        }
+    });
+});
+
+describe('Wide-viewport compositions (#61)', () => {
+    const WIDE_SCREENS = [
+        'menu.tsx',
+        'meal.tsx',
+        'cart.tsx',
+        'checkout.tsx',
+        'status.tsx',
+    ];
+    const READING_SCREENS = ['table.tsx', 'tables.tsx'];
+
+    const read = (file: string) =>
+        fs.readFileSync(
+            path.resolve(import.meta.dirname, '../../pages/guest', file),
+            'utf8',
+        );
+
+    it('opens the column to 72rem from lg only when asked', () => {
+        const wide = render(
+            <GuestLayout wide>
+                <p>content</p>
+            </GuestLayout>,
+        ).container.querySelector('[data-guest-shell]');
+
+        expect(wide).toHaveClass('sm:max-w-[40rem]', 'lg:max-w-[72rem]');
+        expect(wide).toHaveAttribute('data-guest-width', 'wide');
+
+        const { shell } = mount();
+
+        expect(shell?.className).not.toContain('lg:max-w');
+        expect(shell).toHaveAttribute('data-guest-width', 'reading');
+    });
+
+    it('gives the screens with two-column or grid compositions the wide column', () => {
+        for (const file of WIDE_SCREENS) {
+            const source = read(file);
+
+            expect(source, `${file} must use <GuestLayout wide>`).toContain(
+                '<GuestLayout wide>',
+            );
+            expect(source, `${file} must lay itself out from lg`).toMatch(
+                /lg:(grid|flex)/,
+            );
+        }
+    });
+
+    it('keeps the table screens at a reading measure', () => {
+        for (const file of READING_SCREENS) {
+            expect(read(file), file).not.toContain('<GuestLayout wide>');
+        }
+    });
+
+    it('never changes a phone: wide-only wrappers are display: contents below lg', () => {
+        for (const file of WIDE_SCREENS) {
+            const wrappers = [
+                ...read(file).matchAll(/className="(contents [^"]*)"/g),
+            ].map((match) => match[1]);
+
+            for (const classes of wrappers) {
+                expect(
+                    classes.split(/\s+/).filter((c) => !c.startsWith('lg:')),
+                    `${file}: "${classes}" must only change from lg`,
+                ).toEqual(['contents']);
+            }
         }
     });
 });

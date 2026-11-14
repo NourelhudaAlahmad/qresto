@@ -17,9 +17,20 @@ import { checkScreen } from '@/lib/non-negotiables';
  * on the same page background, with a hairline either side so headers
  * and docks end somewhere deliberate. No device frame, no clipping: the
  * page scrolls normally, and sticky headers and docks stick to the
- * viewport. Laying screens out across a wide viewport is #61.
+ * viewport. Screens that compose for a wide viewport pass `wide` (#61).
  */
-export default function GuestLayout({ children }: PropsWithChildren) {
+type GuestLayoutProps = PropsWithChildren<{
+    /**
+     * Screens with a composition for wide viewports (#61) open the column
+     * to 72rem from lg; the rest keep the 40rem reading column.
+     */
+    wide?: boolean;
+}>;
+
+export default function GuestLayout({
+    children,
+    wide = false,
+}: GuestLayoutProps) {
     const frame = useRef<HTMLDivElement>(null);
 
     // #36, rule 01: one primary button per guest screen.
@@ -33,7 +44,8 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                 and the sticky headers and docks would stop sticking. */}
             <div
                 data-guest-shell
-                className="relative mx-auto w-full bg-[var(--surface-page)] sm:max-w-[40rem] sm:overflow-x-clip sm:border-x sm:border-[var(--border-subtle)]"
+                data-guest-width={wide ? 'wide' : 'reading'}
+                className={`relative mx-auto w-full bg-[var(--surface-page)] sm:max-w-[40rem] sm:overflow-x-clip sm:border-x sm:border-[var(--border-subtle)] ${wide ? 'lg:max-w-[72rem]' : ''}`}
             >
                 <div
                     ref={frame}

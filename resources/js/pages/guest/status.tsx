@@ -284,11 +284,11 @@ export default function Status({
     const sitting = live.sitting;
 
     return (
-        <GuestLayout>
+        <GuestLayout wide>
             <Head title={fill(g.status.head, { code: order.code })} />
 
             <div className="flex h-[100dvh] min-h-0 flex-col bg-[var(--surface-page)]">
-                <header className="shrink-0 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-5 pb-4 pt-4">
+                <header className="shrink-0 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-5 pb-4 pt-4 lg:px-[var(--gutter-desktop)]">
                     <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
                             <p className="font-display text-body font-semibold text-[var(--text-primary)]">
@@ -310,11 +310,14 @@ export default function Status({
                     </div>
                 </header>
 
-                <main className="min-h-0 flex-1 overflow-y-auto">
+                <main className="min-h-0 flex-1 overflow-y-auto lg:grid lg:grid-cols-2 lg:content-start lg:items-start lg:gap-x-8 lg:px-[var(--gutter-desktop)] lg:py-8">
+                    {/* Wide (#61): where the order is on one side, the waiter and
+                        the receipt on the other. The wrapper is display: contents
+                        below lg, so a phone keeps its single column. */}
                     {/* Left open on the table through the meal, on a phone
                         moving in and out of signal (#58). */}
                     {isDisconnected && (
-                        <div className="px-5 pt-4">
+                        <div className="px-5 pt-4 lg:col-span-2 lg:px-0 lg:pb-6 lg:pt-0">
                             <OfflineBanner
                                 tone="guest"
                                 title={g.status.offline_title}
@@ -329,25 +332,27 @@ export default function Status({
                         </div>
                     )}
 
-                    <section className="px-5 pb-6 pt-7">
-                        <h1 className="font-display max-w-[320px] text-[40px] font-semibold leading-[1.02] tracking-[-0.045em] text-[var(--text-primary)]">
-                            <StatusTransition status={live.status}>
-                                {copy.title}
-                            </StatusTransition>
-                        </h1>
+                    <div className="contents lg:block">
+                        <section className="px-5 pb-6 pt-7 lg:px-0 lg:pt-0">
+                            <h1 className="font-display max-w-[320px] text-[40px] font-semibold leading-[1.02] tracking-[-0.045em] text-[var(--text-primary)]">
+                                <StatusTransition status={live.status}>
+                                    {copy.title}
+                                </StatusTransition>
+                            </h1>
 
-                        <p className="text-body mt-3 max-w-[335px] leading-7 text-[var(--text-secondary)]">
-                            <StatusTransition status={live.status}>
-                                {copy.description}
-                            </StatusTransition>
-                        </p>
-                    </section>
+                            <p className="text-body mt-3 max-w-[335px] leading-7 text-[var(--text-secondary)]">
+                                <StatusTransition status={live.status}>
+                                    {copy.description}
+                                </StatusTransition>
+                            </p>
+                        </section>
 
-                    <section className="px-5 pb-6">
-                        <ProgressTrail items={trailItems} />
-                    </section>
+                        <section className="px-5 pb-6 lg:px-0">
+                            <ProgressTrail items={trailItems} />
+                        </section>
+                    </div>
 
-                    <div className="space-y-5 px-4 pb-6">
+                    <div className="space-y-5 px-4 pb-6 lg:px-0">
                         <Card>
                             <div className="flex items-center gap-3">
                                 {live.assigned_waiter && (
@@ -567,16 +572,18 @@ export default function Status({
 
                 {/* The canvas's "Advance status" only steps the prototype's
                     timeline for reviewers; guests never move their own order. */}
-                <StickyDock>
-                    <Button
-                        asChild
-                        variant="outline"
-                        size="lg"
-                        fullWidth
-                        className="rounded-full"
-                    >
-                        <Link href="/menu">{g.status.order_more}</Link>
-                    </Button>
+                <StickyDock className="lg:px-[var(--gutter-desktop)]">
+                    <div className="lg:ms-auto lg:w-[calc(50%-1rem)]">
+                        <Button
+                            asChild
+                            variant="outline"
+                            size="lg"
+                            fullWidth
+                            className="rounded-full"
+                        >
+                            <Link href="/menu">{g.status.order_more}</Link>
+                        </Button>
+                    </div>
                 </StickyDock>
 
                 <TabBar

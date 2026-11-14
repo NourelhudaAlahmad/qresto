@@ -198,7 +198,7 @@ export default function Menu({
     }, [filteredCategories]);
 
     return (
-        <GuestLayout>
+        <GuestLayout wide>
             <Head title={fill(g.menu.head, { restaurant: restaurant.name })} />
 
             <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[var(--surface-page)]">
@@ -206,7 +206,7 @@ export default function Menu({
                     TOP HEADER
                 ========================== */}
                 <header className="z-20 shrink-0 border-b border-[var(--border-subtle)] bg-[var(--surface-page)]">
-                    <div className="px-4 pb-3 pt-4">
+                    <div className="px-4 pb-3 pt-4 lg:px-[var(--gutter-desktop)]">
                         {/* Restaurant title */}
                         <div className="mb-4 flex items-start justify-between gap-3">
                             <div className="min-w-0">
@@ -226,7 +226,7 @@ export default function Menu({
 
                             <span className="text-caption inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--clay-50)] px-3 py-2 font-semibold text-[var(--clay-700)]">
                                 <span aria-hidden="true">🍴</span>
-                                Table {table.number}
+                                {fill(g.status.table, { table: table.number })}
                             </span>
                         </div>
 
@@ -238,68 +238,77 @@ export default function Menu({
                             aria-label={g.menu.search}
                         />
 
-                        {/* Category chips */}
-                        <div className="scrollbar-none -mx-4 mt-3 overflow-x-auto px-4">
-                            <div className="flex w-max gap-2">
-                                <ChipFilter
-                                    type="category"
-                                    active={activeCategory === ALL_CATEGORIES}
-                                    onClick={() =>
-                                        setActiveCategory(ALL_CATEGORIES)
-                                    }
-                                >
-                                    {g.menu.all}
-                                </ChipFilter>
-
-                                {categories.map((category) => (
-                                    <ChipFilter
-                                        key={category.id}
-                                        type="category"
-                                        active={activeCategory === category.id}
-                                        onClick={() =>
-                                            setActiveCategory(category.id)
-                                        }
-                                    >
-                                        {category.name}
-                                    </ChipFilter>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Dietary chips */}
-                        {dietaryTags.length > 0 && (
-                            <div className="scrollbar-none -mx-4 mt-2 overflow-x-auto px-4">
+                        {/* Wide: the category and dietary rows side by side (#61). */}
+                        <div className="lg:mt-3 lg:flex lg:items-start lg:gap-6">
+                            {/* Category chips */}
+                            <div className="scrollbar-none -mx-4 mt-3 overflow-x-auto px-4 lg:mx-0 lg:mt-0 lg:min-w-0 lg:flex-1 lg:px-0">
                                 <div className="flex w-max gap-2">
                                     <ChipFilter
-                                        active={activeDietary === ALL_DIETARY}
+                                        type="category"
+                                        active={
+                                            activeCategory === ALL_CATEGORIES
+                                        }
                                         onClick={() =>
-                                            setActiveDietary(ALL_DIETARY)
+                                            setActiveCategory(ALL_CATEGORIES)
                                         }
                                     >
-                                        {g.menu.all_diets}
+                                        {g.menu.all}
                                     </ChipFilter>
 
-                                    {dietaryTags.map((tag) => (
+                                    {categories.map((category) => (
                                         <ChipFilter
-                                            key={tag}
-                                            active={activeDietary === tag}
+                                            key={category.id}
+                                            type="category"
+                                            active={
+                                                activeCategory === category.id
+                                            }
                                             onClick={() =>
-                                                setActiveDietary(tag)
+                                                setActiveCategory(category.id)
                                             }
                                         >
-                                            {tag}
+                                            {category.name}
                                         </ChipFilter>
                                     ))}
                                 </div>
                             </div>
-                        )}
+
+                            {/* Dietary chips */}
+                            {dietaryTags.length > 0 && (
+                                <div className="scrollbar-none -mx-4 mt-2 overflow-x-auto px-4 lg:mx-0 lg:mt-0 lg:min-w-0 lg:flex-1 lg:px-0">
+                                    <div className="flex w-max gap-2">
+                                        <ChipFilter
+                                            active={
+                                                activeDietary === ALL_DIETARY
+                                            }
+                                            onClick={() =>
+                                                setActiveDietary(ALL_DIETARY)
+                                            }
+                                        >
+                                            {g.menu.all_diets}
+                                        </ChipFilter>
+
+                                        {dietaryTags.map((tag) => (
+                                            <ChipFilter
+                                                key={tag}
+                                                active={activeDietary === tag}
+                                                onClick={() =>
+                                                    setActiveDietary(tag)
+                                                }
+                                            >
+                                                {tag}
+                                            </ChipFilter>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </header>
 
                 {/* =========================
                     SCROLLABLE MENU
                 ========================== */}
-                <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-10 pt-5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-10 pt-5 [-ms-overflow-style:none] [scrollbar-width:none] lg:px-[var(--gutter-desktop)] [&::-webkit-scrollbar]:hidden">
                     {visibleItemCount === 0 ? (
                         <EmptyState
                             icon={<SearchX className="size-7" />}
@@ -318,9 +327,13 @@ export default function Menu({
                                     />
 
                                     {/* Items */}
-                                    <div className="divide-border-subtle mt-2 divide-y">
+                                    {/* Wide: two dishes a row, each with its own rule (#61). */}
+                                    <div className="divide-border-subtle mt-2 divide-y lg:grid lg:grid-cols-2 lg:gap-x-8 lg:divide-y-0">
                                         {category.items.map((item) => (
-                                            <div key={item.id} className="py-0">
+                                            <div
+                                                key={item.id}
+                                                className="py-0 lg:border-t lg:border-[var(--border-subtle)]"
+                                            >
                                                 <MenuItemCard
                                                     name={item.name}
                                                     description={
@@ -374,19 +387,21 @@ export default function Menu({
                 ========================== */}
                 {cart.count > 0 && cart.subtotal !== null && (
                     <StickyDock className="shrink-0">
-                        <Button
-                            size="lg"
-                            fullWidth
-                            onClick={() => router.visit('/cart')}
-                            className="h-14 rounded-full text-base font-semibold shadow-sm"
-                        >
-                            {cart.count === 1
-                                ? g.menu.view_order_one
-                                : fill(g.menu.view_order_other, {
-                                      count: cart.count,
-                                  })}{' '}
-                            <Numeric>{cart.subtotal.formatted}</Numeric>
-                        </Button>
+                        <div className="lg:ms-auto lg:max-w-[24rem]">
+                            <Button
+                                size="lg"
+                                fullWidth
+                                onClick={() => router.visit('/cart')}
+                                className="h-14 rounded-full text-base font-semibold shadow-sm"
+                            >
+                                {cart.count === 1
+                                    ? g.menu.view_order_one
+                                    : fill(g.menu.view_order_other, {
+                                          count: cart.count,
+                                      })}{' '}
+                                <Numeric>{cart.subtotal.formatted}</Numeric>
+                            </Button>
+                        </div>
                     </StickyDock>
                 )}
 

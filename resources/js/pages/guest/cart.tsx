@@ -392,11 +392,11 @@ export default function CartPage({
     };
 
     return (
-        <GuestLayout>
+        <GuestLayout wide>
             <Head title={translations.title} />
 
             <div className="flex min-h-dvh flex-col bg-[var(--surface-page)]">
-                <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-[var(--border-subtle)] bg-[var(--alpha-paper-88)] px-[var(--gutter-mobile)] backdrop-blur-xl">
+                <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-[var(--border-subtle)] bg-[var(--alpha-paper-88)] px-[var(--gutter-mobile)] backdrop-blur-xl lg:px-[var(--gutter-desktop)]">
                     <Link
                         href="/menu"
                         aria-label={g.cart.back}
@@ -451,184 +451,202 @@ export default function CartPage({
                     </main>
                 ) : (
                     <>
-                        <main className="flex flex-1 flex-col gap-3 px-[var(--gutter-mobile)] py-4 pb-6">
-                            {cart.lines.map((line) => {
-                                const lineBusy = busyLineId === line.id;
+                        <main className="flex flex-1 flex-col gap-3 px-[var(--gutter-mobile)] py-4 pb-6 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-8 lg:px-[var(--gutter-desktop)] lg:py-8">
+                            {/* Wide: the lines beside the summary (#61). Below lg the two
+                                wrappers are display: contents, so a phone gets the single
+                                column it always had. */}
+                            <div className="contents lg:flex lg:flex-col lg:gap-3">
+                                {cart.lines.map((line) => {
+                                    const lineBusy = busyLineId === line.id;
 
-                                return (
-                                    <Card
-                                        key={line.id}
-                                        className="flex gap-3 p-3 sm:p-3"
-                                    >
-                                        <div className="size-16 shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-[var(--surface-sunken)]">
-                                            {line.photo_url ? (
-                                                <img
-                                                    src={line.photo_url}
-                                                    alt=""
-                                                    className="size-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="grid size-full place-items-center text-[var(--text-tertiary)]">
-                                                    <svg
-                                                        viewBox="0 0 24 24"
-                                                        width="22"
-                                                        height="22"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="1.6"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        aria-hidden="true"
-                                                    >
-                                                        <path d="M3 3h18v18H3z" />
-                                                        <path d="m3 16 5-5 4 4 3-3 6 6" />
-                                                        <circle
-                                                            cx="8.5"
-                                                            cy="8.5"
-                                                            r="1.5"
-                                                        />
-                                                    </svg>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="min-w-0 flex-1 text-[length:var(--text-title-3)] font-[var(--font-display)] font-[var(--weight-semibold)]">
-                                                    {line.name}
-                                                </span>
-
-                                                <span className="shrink-0 text-[length:var(--text-body)] font-[var(--font-mono)] font-medium">
-                                                    {formatMoney(
-                                                        line.line_total,
-                                                    )}
-                                                </span>
+                                    return (
+                                        <Card
+                                            key={line.id}
+                                            className="flex gap-3 p-3 sm:p-3"
+                                        >
+                                            <div className="size-16 shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-[var(--surface-sunken)]">
+                                                {line.photo_url ? (
+                                                    <img
+                                                        src={line.photo_url}
+                                                        alt=""
+                                                        className="size-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="grid size-full place-items-center text-[var(--text-tertiary)]">
+                                                        <svg
+                                                            viewBox="0 0 24 24"
+                                                            width="22"
+                                                            height="22"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="1.6"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            aria-hidden="true"
+                                                        >
+                                                            <path d="M3 3h18v18H3z" />
+                                                            <path d="m3 16 5-5 4 4 3-3 6 6" />
+                                                            <circle
+                                                                cx="8.5"
+                                                                cy="8.5"
+                                                                r="1.5"
+                                                            />
+                                                        </svg>
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            {(line.variant ||
-                                                line.addons.length > 0) && (
-                                                <div className="text-[length:var(--text-caption)] leading-snug text-[var(--text-secondary)]">
-                                                    {line.variant && (
-                                                        <span>
-                                                            {line.variant}
-                                                        </span>
-                                                    )}
+                                            <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                                <div className="flex items-baseline gap-2">
+                                                    <span className="min-w-0 flex-1 text-[length:var(--text-title-3)] font-[var(--font-display)] font-[var(--weight-semibold)]">
+                                                        {line.name}
+                                                    </span>
 
-                                                    {line.variant &&
-                                                        line.addons.length >
-                                                            0 && (
-                                                            <span> · </span>
+                                                    <span className="shrink-0 text-[length:var(--text-body)] font-[var(--font-mono)] font-medium">
+                                                        {formatMoney(
+                                                            line.line_total,
+                                                        )}
+                                                    </span>
+                                                </div>
+
+                                                {(line.variant ||
+                                                    line.addons.length > 0) && (
+                                                    <div className="text-[length:var(--text-caption)] leading-snug text-[var(--text-secondary)]">
+                                                        {line.variant && (
+                                                            <span>
+                                                                {line.variant}
+                                                            </span>
                                                         )}
 
-                                                    {line.addons.map(
-                                                        (addon, index) => (
-                                                            <span
-                                                                key={addon.id}
-                                                            >
-                                                                {index > 0 &&
-                                                                    ', '}
-                                                                {addon.label}
-                                                            </span>
-                                                        ),
-                                                    )}
+                                                        {line.variant &&
+                                                            line.addons.length >
+                                                                0 && (
+                                                                <span> · </span>
+                                                            )}
+
+                                                        {line.addons.map(
+                                                            (addon, index) => (
+                                                                <span
+                                                                    key={
+                                                                        addon.id
+                                                                    }
+                                                                >
+                                                                    {index >
+                                                                        0 &&
+                                                                        ', '}
+                                                                    {
+                                                                        addon.label
+                                                                    }
+                                                                </span>
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {line.note && (
+                                                    <span className="text-[length:var(--text-caption)] font-medium text-[var(--warning-fg)]">
+                                                        {line.note}
+                                                    </span>
+                                                )}
+
+                                                <div className="mt-0.5 flex items-center gap-3">
+                                                    <QuantityStepper
+                                                        value={line.qty}
+                                                        min={0}
+                                                        max={99}
+                                                        size="sm"
+                                                        disabled={lineBusy}
+                                                        onChange={(nextQty) => {
+                                                            void updateQuantity(
+                                                                line,
+                                                                nextQty,
+                                                            );
+                                                        }}
+                                                    />
+
+                                                    <span className="flex-1" />
+
+                                                    <button
+                                                        type="button"
+                                                        disabled={lineBusy}
+                                                        onClick={() => {
+                                                            void removeLine(
+                                                                line,
+                                                            );
+                                                        }}
+                                                        className="rounded-[var(--radius-sm)] px-2 py-2 text-[length:var(--text-caption)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--danger-fg)] disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                        {g.cart.remove}
+                                                    </button>
                                                 </div>
-                                            )}
-
-                                            {line.note && (
-                                                <span className="text-[length:var(--text-caption)] font-medium text-[var(--warning-fg)]">
-                                                    {line.note}
-                                                </span>
-                                            )}
-
-                                            <div className="mt-0.5 flex items-center gap-3">
-                                                <QuantityStepper
-                                                    value={line.qty}
-                                                    min={0}
-                                                    max={99}
-                                                    size="sm"
-                                                    disabled={lineBusy}
-                                                    onChange={(nextQty) => {
-                                                        void updateQuantity(
-                                                            line,
-                                                            nextQty,
-                                                        );
-                                                    }}
-                                                />
-
-                                                <span className="flex-1" />
-
-                                                <button
-                                                    type="button"
-                                                    disabled={lineBusy}
-                                                    onClick={() => {
-                                                        void removeLine(line);
-                                                    }}
-                                                    className="rounded-[var(--radius-sm)] px-2 py-2 text-[length:var(--text-caption)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--danger-fg)] disabled:cursor-not-allowed disabled:opacity-50"
-                                                >
-                                                    {g.cart.remove}
-                                                </button>
                                             </div>
-                                        </div>
-                                    </Card>
-                                );
-                            })}
+                                        </Card>
+                                    );
+                                })}
 
-                            <Link
-                                href="/menu"
-                                className="flex h-11 items-center justify-center rounded-[var(--radius-pill)] border border-dashed border-[var(--border-strong)] bg-transparent px-4 text-[length:var(--text-body)] font-[var(--weight-medium)] text-[var(--text-secondary)] transition-colors hover:border-[var(--clay-400)] hover:text-[var(--clay-600)]"
-                            >
-                                {g.cart.add_more}
-                            </Link>
-
-                            <label className="mt-2 flex flex-col gap-1.5">
-                                <span className="text-[length:var(--text-label)] font-[var(--weight-semibold)]">
-                                    {g.cart.table_note}
-                                </span>
-
-                                <Textarea
-                                    rows={2}
-                                    maxLength={500}
-                                    value={tableNote}
-                                    disabled={savingNote}
-                                    placeholder={g.cart.table_note_placeholder}
-                                    className="resize-none"
-                                    onChange={(event) => {
-                                        setTableNote(event.target.value);
-                                    }}
-                                    onBlur={saveTableNote}
-                                />
-                            </label>
-
-                            {latest_order_id != null && (
-                                <p
-                                    role="note"
-                                    className="text-body rounded-[var(--radius-md)] bg-[var(--surface-sunken)] px-4 py-3 text-[var(--text-secondary)]"
+                                <Link
+                                    href="/menu"
+                                    className="flex h-11 items-center justify-center rounded-[var(--radius-pill)] border border-dashed border-[var(--border-strong)] bg-transparent px-4 text-[length:var(--text-body)] font-[var(--weight-medium)] text-[var(--text-secondary)] transition-colors hover:border-[var(--clay-400)] hover:text-[var(--clay-600)]"
                                 >
-                                    {g.cart.new_round}
-                                </p>
-                            )}
+                                    {g.cart.add_more}
+                                </Link>
+                            </div>
 
-                            <PriceSummary
-                                subtotal={formatMoney(cart.subtotal)}
-                                service={`${servicePercentage(
-                                    cart.service_pct,
-                                )}% · ${formatMoney(cart.service_amount)}`}
-                                total={formatMoney(cart.total)}
-                                subtotalLabel={g.cart.subtotal}
-                                serviceLabel={g.cart.service}
-                                totalLabel={g.cart.total}
-                            />
+                            <div className="contents lg:sticky lg:top-20 lg:flex lg:flex-col lg:gap-3">
+                                <label className="mt-2 flex flex-col gap-1.5 lg:mt-0">
+                                    <span className="text-[length:var(--text-label)] font-[var(--weight-semibold)]">
+                                        {g.cart.table_note}
+                                    </span>
+
+                                    <Textarea
+                                        rows={2}
+                                        maxLength={500}
+                                        value={tableNote}
+                                        disabled={savingNote}
+                                        placeholder={
+                                            g.cart.table_note_placeholder
+                                        }
+                                        className="resize-none"
+                                        onChange={(event) => {
+                                            setTableNote(event.target.value);
+                                        }}
+                                        onBlur={saveTableNote}
+                                    />
+                                </label>
+
+                                {latest_order_id != null && (
+                                    <p
+                                        role="note"
+                                        className="text-body rounded-[var(--radius-md)] bg-[var(--surface-sunken)] px-4 py-3 text-[var(--text-secondary)]"
+                                    >
+                                        {g.cart.new_round}
+                                    </p>
+                                )}
+
+                                <PriceSummary
+                                    subtotal={formatMoney(cart.subtotal)}
+                                    service={`${servicePercentage(
+                                        cart.service_pct,
+                                    )}% · ${formatMoney(cart.service_amount)}`}
+                                    total={formatMoney(cart.total)}
+                                    subtotalLabel={g.cart.subtotal}
+                                    serviceLabel={g.cart.service}
+                                    totalLabel={g.cart.total}
+                                />
+                            </div>
                         </main>
 
-                        <StickyDock>
-                            <Button
-                                type="button"
-                                size="lg"
-                                fullWidth
-                                onClick={goToPayment}
-                            >
-                                {g.cart.choose_payment}
-                            </Button>
+                        <StickyDock className="lg:px-[var(--gutter-desktop)]">
+                            <div className="lg:ms-auto lg:w-[22rem]">
+                                <Button
+                                    type="button"
+                                    size="lg"
+                                    fullWidth
+                                    onClick={goToPayment}
+                                >
+                                    {g.cart.choose_payment}
+                                </Button>
+                            </div>
                         </StickyDock>
                     </>
                 )}

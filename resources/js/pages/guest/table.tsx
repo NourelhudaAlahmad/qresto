@@ -126,9 +126,11 @@ export default function Table({
 
             <form
                 onSubmit={handleSubmit}
-                className="flex min-h-[100dvh] flex-col"
+                className="flex min-h-[100dvh] flex-col lg:justify-center"
             >
-                <main className="flex flex-1 flex-col px-[var(--gutter-mobile)] pb-6 pt-8">
+                {/* Wide: one centred card at a reading measure, its buttons
+                    right under it rather than docked to the bottom (#61). */}
+                <main className="flex flex-1 flex-col px-[var(--gutter-mobile)] pb-6 pt-8 lg:mx-auto lg:w-full lg:max-w-[28rem] lg:flex-none lg:pt-0">
                     <div className="text-herb-700 text-body flex items-center gap-2 font-semibold">
                         <Icon iconNode={CircleCheck} className="size-4" />
                         <span>{g.table.read}</span>
@@ -179,7 +181,7 @@ export default function Table({
                     </label>
                 </main>
 
-                <StickyDock className="flex-col gap-2">
+                <StickyDock className="flex-col gap-2 lg:static lg:mx-auto lg:w-full lg:max-w-[28rem] lg:border-t-0 lg:bg-transparent lg:backdrop-blur-none">
                     <Button
                         type="submit"
                         size="lg"
