@@ -481,7 +481,14 @@ export default function Kanban({
                                             : 'flex'
                                     } min-w-0 flex-col gap-3`}
                                 >
-                                    <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] pb-3">
+                                    {/* Pinned under the staff topbar while the
+                                        column scrolls, so the column you are
+                                        reading stays named (#65). Solid, so
+                                        cards pass behind it cleanly. */}
+                                    <div
+                                        data-column-header
+                                        className="sticky top-[var(--topbar-h)] z-10 -mt-3 flex items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--surface-page)] pb-3 pt-3"
+                                    >
                                         <span
                                             aria-hidden="true"
                                             className="size-2.5 rounded-full"

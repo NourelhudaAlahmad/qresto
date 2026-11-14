@@ -157,3 +157,37 @@ describe('Waiter kanban on the design components', () => {
         ).toBeInTheDocument();
     });
 });
+
+describe('column headings stay on screen (#65)', () => {
+    it('pins every heading, with its dot, label and count, under the topbar', () => {
+        mount();
+
+        for (const [name, count] of [
+            ['New', '1'],
+            ['Preparing', '1'],
+            ['Ready', '0'],
+            ['Served', '1'],
+        ]) {
+            const column = screen.getByRole('region', { name });
+            const header = column.querySelector('[data-column-header]');
+
+            // The heading is the column's first child, so it pins for as
+            // long as the column is on screen.
+            expect(column.firstElementChild).toBe(header);
+            expect(header).toHaveClass(
+                'sticky',
+                'top-[var(--topbar-h)]',
+                'z-10',
+                // Solid: cards pass behind it without bleeding through.
+                'bg-[var(--surface-page)]',
+            );
+            expect(
+                header?.querySelector('[aria-hidden="true"]'),
+            ).not.toBeNull();
+            expect(
+                within(header as HTMLElement).getByRole('heading'),
+            ).toHaveTextContent(name);
+            expect(header).toHaveTextContent(count);
+        }
+    });
+});
