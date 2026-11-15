@@ -9,7 +9,7 @@ import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import StaffLayout from '@/layouts/staff-layout';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'QResto';
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
