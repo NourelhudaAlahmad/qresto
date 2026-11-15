@@ -1,4 +1,5 @@
 import {
+    act,
     cleanup,
     fireEvent,
     render,
@@ -7,7 +8,7 @@ import {
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import Kanban from '@/pages/staff/orders/kanban';
+import Kanban, { COLUMN_PAGE_SIZE } from '@/pages/staff/orders/kanban';
 import type { Ticket } from '@/pages/staff/orders/list';
 
 const patch = vi.fn();
@@ -189,5 +190,133 @@ describe('column headings stay on screen (#65)', () => {
             ).toHaveTextContent(name);
             expect(header).toHaveTextContent(count);
         }
+    });
+});
+
+describe('long columns render in batches (#66)', () => {
+    const served = (count: number, from = 100): Ticket[] =>
+        Array.from({ length: count }, (_, index) => ({
+            id: from + index,
+            code: `S-${from + index}`,
+            status: 'served' as const,
+            table: '07',
+            guest_name: 'Yara',
+            placed_at: minutesAgo(40 + index),
+            total_minor: 1000,
+            currency: 'USD',
+            paid: false,
+            lines: [],
+        }));
+
+    const props = {
+        canAdvance: true,
+        canTakePayment: true,
+        warnMinutes: 14,
+        lateMinutes: 25,
+    };
+
+    const servedColumn = () => screen.getByRole('region', { name: 'Served' });
+    const rendered = () =>
+        servedColumn().querySelectorAll('[data-elapsed-level]').length;
+
+    it('sizes the first batch per column, Served smallest', () => {
+        expect(COLUMN_PAGE_SIZE.served).toBe(10);
+        expect(COLUMN_PAGE_SIZE.preparing).toBeGreaterThan(
+            COLUMN_PAGE_SIZE.served,
+        );
+    });
+
+    it('draws only the first batch, and the header keeps the true total', () => {
+        render(<Kanban {...props} orders={served(13)} />);
+
+        expect(rendered()).toBe(10);
+        expect(
+            servedColumn().querySelector('[data-column-header]'),
+        ).toHaveTextContent('13');
+        expect(
+            within(servedColumn()).getByRole('button', {
+                name: 'Show 3 more',
+            }),
+        ).toBeInTheDocument();
+    });
+
+    it('brings in the rest, and the header still reads 13', () => {
+        render(<Kanban {...props} orders={served(13)} />);
+
+        fireEvent.click(
+            within(servedColumn()).getByRole('button', { name: 'Show 3 more' }),
+        );
+
+        expect(rendered()).toBe(13);
+        expect(servedColumn().querySelector('[data-load-more]')).toBeNull();
+        expect(
+            servedColumn().querySelector('[data-column-header]'),
+        ).toHaveTextContent('13');
+    });
+
+    it('loads the next batch as the end of the column scrolls into view', () => {
+        const observers: {
+            callback: IntersectionObserverCallback;
+            target?: Element;
+        }[] = [];
+
+        vi.stubGlobal(
+            'IntersectionObserver',
+            class {
+                constructor(public callback: IntersectionObserverCallback) {
+                    observers.push(this);
+                }
+
+                observe(target: Element) {
+                    (this as unknown as { target: Element }).target = target;
+                }
+
+                disconnect() {}
+            },
+        );
+
+        render(<Kanban {...props} orders={served(25)} />);
+        expect(rendered()).toBe(10);
+
+        const observer = observers.at(-1)!;
+        act(() =>
+            observer.callback(
+                [
+                    {
+                        isIntersecting: true,
+                        target: observer.target,
+                    } as IntersectionObserverEntry,
+                ],
+                observer as unknown as IntersectionObserver,
+            ),
+        );
+
+        expect(rendered()).toBe(20);
+
+        vi.unstubAllGlobals();
+    });
+
+    it('keeps the loaded tickets when a poll brings new orders', () => {
+        const { rerender } = render(<Kanban {...props} orders={served(13)} />);
+
+        fireEvent.click(
+            within(servedColumn()).getByRole('button', { name: 'Show 3 more' }),
+        );
+        expect(rendered()).toBe(13);
+
+        // A poll: a fresh array, one more ticket served.
+        rerender(<Kanban {...props} orders={served(14)} />);
+
+        expect(rendered()).toBe(14);
+        expect(
+            servedColumn().querySelector('[data-column-header]'),
+        ).toHaveTextContent('14');
+    });
+
+    it('leaves a column with fewer than a batch unchanged', () => {
+        render(<Kanban {...props} orders={served(9)} />);
+
+        expect(rendered()).toBe(9);
+        expect(servedColumn().querySelector('[data-load-more]')).toBeNull();
     });
 });

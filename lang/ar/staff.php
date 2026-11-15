@@ -574,6 +574,7 @@ return [
         'sort_table' => 'الطاولة',
         'sort_total' => 'الإجمالي (الأعلى أولاً)',
         'nothing' => 'لا شيء هنا الآن',
+        'show_more' => 'اعرض :count إضافية',
         'col_order' => 'الطلب',
         'col_table_guest' => 'الطاولة · الضيف',
         'col_status' => 'الحالة',

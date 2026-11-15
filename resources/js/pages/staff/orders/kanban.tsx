@@ -54,7 +54,78 @@ const COLUMN_COLOR: Record<Column, string> = Object.fromEntries(
     COLUMNS.map((column) => [column.id, column.color]),
 ) as Record<Column, string>;
 
+/**
+ * How many tickets each column draws at first, and adds per batch as the
+ * waiter scrolls it (#66). The open columns are what a waiter acts on, so
+ * they show more; Served is a long tail of history.
+ */
+export const COLUMN_PAGE_SIZE: Record<Column, number> = {
+    new: 15,
+    preparing: 15,
+    ready: 12,
+    served: 10,
+};
+
 const LIVE_PROPS = ['orders'];
+
+/**
+ * The end of a column that has more to show: loads the next batch as it
+ * scrolls near the viewport, and is a plain button for a keyboard or a
+ * browser without IntersectionObserver.
+ */
+function LoadMore({
+    rendered,
+    remaining,
+    label,
+    onLoad,
+}: {
+    rendered: number;
+    remaining: number;
+    label: string;
+    onLoad: () => void;
+}) {
+    const ref = useRef<HTMLButtonElement>(null);
+    const load = useRef(onLoad);
+
+    useEffect(() => {
+        load.current = onLoad;
+    });
+
+    // Re-observed after every batch, so a batch that still leaves the end
+    // in view loads the next one instead of waiting for a scroll.
+    useEffect(() => {
+        const element = ref.current;
+
+        if (!element || typeof IntersectionObserver === 'undefined') {
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries.some((entry) => entry.isIntersecting)) {
+                    load.current();
+                }
+            },
+            { rootMargin: '0px 0px 400px 0px' },
+        );
+
+        observer.observe(element);
+
+        return () => observer.disconnect();
+    }, [rendered]);
+
+    return (
+        <button
+            ref={ref}
+            type="button"
+            data-load-more
+            onClick={onLoad}
+            className="text-label min-h-11 rounded-[var(--radius-lg)] border border-dashed border-[var(--border-default)] font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-card)]"
+        >
+            {fill(label, { count: remaining })}
+        </button>
+    );
+}
 
 function nextStatus(status: OrderStatus): OrderStatus | null {
     return (
@@ -248,6 +319,16 @@ export default function Kanban({
     const [voidOrder, setVoidOrder] = useState<Ticket | null>(null);
     const [reason, setReason] = useState('');
     const [error, setError] = useState('');
+    // How far each column has been scrolled into (#66). State, not derived
+    // from the orders, so a poll never collapses a column back.
+    const [shown, setShown] =
+        useState<Record<Column, number>>(COLUMN_PAGE_SIZE);
+
+    const showMore = (column: Column): void =>
+        setShown((current) => ({
+            ...current,
+            [column]: current[column] + COLUMN_PAGE_SIZE[column],
+        }));
 
     const { muted, toggleMute } = useLiveAlertMute();
 
@@ -505,18 +586,22 @@ export default function Kanban({
                                     </div>
 
                                     {columnOrders.length ? (
-                                        columnOrders.map((order) => (
-                                            <KanbanTicket
-                                                key={order.id}
-                                                order={order}
-                                                column={column.id}
-                                                canAdvance={canAdvance}
-                                                canTakePayment={canTakePayment}
-                                                busy={busy === order.id}
-                                                onAdvance={advance}
-                                                onVoid={setVoidOrder}
-                                            />
-                                        ))
+                                        columnOrders
+                                            .slice(0, shown[column.id])
+                                            .map((order) => (
+                                                <KanbanTicket
+                                                    key={order.id}
+                                                    order={order}
+                                                    column={column.id}
+                                                    canAdvance={canAdvance}
+                                                    canTakePayment={
+                                                        canTakePayment
+                                                    }
+                                                    busy={busy === order.id}
+                                                    onAdvance={advance}
+                                                    onVoid={setVoidOrder}
+                                                />
+                                            ))
                                     ) : (
                                         <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--border-default)] bg-[var(--surface-card)]">
                                             <EmptyState
@@ -524,6 +609,20 @@ export default function Kanban({
                                                 className="py-6"
                                             />
                                         </div>
+                                    )}
+
+                                    {/* The header keeps the true total; the
+                                        rest arrives as the column scrolls. */}
+                                    {columnOrders.length > shown[column.id] && (
+                                        <LoadMore
+                                            rendered={shown[column.id]}
+                                            remaining={
+                                                columnOrders.length -
+                                                shown[column.id]
+                                            }
+                                            label={t.show_more}
+                                            onLoad={() => showMore(column.id)}
+                                        />
                                     )}
                                 </section>
                             );

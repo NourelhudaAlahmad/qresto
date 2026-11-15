@@ -574,6 +574,7 @@ return [
         'sort_table' => 'Table',
         'sort_total' => 'Total (highest first)',
         'nothing' => 'Nothing here right now',
+        'show_more' => 'Show :count more',
         'col_order' => 'Order',
         'col_table_guest' => 'Table · Guest',
         'col_status' => 'Status',
