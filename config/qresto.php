@@ -138,5 +138,12 @@ return [
         // A replay guard, not a record: Stripe retries for three days and
         // keeps events resendable for thirty.
         'webhook_events_days' => (int) env('QRESTO_RETAIN_WEBHOOK_EVENTS_DAYS', 30),
+        // Who signed in by shift QR, and who issued the code: kept a month
+        // after the five-minute code expired, then gone.
+        'shift_sign_in_tokens_days' => (int) env('QRESTO_RETAIN_SHIFT_TOKENS_DAYS', 30),
+        // Notifications someone has already read. Unread ones stay.
+        'read_notifications_days' => (int) env('QRESTO_RETAIN_READ_NOTIFICATIONS_DAYS', 90),
+        // Failed queue jobs, for `queue:prune-failed`.
+        'failed_jobs_hours' => (int) env('QRESTO_RETAIN_FAILED_JOBS_HOURS', 168),
     ],
 ];

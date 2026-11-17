@@ -9,7 +9,9 @@ use App\Models\Payment;
 use App\Models\Restaurant;
 use App\Models\RestaurantTable;
 use App\Models\ServiceRequest;
+use App\Models\ShiftSignInToken;
 use App\Models\TableSession;
+use App\Models\User;
 use App\Models\WebhookEvent;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -158,3 +160,61 @@ it('runs the prune from the schedule every day', function () {
     expect($event)->not->toBeNull()
         ->and($event->expression)->toBe('0 0 * * *');
 });
+
+it('prunes shift sign-in codes a month after they expired', function () {
+    $waiter = User::factory()->create(['restaurant_id' => $this->restaurant->id]);
+
+    $code = fn (int $daysAgo, string $token) => ShiftSignInToken::query()->withoutGlobalScopes()->create([
+        'restaurant_id' => $this->restaurant->id,
+        'user_id' => $waiter->id,
+        'token' => hash('sha256', $token),
+        'issued_by' => $waiter->id,
+        'expires_at' => now()->subDays($daysAgo),
+    ]);
+
+    $old = $code(31, 'old');
+    $recent = $code(29, 'recent');
+
+    prune();
+
+    expect(ShiftSignInToken::query()->withoutGlobalScopes()->pluck('id')->all())->toBe([$recent->id])
+        ->and($old->fresh())->toBeNull();
+});
+
+it('prunes notifications read long ago, and never unread ones', function () {
+    $user = User::factory()->create(['restaurant_id' => $this->restaurant->id]);
+
+    $notification = fn (string $id, ?int $readDaysAgo, int $createdDaysAgo) => DB::table('notifications')->insert([
+        'id' => $id,
+        'type' => 'test',
+        'notifiable_type' => User::class,
+        'notifiable_id' => $user->id,
+        'data' => '{}',
+        'read_at' => $readDaysAgo === null ? null : now()->subDays($readDaysAgo),
+        'created_at' => now()->subDays($createdDaysAgo),
+        'updated_at' => now()->subDays($createdDaysAgo),
+    ]);
+
+    $notification('read-long-ago', 91, 120);
+    $notification('read-recently', 10, 120);
+    $notification('never-read', null, 400);
+
+    $this->artisan('qresto:prune-notifications')->assertSuccessful();
+
+    expect(DB::table('notifications')->orderBy('id')->pluck('id')->all())
+        ->toBe(['never-read', 'read-recently']);
+});
+
+it('schedules the other retention jobs every day', function (string $command, string $argument) {
+    $event = collect(app(Schedule::class)->events())
+        ->first(fn ($event): bool => str_contains($event->command ?? '', $command)
+            && str_contains($event->command ?? '', $argument));
+
+    expect($event)->not->toBeNull()
+        ->and($event->expression)->toBe('0 0 * * *');
+})->with([
+    ['qresto:prune-notifications', ''],
+    ['queue:prune-failed', '--hours=168'],
+    ['auth:clear-resets', 'users'],
+    ['auth:clear-resets', 'staff_invites'],
+]);

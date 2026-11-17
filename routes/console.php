@@ -21,8 +21,20 @@ Schedule::command('qresto:check-integrations')
     ->everyMinute()
     ->withoutOverlapping();
 
-// Retention (#57): closed-out sessions, dead carts and old webhook
-// replay guards. Periods live in config('qresto.retention').
+// Retention (#57): closed-out sessions, dead carts, old webhook replay
+// guards and spent shift codes. Periods live in config('qresto.retention').
 Schedule::command('model:prune')
     ->daily()
     ->withoutOverlapping();
+
+Schedule::command('qresto:prune-notifications')
+    ->daily()
+    ->withoutOverlapping();
+
+Schedule::command('queue:prune-failed', [
+    '--hours' => (int) config('qresto.retention.failed_jobs_hours', 168),
+])->daily();
+
+// Expired password-reset and staff-invitation tokens.
+Schedule::command('auth:clear-resets', ['users'])->daily();
+Schedule::command('auth:clear-resets', ['staff_invites'])->daily();
