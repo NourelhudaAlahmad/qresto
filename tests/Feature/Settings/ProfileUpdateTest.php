@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\Restaurant;
+use App\Models\ShiftSignInToken;
 use App\Models\User;
+use Illuminate\Support\Facades\Route;
 
 test('profile page is displayed', function () {
     $user = User::factory()->create();
@@ -50,36 +53,36 @@ test('email verification status is unchanged when the email address is unchanged
     expect($user->refresh()->email_verified_at)->not->toBeNull();
 });
 
-test('user can delete their account', function () {
+test('staff cannot delete their own account', function () {
     $user = User::factory()->create();
 
-    $response = $this
-        ->actingAs($user)
-        ->delete(route('profile.destroy'), [
-            'password' => 'password',
-        ]);
+    expect(Route::has('profile.destroy'))->toBeFalse();
 
-    $response
-        ->assertSessionHasNoErrors()
-        ->assertRedirect(route('home'));
+    $this->actingAs($user)
+        ->delete('/settings/profile', ['password' => 'password'])
+        ->assertMethodNotAllowed();
 
-    $this->assertGuest();
-    expect($user->fresh())->toBeNull();
+    $this->assertAuthenticatedAs($user);
+    expect($user->fresh())->not->toBeNull();
 });
 
-test('correct password must be provided to delete account', function () {
-    $user = User::factory()->create();
+test('a manager who issued shift QRs keeps their account and its audit trail', function () {
+    $restaurant = Restaurant::factory()->create();
+    $manager = User::factory()->create(['restaurant_id' => $restaurant->id]);
+    $waiter = User::factory()->create(['restaurant_id' => $manager->restaurant_id]);
 
-    $response = $this
-        ->actingAs($user)
-        ->from(route('profile.edit'))
-        ->delete(route('profile.destroy'), [
-            'password' => 'wrong-password',
-        ]);
+    ShiftSignInToken::query()->create([
+        'restaurant_id' => $manager->restaurant_id,
+        'user_id' => $waiter->id,
+        'token' => hash('sha256', 'issued-by-the-manager'),
+        'issued_by' => $manager->id,
+        'expires_at' => now()->addMinutes(5),
+    ]);
 
-    $response
-        ->assertSessionHasErrors('password')
-        ->assertRedirect(route('profile.edit'));
+    $this->actingAs($manager)
+        ->delete('/settings/profile', ['password' => 'password'])
+        ->assertMethodNotAllowed();
 
-    expect($user->fresh())->not->toBeNull();
+    expect($manager->fresh())->not->toBeNull()
+        ->and(ShiftSignInToken::query()->where('issued_by', $manager->id)->count())->toBe(1);
 });
