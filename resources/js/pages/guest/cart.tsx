@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { CircleHelp, ClipboardList, Menu as MenuIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Button } from '@/components/qresto/button';
 import { CallWaiterSheet } from '@/components/qresto/call-waiter-sheet';
@@ -184,6 +184,12 @@ export default function CartPage({
 
     const [busyLineId, setBusyLineId] = useState<number | null>(null);
 
+    // The quantity the guest last asked for, per line, until the server
+    // holds it: shown at once, and the base for the next tap.
+    const [wantedQty, setWantedQty] = useState<Record<number, number>>({});
+    const targets = useRef(new Map<number, number>());
+    const syncing = useRef(new Set<number>());
+
     const [savingNote, setSavingNote] = useState(false);
 
     const [helpOpen, setHelpOpen] = useState(false);
@@ -286,38 +292,75 @@ export default function CartPage({
         }
     };
 
-    const updateQuantity = async (line: CartLine, nextQty: number) => {
-        if (busyLineId !== null) {
+    const reloadCartAndWait = () =>
+        new Promise<void>((resolve) => {
+            router.reload({ only: ['cart'], onFinish: () => resolve() });
+        });
+
+    /**
+     * Sends a line's quantity until the server holds the last one the
+     * guest asked for. Taps made while a request or the reload after it is
+     * still running only move the target, so a quick "+ +" adds two instead
+     * of sending the same stale number twice.
+     */
+    const syncLine = async (lineId: number) => {
+        if (syncing.current.has(lineId)) {
             return;
         }
 
-        if (nextQty === line.qty) {
-            return;
-        }
+        syncing.current.add(lineId);
 
-        if (nextQty <= 0) {
-            await removeLine(line);
-
-            return;
-        }
+        let sent: number | undefined;
 
         try {
-            setBusyLineId(line.id);
+            while (targets.current.get(lineId) !== sent) {
+                sent = targets.current.get(lineId) as number;
 
-            await requestJson(`/cart/lines/${line.id}`, 'PATCH', {
-                qty: nextQty,
-            });
+                await requestJson(`/cart/lines/${lineId}`, 'PATCH', {
+                    qty: sent,
+                });
 
-            reloadCart();
+                if (targets.current.get(lineId) === sent) {
+                    await reloadCartAndWait();
+                }
+            }
         } catch {
             showToast({
                 type: 'error',
                 title: g.cart.quantity_failed,
                 description: g.cart.try_again,
             });
+            reloadCart();
         } finally {
-            setBusyLineId(null);
+            syncing.current.delete(lineId);
+            targets.current.delete(lineId);
+            setWantedQty((current) => {
+                const next = { ...current };
+                delete next[lineId];
+
+                return next;
+            });
         }
+    };
+
+    const updateQuantity = async (line: CartLine, nextQty: number) => {
+        if (busyLineId !== null) {
+            return;
+        }
+
+        if (nextQty <= 0) {
+            // Removing waits for any quantity change still on its way.
+            if (!syncing.current.has(line.id)) {
+                await removeLine(line);
+            }
+
+            return;
+        }
+
+        targets.current.set(line.id, nextQty);
+        setWantedQty((current) => ({ ...current, [line.id]: nextQty }));
+
+        void syncLine(line.id);
     };
 
     const saveTableNote = () => {
@@ -541,7 +584,11 @@ export default function CartPage({
 
                                                 <div className="mt-0.5 flex items-center gap-3">
                                                     <QuantityStepper
-                                                        value={line.qty}
+                                                        value={
+                                                            wantedQty[
+                                                                line.id
+                                                            ] ?? line.qty
+                                                        }
                                                         min={0}
                                                         max={99}
                                                         size="sm"

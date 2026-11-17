@@ -1,4 +1,11 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { router } from '@inertiajs/react';
+import {
+    act,
+    cleanup,
+    fireEvent,
+    render,
+    screen,
+} from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -251,5 +258,47 @@ describe('the service row speaks one locale (#69)', () => {
                 ),
             ),
         ).toBeInTheDocument();
+    });
+});
+
+describe('Guest cart quantity', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('counts two quick taps on + as two, not one', async () => {
+        const bodies: number[] = [];
+        let release: () => void = () => undefined;
+
+        vi.stubGlobal(
+            'fetch',
+            vi.fn((_url: string, init: { body: string }) => {
+                bodies.push(JSON.parse(init.body).qty);
+
+                // The first request is still on its way when the second tap lands.
+                return new Promise((resolve) => {
+                    release = () =>
+                        resolve({ ok: true, json: async () => ({}) });
+                });
+            }),
+        );
+        vi.mocked(router.reload).mockImplementation((options) => {
+            options?.onFinish?.({} as never);
+        });
+
+        render(<CartPage {...cartProps} />);
+
+        const plus = screen.getByRole('button', { name: 'Increase quantity' });
+
+        fireEvent.click(plus);
+        fireEvent.click(plus);
+
+        // Both taps show at once.
+        expect(screen.getByText('3')).toBeInTheDocument();
+
+        await act(async () => release());
+        await act(async () => release());
+
+        expect(bodies).toEqual([2, 3]);
     });
 });
