@@ -105,4 +105,38 @@ class SharedMoneyFormatterTest extends TestCase
 
         $this->assertSame(['amount', 'currency'], array_keys($json));
     }
+
+    /**
+     * A bare toLocaleString() formats in the runtime's locale, not the
+     * page's: "Service 12,5% · $3.13" (#69). Numbers go through the shared
+     * helpers, or pass activeLocale() explicitly.
+     */
+    public function test_no_number_is_formatted_in_the_runtime_locale(): void
+    {
+        $offenders = [];
+
+        $files = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator(resource_path('js')),
+        );
+
+        foreach ($files as $file) {
+            $path = str_replace('\\', '/', $file->getPathname());
+
+            if (! preg_match('/\.(tsx|ts)$/', $path) || str_contains($path, '.test.') || str_contains($path, '/tests/') || str_contains($path, '/components/ui/')) {
+                continue;
+            }
+
+            foreach (preg_split('/\R/', (string) file_get_contents($path)) ?: [] as $number => $line) {
+                if (str_contains($line, 'toLocaleString()')) {
+                    $offenders[] = str_replace(str_replace('\\', '/', resource_path('js')).'/', '', $path).':'.($number + 1);
+                }
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $offenders,
+            'Format numbers with formatPercent / formatMinor, or pass activeLocale() to toLocaleString().',
+        );
+    }
 }

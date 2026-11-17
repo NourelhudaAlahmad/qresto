@@ -61,6 +61,28 @@ export function formatMinor(
     return new Intl.NumberFormat(activeLocale(), precision).format(amount);
 }
 
+/**
+ * A percentage's number in the active locale ("12.5", Arabic digits on an
+ * Arabic page), for copy that carries its own "%" ("Service :pct%"). The
+ * same locale as the money beside it, so one row never mixes a comma and
+ * a dot decimal (#69). A value that is not a number is returned as is.
+ */
+export function formatPercent(value: number | string): string {
+    const percentage = Number(value);
+
+    if (typeof value === 'string' && value.trim() === '') {
+        return value;
+    }
+
+    if (!Number.isFinite(percentage)) {
+        return String(value);
+    }
+
+    return new Intl.NumberFormat(activeLocale(), {
+        maximumFractionDigits: 2,
+    }).format(percentage);
+}
+
 export function formatMoney(money: Money, options?: MoneyOptions): string {
     return formatMinor(Number(money.amount), money.currency, options);
 }

@@ -487,3 +487,21 @@ describe('accessibility (#36)', () => {
         await expectNoCriticalA11y(container);
     });
 });
+
+describe('the service row speaks one locale (#69)', () => {
+    it('formats the percentage in the page locale on an Arabic page, as the cart does', () => {
+        document.documentElement.lang = 'ar';
+
+        try {
+            renderCheckout();
+
+            const arabic = new Intl.NumberFormat('ar', {
+                maximumFractionDigits: 2,
+            }).format(12.5);
+
+            expect(screen.getByText(`Service ${arabic}%`)).toBeInTheDocument();
+        } finally {
+            document.documentElement.lang = 'en';
+        }
+    });
+});

@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import CartPage from '@/pages/guest/cart';
 import { expectNoCriticalA11y } from '@/tests/a11y';
@@ -211,5 +211,45 @@ describe('accessibility (#36)', () => {
         const { container } = render(<CartPage {...cartProps} />);
 
         await expectNoCriticalA11y(container);
+    });
+});
+
+describe('the service row speaks one locale (#69)', () => {
+    afterEach(() => {
+        document.documentElement.lang = 'en';
+        cleanup();
+    });
+
+    it('reads Service 12.5% beside the money, as the checkout does', () => {
+        document.documentElement.lang = 'en';
+
+        render(
+            <CartPage
+                {...cartProps}
+                cart={{ ...cartProps.cart, service_pct: '12.5' }}
+            />,
+        );
+
+        expect(screen.getByText('12.5% · $1.80')).toBeInTheDocument();
+        expect(screen.queryByText(/12,5%/)).toBeNull();
+    });
+
+    it('formats the percentage in the page locale on an Arabic page', () => {
+        document.documentElement.lang = 'ar';
+
+        render(
+            <CartPage
+                {...cartProps}
+                cart={{ ...cartProps.cart, service_pct: '12.5' }}
+            />,
+        );
+
+        expect(
+            screen.getByText(
+                new RegExp(
+                    `^${new Intl.NumberFormat('ar', { maximumFractionDigits: 2 }).format(12.5)}% · `,
+                ),
+            ),
+        ).toBeInTheDocument();
     });
 });

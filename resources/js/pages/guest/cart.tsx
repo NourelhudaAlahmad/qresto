@@ -14,7 +14,7 @@ import { TabBar } from '@/components/qresto/tab-bar';
 import { Textarea } from '@/components/qresto/textarea';
 import { showToast } from '@/components/qresto/toast';
 import GuestLayout from '@/layouts/guest-layout';
-import { formatMoney } from '@/lib/formatMoney';
+import { formatMoney, formatPercent } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 import type { Money } from '@/types/order';
 
@@ -166,16 +166,6 @@ function errorStatus(error: unknown): number | null {
     }
 
     return null;
-}
-
-function servicePercentage(servicePct: string): string {
-    const percentage = Number(servicePct);
-
-    if (Number.isNaN(percentage)) {
-        return servicePct;
-    }
-
-    return percentage.toLocaleString();
 }
 
 export default function CartPage({
@@ -625,7 +615,7 @@ export default function CartPage({
 
                                 <PriceSummary
                                     subtotal={formatMoney(cart.subtotal)}
-                                    service={`${servicePercentage(
+                                    service={`${formatPercent(
                                         cart.service_pct,
                                     )}% · ${formatMoney(cart.service_amount)}`}
                                     total={formatMoney(cart.total)}

@@ -5,6 +5,7 @@ import {
     currencySymbol,
     formatMinor,
     formatMoney,
+    formatPercent,
 } from './formatMoney';
 
 function pageLanguage(lang: string): void {
@@ -81,5 +82,35 @@ describe('currencySymbol', () => {
         expect(currencySymbol('USD')).toBe('$');
         expect(currencySymbol('')).toBe('');
         expect(currencySymbol('NOT-A-CODE')).toBe('');
+    });
+});
+
+describe('formatPercent (#69)', () => {
+    it('reads 12.5 on an English page, not the runtime locale', () => {
+        pageLanguage('en');
+
+        expect(formatPercent('12.5')).toBe('12.5');
+        expect(formatPercent(10)).toBe('10');
+    });
+
+    it('follows a comma-decimal page language, as money does', () => {
+        pageLanguage('de');
+
+        expect(formatPercent('12.5')).toBe('12,5');
+    });
+
+    it('uses the same locale as money on an Arabic page', () => {
+        pageLanguage('ar');
+
+        expect(formatPercent('12.5')).toBe(
+            new Intl.NumberFormat('ar', { maximumFractionDigits: 2 }).format(
+                12.5,
+            ),
+        );
+    });
+
+    it('passes a value that is not a number through unchanged', () => {
+        expect(formatPercent('n/a')).toBe('n/a');
+        expect(formatPercent('')).toBe('');
     });
 });

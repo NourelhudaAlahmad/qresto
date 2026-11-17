@@ -18,7 +18,7 @@ import {
 } from '@/components/qresto/stripe-payment';
 import type { StripeCardFieldsHandle } from '@/components/qresto/stripe-payment';
 import GuestLayout from '@/layouts/guest-layout';
-import { formatMoney } from '@/lib/formatMoney';
+import { formatMoney, formatPercent } from '@/lib/formatMoney';
 import { fill } from '@/types/checkout';
 import type { CheckoutTranslations } from '@/types/checkout';
 import type { Money } from '@/types/order';
@@ -598,9 +598,12 @@ export default function CheckoutPage({
 
     const footnote = isDeferred ? t.footnote_deferred : t.footnote_card;
 
-    const serviceLabel = fill(t.service, { pct: Number(cart.service_pct) });
+    const serviceLabel = fill(t.service, {
+        pct: formatPercent(cart.service_pct),
+    });
 
-    const tipLabel = tipPct === 0 ? t.tip : fill(t.tip_pct, { pct: tipPct });
+    const tipLabel =
+        tipPct === 0 ? t.tip : fill(t.tip_pct, { pct: formatPercent(tipPct) });
 
     return (
         <GuestLayout wide>
