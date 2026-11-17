@@ -616,10 +616,6 @@ return [
         'settle_hint' => 'Settle with the floor’s checkout.',
     ],
 
-    'landing' => [
-        'coming_soon' => 'This staff panel is coming soon.',
-    ],
-
     'pass' => [
         'signed_in_as' => 'Signed in as :name',
         'sign_out' => 'Sign out',

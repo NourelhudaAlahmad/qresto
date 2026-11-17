@@ -19,13 +19,6 @@ return [
 
     'service_charge_pct' => 0,
 
-    'tip_presets' => [
-        0,
-        10,
-        12.5,
-        15,
-    ],
-
     'sla' => [
         'warn_minutes' => 14,
         'late_minutes' => 25,
@@ -36,13 +29,6 @@ return [
         'floor_interval' => 8,
         'kds_interval' => 4,
         'guest_status_interval' => 10,
-    ],
-
-    'payment_methods' => [
-        'card',
-        'wallet',
-        'cash',
-        'pos',
     ],
 
     'payments' => [
