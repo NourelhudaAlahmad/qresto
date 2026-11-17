@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\PaymentMethod;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
@@ -20,11 +21,7 @@ class PaymentFactoryTest extends TestCase
         $this->assertInstanceOf(Payment::class, $payment);
         $this->assertNotNull($payment->order_id);
 
-        $this->assertContains($payment->method, [
-            'cash',
-            'card',
-            'online',
-        ]);
+        $this->assertNotNull(PaymentMethod::tryFrom($payment->method));
 
         $this->assertSame('pending', $payment->status);
 
@@ -231,5 +228,14 @@ class PaymentFactoryTest extends TestCase
             500,
             $payment->refunded_amount->amount(),
         );
+    }
+
+    public function test_payment_factory_only_picks_methods_the_app_knows(): void
+    {
+        $methods = Payment::factory()->count(40)->make()->pluck('method')->unique();
+
+        foreach ($methods as $method) {
+            $this->assertNotNull(PaymentMethod::tryFrom($method), "Unknown payment method {$method}");
+        }
     }
 }

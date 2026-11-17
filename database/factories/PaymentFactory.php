@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\PaymentMethod;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
@@ -18,11 +19,9 @@ class PaymentFactory extends Factory
     {
         return [
             'order_id' => Order::factory(),
-            'method' => fake()->randomElement([
-                'cash',
-                'card',
-                'online',
-            ]),
+            // Only methods the app knows: PaymentMethod::from() throws on
+            // anything else, which made tests fail one run in three.
+            'method' => fake()->randomElement(PaymentMethod::cases())->value,
             'status' => 'pending',
             'amount' => fake()->numberBetween(500, 20000),
             'tip_amount' => 0,

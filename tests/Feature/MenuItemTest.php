@@ -86,3 +86,15 @@ test('sold out items remain visible in the menu', function () {
     expect($items->contains($soldOut))->toBeTrue()
         ->and($soldOut->is_available)->toBeFalse();
 });
+
+test('the factory puts an item in a category of its own restaurant', function () {
+    $item = MenuItem::factory()->create();
+
+    expect($item->category->restaurant_id)->toBe($item->restaurant_id)
+        ->and(Restaurant::query()->count())->toBe(1);
+
+    $restaurant = Restaurant::factory()->create();
+    $other = MenuItem::factory()->create(['restaurant_id' => $restaurant->id]);
+
+    expect($other->category->restaurant_id)->toBe($restaurant->id);
+});

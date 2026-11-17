@@ -20,7 +20,10 @@ class MenuItemFactory extends Factory
     {
         return [
             'restaurant_id' => Restaurant::factory(),
-            'menu_category_id' => MenuCategory::factory(),
+            // The category belongs to the item's own restaurant.
+            'menu_category_id' => fn (array $attributes) => MenuCategory::factory()->state([
+                'restaurant_id' => $attributes['restaurant_id'],
+            ]),
 
             'name' => fake()->words(3, true),
             'description' => fake()->sentence(),
