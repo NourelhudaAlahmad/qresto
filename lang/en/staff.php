@@ -120,8 +120,6 @@ return [
         'kitchen_pass_sub' => 'Live kitchen order feed',
         'shift_qr' => 'Shift QR',
         'shift_qr_sub' => 'Issue staff sign-in codes',
-        'dashboard' => 'Dashboard',
-        'dashboard_sub' => 'Restaurant overview',
         'staff' => 'Staff',
     ],
 

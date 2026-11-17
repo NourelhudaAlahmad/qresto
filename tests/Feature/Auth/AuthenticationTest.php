@@ -23,7 +23,8 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    // An account with no staff role has no working screen: its settings (#70).
+    $response->assertRedirect(route('profile.edit', absolute: false));
 });
 
 test('users with two factor enabled are redirected to two factor challenge', function () {
@@ -164,7 +165,7 @@ test('remember me creates a persistent login token', function () {
     ]);
 
     $response->assertRedirect(
-        route('dashboard', absolute: false),
+        route('profile.edit', absolute: false),
     );
 
     $this->assertAuthenticatedAs($user);

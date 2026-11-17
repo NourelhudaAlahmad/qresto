@@ -182,11 +182,6 @@ class HandleInertiaRequests extends Middleware
                 'staff.pages.shift_qr_sub',
             ],
 
-            'dashboard' => [
-                'staff.pages.dashboard',
-                'staff.pages.dashboard_sub',
-            ],
-
             default => [
                 'staff.pages.staff',
                 '',

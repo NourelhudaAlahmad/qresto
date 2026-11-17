@@ -57,6 +57,8 @@ class StaffLoginDestination
             }
         }
 
-        return route('dashboard', absolute: false);
+        // No working screen for this account: its own settings, never
+        // /dashboard, which now redirects here (#70).
+        return route('profile.edit', absolute: false);
     }
 }

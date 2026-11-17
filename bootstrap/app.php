@@ -9,6 +9,7 @@ use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetCurrentRestaurant;
 use App\Http\Middleware\SetLocale;
+use App\Services\Auth\StaffLoginDestination;
 use App\Support\ErrorPage;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -39,6 +40,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'table.session' => EnsureTableSession::class,
             'staff.auth.check' => EnsureStaffAccountCanAuthenticate::class,
         ]);
+
+        // A signed-in person who opens /login (or any guest page) goes to
+        // their own working screen, not the old starter-kit dashboard (#70).
+        $middleware->redirectUsersTo(
+            fn (Request $request): string => app(StaffLoginDestination::class)->for($request->user()),
+        );
 
         // Before the session starts, so a remembered login gets its longer
         // lifetime (#51).

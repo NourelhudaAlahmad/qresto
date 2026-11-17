@@ -44,9 +44,6 @@ createInertiaApp({
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];
 
-            // Staff Dashboard uses the dedicated staff shell.
-            case name === 'dashboard':
-                return StaffLayout;
             case name.startsWith('staff/'):
                 return StaffLayout;
             default:

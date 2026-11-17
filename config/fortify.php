@@ -73,6 +73,8 @@ return [
     |
     */
 
+    // /dashboard only redirects each person to their role's landing screen
+    // (#70), so password resets and verification links end up there too.
     'home' => '/dashboard',
 
     /*
