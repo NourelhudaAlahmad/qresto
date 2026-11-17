@@ -38,11 +38,12 @@ vi.mock('@inertiajs/react', () => ({
     }),
 }));
 
-const money = (amount: number, formatted: string) => ({
-    amount,
-    currency: 'USD',
-    formatted,
-});
+// The label only documents the fixture; the page formats the amount.
+const money = (amount: number, label?: string) => {
+    void label;
+
+    return { amount, currency: 'USD' };
+};
 
 const cartProps = {
     restaurant: {

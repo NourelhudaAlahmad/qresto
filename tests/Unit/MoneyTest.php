@@ -90,7 +90,6 @@ class MoneyTest extends TestCase
             [
                 'amount' => 123456,
                 'currency' => 'USD',
-                'formatted' => '1234.56',
             ],
             $money->jsonSerialize(),
         );

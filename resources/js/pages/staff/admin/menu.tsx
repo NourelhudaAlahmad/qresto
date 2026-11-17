@@ -22,7 +22,7 @@ import { Switch } from '@/components/qresto/switch';
 import { Tag } from '@/components/qresto/tag';
 import { Textarea } from '@/components/qresto/textarea';
 import { showToast } from '@/components/qresto/toast';
-import { activeLocale } from '@/lib/formatMoney';
+import { activeLocale, formatMinor } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 import type { SharedTranslations } from '@/lib/i18n';
 
@@ -50,7 +50,7 @@ type Dish = {
     name: string;
     description: string | null;
     price: string;
-    price_formatted: string;
+    price_minor: number;
     prep_minutes: number | null;
     available: boolean;
     chef_flag: boolean;
@@ -427,10 +427,12 @@ function Categories({
 
 function DishTable({
     dishes,
+    currency,
     selectedId,
     onSelect,
 }: {
     dishes: Dish[];
+    currency: string;
     selectedId: number | 'new' | null;
     onSelect: (id: number) => void;
 }) {
@@ -551,7 +553,7 @@ function DishTable({
                             </td>
                             <td className="p-2 text-end">
                                 <Numeric className="font-mono">
-                                    {dish.price_formatted}
+                                    {formatMinor(dish.price_minor, currency)}
                                 </Numeric>
                             </td>
                             <td
@@ -1133,6 +1135,7 @@ function OptionRows({
 }
 
 export default function MenuManagement({
+    currency,
     categories,
     dishes,
     allergens,
@@ -1399,6 +1402,7 @@ export default function MenuManagement({
             <div className="overflow-x-auto">
                 <DishTable
                     dishes={visibleDishes}
+                    currency={currency}
                     selectedId={selected}
                     onSelect={(id) => open(id)}
                 />

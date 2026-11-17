@@ -43,7 +43,7 @@ const dish = (id: number, name: string, extra = {}) => ({
     name,
     description: 'Off the coals',
     price: '18.00',
-    price_formatted: '$18.00',
+    price_minor: 1800,
     prep_minutes: 14,
     available: true,
     chef_flag: false,
@@ -230,5 +230,15 @@ describe('Menu management (#31)', () => {
         expect(screen.getByRole('dialog').textContent).toContain(
             'Past orders keep its name and price',
         );
+    });
+});
+
+describe('dish prices carry the currency (#68)', () => {
+    it('shows each price in the dish table with the symbol', () => {
+        render(<MenuManagement {...props} />);
+        openGrill();
+
+        expect(screen.getAllByText('$18.00').length).toBe(2);
+        expect(screen.queryByText('18.00')).toBeNull();
     });
 });

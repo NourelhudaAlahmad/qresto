@@ -88,7 +88,6 @@ function money(amount: number, currency: string): Money {
     return {
         amount,
         currency,
-        formatted: '',
     };
 }
 

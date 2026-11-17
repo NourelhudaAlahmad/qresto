@@ -25,14 +25,19 @@ vi.mock('@inertiajs/react', () => ({
 vi.mock('@/components/qresto/menu-item-card', () => ({
     MenuItemCard: ({
         name,
+        price,
         onClick,
     }: {
         name: string;
+        price: string;
         onClick?: () => void;
     }) => (
-        <button type="button" onClick={onClick}>
-            {name}
-        </button>
+        <>
+            <button type="button" onClick={onClick}>
+                {name}
+            </button>
+            <span data-price>{price}</span>
+        </>
     ),
 }));
 
@@ -98,7 +103,6 @@ const menuProps = {
                     price: {
                         amount: 1800,
                         currency: 'USD',
-                        formatted: '$18.00',
                     },
                     photo: null,
                     tags: ['Halal'],
@@ -127,7 +131,6 @@ const menuProps = {
                     price: {
                         amount: 1250,
                         currency: 'USD',
-                        formatted: '$12.50',
                     },
                     photo: null,
                     tags: ['Vegan'],
@@ -145,7 +148,6 @@ const menuProps = {
         subtotal: {
             amount: 3050,
             currency: 'USD',
-            formatted: '$30.50',
         },
     },
 };
@@ -384,5 +386,35 @@ describe('accessibility (#36)', () => {
         const { container } = render(<Menu {...menuProps} />);
 
         await expectNoCriticalA11y(container);
+    });
+});
+
+describe('menu prices carry the currency (#68)', () => {
+    it('prices a dish as its meal screen does, with the symbol', () => {
+        render(<Menu {...menuProps} />);
+
+        expect(screen.getAllByText('$18.00').length).toBeGreaterThan(0);
+        expect(screen.queryByText('18.00')).toBeNull();
+    });
+
+    it('shows the dock subtotal with the symbol', () => {
+        render(<Menu {...menuProps} />);
+
+        expect(screen.getAllByText('$30.50').length).toBeGreaterThan(0);
+        expect(screen.queryByText('30.50')).toBeNull();
+    });
+
+    it('groups a four-figure amount', () => {
+        render(
+            <Menu
+                {...menuProps}
+                cart={{
+                    ...menuProps.cart,
+                    subtotal: { amount: 123456, currency: 'USD' },
+                }}
+            />,
+        );
+
+        expect(screen.getAllByText('$1,234.56').length).toBeGreaterThan(0);
     });
 });

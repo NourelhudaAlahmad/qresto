@@ -54,7 +54,6 @@ const checkoutProps = {
         subtotal: {
             amount: 5000,
             currency: 'USD',
-            formatted: '$50.00',
         },
 
         service_pct: '12.5',
@@ -62,19 +61,16 @@ const checkoutProps = {
         service_amount: {
             amount: 625,
             currency: 'USD',
-            formatted: '$6.25',
         },
 
         discount_amount: {
             amount: 0,
             currency: 'USD',
-            formatted: '$0.00',
         },
 
         total: {
             amount: 5625,
             currency: 'USD',
-            formatted: '$56.25',
         },
     },
 
@@ -89,7 +85,6 @@ const checkoutProps = {
         discount: {
             amount: 0,
             currency: 'USD',
-            formatted: '$0.00',
         },
     },
 

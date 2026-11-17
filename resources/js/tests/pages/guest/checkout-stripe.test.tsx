@@ -81,7 +81,6 @@ vi.mock('@stripe/stripe-js', () => ({
 const money = (amount: number) => ({
     amount,
     currency: 'USD',
-    formatted: `$${(amount / 100).toFixed(2)}`,
 });
 
 const props = {

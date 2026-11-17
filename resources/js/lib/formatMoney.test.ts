@@ -70,9 +70,7 @@ describe('formatMoney', () => {
     it('reads the amount and currency off the Money shape', () => {
         pageLanguage('en');
 
-        expect(
-            formatMoney({ amount: 999, currency: 'EUR', formatted: '' }),
-        ).toBe('€9.99');
+        expect(formatMoney({ amount: 999, currency: 'EUR' })).toBe('€9.99');
     });
 });
 

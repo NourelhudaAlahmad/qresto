@@ -162,7 +162,6 @@ final class Money implements JsonSerializable
         return [
             'amount' => $this->amount,
             'currency' => $this->currency,
-            'formatted' => $this->formatted(),
         ];
     }
 }

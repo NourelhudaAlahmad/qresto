@@ -69,7 +69,6 @@ const baseProps = {
         price: {
             amount: 1800,
             currency: 'USD',
-            formatted: '$18.00',
         },
         photo: null,
         prep_minutes: 15,
@@ -144,7 +143,6 @@ describe('option sections (#62)', () => {
     const usd = (amount: number) => ({
         amount,
         currency: 'USD',
-        formatted: `$${(amount / 100).toFixed(2)}`,
     });
 
     const variants = [

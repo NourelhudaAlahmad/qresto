@@ -71,7 +71,8 @@ class MenuAdminController extends Controller
                 'name' => $item->name,
                 'description' => $item->description,
                 'price' => $this->decimal($item->price),
-                'price_formatted' => $item->price->formatted(),
+                // Minor units; the page formats it with the currency (#68).
+                'price_minor' => $item->price->amount(),
                 'prep_minutes' => $item->prep_minutes,
                 'available' => (bool) $item->is_available,
                 'chef_flag' => (bool) $item->chef_flag,

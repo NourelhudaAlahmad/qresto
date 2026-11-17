@@ -299,3 +299,16 @@ it('shows the design subtitle with live counts', function () {
             fn ($subtitle) => (bool) preg_match('/^\d+ categories · \d+ dishes · [1-9]\d* sold out$/', $subtitle),
         ));
 });
+
+it('sends dish prices in minor units for the page to format (#68)', function () {
+    $this->actingAs($this->yusuf)
+        ->get('/app/menu')
+        ->assertInertia(fn ($page) => $page
+            ->component('staff/admin/menu')
+            ->where('dishes', function ($dishes) {
+                $kofta = collect($dishes)->firstWhere('id', $this->kofta->id);
+
+                return $kofta['price_minor'] === $this->kofta->price->amount()
+                    && ! array_key_exists('price_formatted', $kofta);
+            }));
+});

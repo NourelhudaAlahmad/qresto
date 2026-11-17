@@ -36,11 +36,9 @@ const money = (
 ): {
     amount: number;
     currency: string;
-    formatted: string;
 } => ({
     amount,
     currency: 'USD',
-    formatted: `$${(amount / 100).toFixed(2)}`,
 });
 
 const baseProps = {
@@ -278,7 +276,6 @@ describe('Guest order status', () => {
                                 total: {
                                     amount: 5570,
                                     currency: 'USD',
-                                    formatted: '55.70',
                                 },
                                 paid: false,
                                 current: true,
@@ -291,7 +288,6 @@ describe('Guest order status', () => {
                                 total: {
                                     amount: 900,
                                     currency: 'USD',
-                                    formatted: '9.00',
                                 },
                                 paid: true,
                                 current: false,
@@ -314,7 +310,6 @@ describe('Guest order status', () => {
                         due: {
                             amount: 5570,
                             currency: 'USD',
-                            formatted: '55.70',
                         },
                     },
                 }}

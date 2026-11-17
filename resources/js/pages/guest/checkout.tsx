@@ -18,7 +18,7 @@ import {
 } from '@/components/qresto/stripe-payment';
 import type { StripeCardFieldsHandle } from '@/components/qresto/stripe-payment';
 import GuestLayout from '@/layouts/guest-layout';
-import { formatMinor, formatMoney } from '@/lib/formatMoney';
+import { formatMoney } from '@/lib/formatMoney';
 import { fill } from '@/types/checkout';
 import type { CheckoutTranslations } from '@/types/checkout';
 import type { Money } from '@/types/order';
@@ -83,7 +83,6 @@ function moneyFromMinor(minor: number, currency: string): Money {
     return {
         amount: minor,
         currency,
-        formatted: formatMinor(minor, currency),
     };
 }
 

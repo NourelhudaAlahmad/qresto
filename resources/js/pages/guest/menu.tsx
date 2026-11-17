@@ -20,13 +20,9 @@ import { SectionHead } from '@/components/qresto/section-head';
 import { StickyDock } from '@/components/qresto/sticky-dock';
 import { TabBar } from '@/components/qresto/tab-bar';
 import GuestLayout from '@/layouts/guest-layout';
+import { formatMoney } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
-
-type Money = {
-    amount: number;
-    currency: string;
-    formatted: string;
-};
+import type { Money } from '@/types';
 
 type Allergen = {
     id: number;
@@ -339,7 +335,9 @@ export default function Menu({
                                                     description={
                                                         item.description
                                                     }
-                                                    price={item.price.formatted}
+                                                    price={formatMoney(
+                                                        item.price,
+                                                    )}
                                                     photo={item.photo}
                                                     tags={item.tags}
                                                     flag={item.flag}
@@ -399,7 +397,7 @@ export default function Menu({
                                     : fill(g.menu.view_order_other, {
                                           count: cart.count,
                                       })}{' '}
-                                <Numeric>{cart.subtotal.formatted}</Numeric>
+                                <Numeric>{formatMoney(cart.subtotal)}</Numeric>
                             </Button>
                         </div>
                     </StickyDock>
