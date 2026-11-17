@@ -221,6 +221,8 @@ final class SettlePayment
                 ? ($order->paid_at ?? now())
                 : null,
         ]);
+
+        $order->closeIfSettled($payment->taken_by ?? 'system');
     }
 
     private function isOfflineMethod(PaymentMethod $method): bool

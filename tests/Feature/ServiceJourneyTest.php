@@ -231,7 +231,8 @@ function serviceThroughToServed(object $test, Guest $guest, Order $order): void
     // The waiter carries it to the table.
     Carbon::setTestNow(now()->addMinutes(1));
     test()->actingAs($test->waiter)->patch("/app/orders/{$order->id}/advance")->assertSessionHasNoErrors();
-    expect($guest->status($order)['status'])->toBe('served');
+    // An order paid up front closes as it is served.
+    expect($guest->status($order)['status'])->toBe($order->fresh()->is_paid ? 'paid' : 'served');
 }
 
 /** Who may not do what, at the step where it would matter. */
@@ -264,7 +265,9 @@ it('runs a full service paid by card now', function () {
     $this->actingAs($this->waiter)->post("/app/tables/{$this->table->id}/free")->assertSessionHasNoErrors();
     expect($this->table->fresh()->state->value)->toBe('free');
 
-    expect(array_column(trail($order->fresh()), 0))->toBe(['placed', 'pending', 'preparing', 'ready', 'served']);
+    // Already paid, so serving it closes it.
+    expect(array_column(trail($order->fresh()), 0))->toBe(['placed', 'pending', 'preparing', 'ready', 'served', 'paid'])
+        ->and($order->fresh()->status->value)->toBe('paid');
 });
 
 it('runs a full service with cash, settled by the waiter', function (string $method) {

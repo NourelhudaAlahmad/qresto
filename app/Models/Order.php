@@ -232,6 +232,22 @@ class Order extends Model
             'occurred_at' => now(),
         ]);
 
+        if ($next === OrderStatus::SERVED) {
+            $this->closeIfSettled($actor);
+        }
+
         return $this;
+    }
+
+    /**
+     * An order is closed (PAID) once it is both served and fully paid,
+     * whichever comes last. A card or wallet order is paid before it is
+     * cooked, so serving it closes it; a cash bill closes when it is paid.
+     */
+    public function closeIfSettled(User|int|string|null $actor = null): void
+    {
+        if ($this->status === OrderStatus::SERVED && $this->is_paid) {
+            $this->transitionTo(OrderStatus::PAID, $actor);
+        }
     }
 }

@@ -409,17 +409,8 @@ final class FloorController extends Controller
                 ]);
             }
 
-            // SettlePayment updates is_paid and paid_at.
-            // Transition to PAID only when the entire bill is paid.
-
-            $order->refresh();
-
-            if ($order->is_paid) {
-                $order->transitionTo(
-                    OrderStatus::PAID,
-                    $user,
-                );
-            }
+            // SettlePayment updates is_paid and closes the order (PAID)
+            // once the entire bill is paid.
         });
 
         return back()->with(

@@ -38,13 +38,16 @@ it('marks a plate collected: ready to served, with the runner as the actor', fun
         ->post("/app/kds/tickets/{$order->id}/bump")
         ->assertRedirect();
 
-    expect($order->fresh()->status)->toBe(OrderStatus::SERVED);
+    // #A-1042 was paid by card at checkout, so serving it also closes it.
+    expect($order->fresh()->is_paid)->toBeTrue()
+        ->and($order->fresh()->status)->toBe(OrderStatus::PAID);
 
-    $event = $order->events()->reorder()->latest('id')->firstOrFail();
+    $events = $order->events()->reorder()->orderBy('id')->get()->slice(-2)->values();
 
-    expect($event->from_status)->toBe('ready')
-        ->and($event->to_status)->toBe('served')
-        ->and($event->actor_id)->toBe($this->runner->id);
+    expect($events[0]->from_status)->toBe('ready')
+        ->and($events[0]->to_status)->toBe('served')
+        ->and($events[0]->actor_id)->toBe($this->runner->id)
+        ->and($events[1]->to_status)->toBe('paid');
 
     $this->actingAs($this->runner)
         ->get('/app/pass')
