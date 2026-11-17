@@ -219,13 +219,14 @@ function onShift(User $waiter, RestaurantTable ...$tables): void
 
 /*
  * Budget for a live poll of stats, orders, staff and now:
- *   7  auth, restaurant and permission loading shared by every staff page
+ *   8  auth, restaurant and permission loading shared by every staff page,
+ *      including the restaurant's own role-grid changes
  *   4  stats (covers, one pass over the orders, prep times, bill calls)
  *   3  orders (the list, its tables, its waiters)
  *   5  staff (order counts, team, roles, shifts, shift tables)
  * It was 33 before #54.
  */
-const OVERVIEW_POLL_QUERY_BUDGET = 19;
+const OVERVIEW_POLL_QUERY_BUDGET = 20;
 
 it('polls the live props within a fixed query budget', function () {
     $waiter = overviewStaff($this->restaurant, 'waiter', 'Nadia Rahman');
@@ -298,7 +299,7 @@ it('does not evaluate the drawer props on a stats poll', function () {
         ->and(collect($queries)->filter(fn (string $query): bool => str_starts_with($query, $tablesQuery)))->toBeEmpty()
         // Shared auth loading plus the four stats queries; orders and
         // staff are not built either.
-        ->and(count($queries))->toBeLessThanOrEqual(11);
+        ->and(count($queries))->toBeLessThanOrEqual(12);
 });
 
 it('still sends the drawer props on a full visit', function () {

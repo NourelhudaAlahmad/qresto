@@ -7,9 +7,10 @@ use App\Enums\Role;
 use App\Models\PermissionAudit;
 use App\Models\User;
 use App\Services\PermissionManager;
+use App\Services\RestaurantCapabilities;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Spatie\Permission\Models\Role as SpatieRole;
+use LogicException;
 
 /**
  * The editable role → capability grid on the super admin dashboard (#28).
@@ -35,6 +36,7 @@ class PermissionMatrix
 
     public function __construct(
         private readonly PermissionManager $permissions,
+        private readonly RestaurantCapabilities $capabilities,
     ) {}
 
     /**
@@ -49,7 +51,7 @@ class PermissionMatrix
      */
     public function for(User $actor): array
     {
-        $grants = $this->grants();
+        $grants = $this->grants($actor);
 
         $roles = array_map(
             fn (Role $role): array => [
@@ -90,10 +92,9 @@ class PermissionMatrix
     public function set(User $actor, Role $role, Capability $capability, bool $granted): bool
     {
         return DB::transaction(function () use ($actor, $role, $capability, $granted): bool {
-            /** @var SpatieRole $spatieRole */
-            $spatieRole = SpatieRole::findByName($role->value, 'web');
+            $current = in_array($capability->value, $this->grants($actor)[$role->value] ?? [], true);
 
-            if ($spatieRole->hasPermissionTo($capability->value) === $granted) {
+            if ($current === $granted) {
                 return false;
             }
 
@@ -104,23 +105,26 @@ class PermissionMatrix
                     throw ValidationException::withMessages(['capability' => $reason]);
                 }
 
-                $this->permissions->revoke($actor, $spatieRole, $capability);
+                $this->permissions->revoke($actor, $role, $capability);
 
                 return true;
             }
 
-            $this->permissions->grant($actor, $spatieRole, $capability);
+            $this->permissions->grant($actor, $role, $capability);
 
             return true;
         });
     }
 
     /**
+     * The latest changes to the actor's own restaurant's grid.
+     *
      * @return list<array{id: int, actor: string, role: string, capability: string, granted: bool, at: string}>
      */
-    public function recentAudits(int $limit = 10): array
+    public function recentAudits(User $actor, int $limit = 10): array
     {
         return array_values(PermissionAudit::query()
+            ->where('restaurant_id', $actor->restaurant_id)
             ->with('actor:id,name')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -163,23 +167,15 @@ class PermissionMatrix
     }
 
     /**
+     * The actor's own restaurant's grid.
+     *
      * @return array<string, list<string>>
      */
-    private function grants(): array
+    private function grants(User $actor): array
     {
-        $grants = [];
+        $restaurantId = $actor->restaurant_id
+            ?? throw new LogicException('Only a restaurant\'s own staff can see its permissions.');
 
-        $roles = SpatieRole::query()
-            ->where('guard_name', 'web')
-            ->with('permissions:id,name')
-            ->get();
-
-        foreach ($roles as $role) {
-            $grants[(string) $role->name] = array_values(
-                $role->permissions->pluck('name')->map(fn ($name): string => (string) $name)->all(),
-            );
-        }
-
-        return $grants;
+        return $this->capabilities->grid($restaurantId);
     }
 }

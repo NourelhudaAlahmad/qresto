@@ -42,7 +42,7 @@ class AdminDashboardController extends Controller
         return Inertia::render('staff/admin/system', [
             'summary' => $summary->for($restaurant),
             'matrix' => $matrix->for($admin),
-            'audits' => $matrix->recentAudits(),
+            'audits' => $matrix->recentAudits($admin),
             'restaurant' => [
                 'name' => $restaurant->name,
                 'service_charge_pct' => (float) $restaurant->service_charge_pct,

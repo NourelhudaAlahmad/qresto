@@ -43,7 +43,7 @@ class PermissionMatrixController extends Controller
     {
         $limit = max(1, min(100, (int) $request->query('limit', 25)));
 
-        return response()->json(['audits' => $matrix->recentAudits($limit)]);
+        return response()->json(['audits' => $matrix->recentAudits($this->actor($request), $limit)]);
     }
 
     private function actor(Request $request): User

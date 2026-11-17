@@ -6,6 +6,7 @@ use App\Models\PermissionAudit;
 use App\Models\Restaurant;
 use App\Models\User;
 use App\Services\Admin\PermissionMatrix;
+use App\Services\RestaurantCapabilities;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role as SpatieRole;
@@ -35,11 +36,17 @@ function matrixUser(Restaurant $restaurant, string $role, string $name = 'Staff'
     return $user;
 }
 
-function roleHas(string $role, Capability $capability): bool
+/**
+ * Whether the role holds the capability in the test's restaurant, read
+ * fresh rather than through the request's remembered grid.
+ */
+function roleHas(string $role, Capability $capability, ?Restaurant $restaurant = null): bool
 {
-    app(PermissionRegistrar::class)->forgetCachedPermissions();
-
-    return SpatieRole::findByName($role, 'web')->hasPermissionTo($capability->value);
+    return (new RestaurantCapabilities)->roleHas(
+        ($restaurant ?? test()->restaurant)->id,
+        $role,
+        $capability->value,
+    );
 }
 
 function toggleCell(string $role, Capability $capability, bool $granted): array
@@ -237,4 +244,69 @@ it('returns the matrix as JSON for the index endpoint', function () {
         ->assertOk()
         ->assertJsonCount(6, 'roles')
         ->assertJsonCount(8, 'rows');
+});
+
+it('changes the grid of the admin\'s own restaurant only', function () {
+    $other = Restaurant::factory()->create();
+    $otherManager = matrixUser($other, 'manager', 'Omar Haddad');
+    $ownManager = matrixUser($this->restaurant, 'manager', 'Sara Malik');
+
+    $this->actingAs($this->yusuf)
+        ->patch('/app/system/permissions', toggleCell('manager', Capability::EDIT_MENU_PRICES, true))
+        ->assertSessionHasNoErrors();
+
+    $this->actingAs($this->yusuf)
+        ->patch('/app/system/permissions', toggleCell('waiter', Capability::TAKE_PAYMENT, false))
+        ->assertSessionHasNoErrors();
+
+    expect(roleHas('manager', Capability::EDIT_MENU_PRICES))->toBeTrue()
+        ->and(roleHas('waiter', Capability::TAKE_PAYMENT))->toBeFalse()
+        ->and(roleHas('manager', Capability::EDIT_MENU_PRICES, $other))->toBeFalse()
+        ->and(roleHas('waiter', Capability::TAKE_PAYMENT, $other))->toBeTrue()
+        // The defaults every restaurant starts from are untouched.
+        ->and(SpatieRole::findByName('manager', 'web')->hasPermissionTo(Capability::EDIT_MENU_PRICES->value))->toBeFalse()
+        ->and(SpatieRole::findByName('waiter', 'web')->hasPermissionTo(Capability::TAKE_PAYMENT->value))->toBeTrue();
+
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    expect($ownManager->fresh()->can(Capability::EDIT_MENU_PRICES->value))->toBeTrue()
+        ->and($otherManager->fresh()->can(Capability::EDIT_MENU_PRICES->value))->toBeFalse();
+});
+
+it('lets a staff member in through the can middleware only where their restaurant allows it', function () {
+    $other = Restaurant::factory()->create();
+    $otherAdmin = matrixUser($other, 'admin', 'Lina Saad');
+
+    // Restaurant B gives its managers system config; restaurant A does not.
+    $this->actingAs($otherAdmin)
+        ->patch('/app/system/permissions', toggleCell('manager', Capability::MANAGE_RESTAURANT_CONFIG, true))
+        ->assertSessionHasNoErrors();
+
+    $this->actingAs(matrixUser($other, 'manager'))->get('/app/system')->assertOk();
+    $this->actingAs(matrixUser($this->restaurant, 'manager'))->get('/app/system')->assertForbidden();
+});
+
+it('shows each restaurant only its own permission changes', function () {
+    $other = Restaurant::factory()->create();
+    $otherAdmin = matrixUser($other, 'admin', 'Lina Saad');
+
+    $this->actingAs($otherAdmin)
+        ->patch('/app/system/permissions', toggleCell('manager', Capability::EDIT_MENU_PRICES, true));
+
+    $this->actingAs($this->yusuf)
+        ->getJson('/app/system/permissions/audits')
+        ->assertOk()
+        ->assertJsonCount(0, 'audits');
+
+    $this->actingAs($this->yusuf)
+        ->get('/app/system')
+        ->assertInertia(fn ($page) => $page
+            ->has('audits', 0)
+            ->where('matrix.rows', fn ($rows) => collect($rows)
+                ->firstWhere('capability', 'edit_menu_prices')['cells']['manager']['granted'] === false));
+
+    $this->actingAs($otherAdmin)
+        ->getJson('/app/system/permissions/audits')
+        ->assertJsonCount(1, 'audits')
+        ->assertJsonPath('audits.0.actor', 'Lina Saad');
 });

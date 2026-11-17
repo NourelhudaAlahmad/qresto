@@ -3,18 +3,23 @@
 namespace App\Models;
 
 use App\Enums\Role;
+use App\Services\RestaurantCapabilities;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Spatie\Permission\Contracts\Permission;
+use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -87,6 +92,33 @@ class User extends Authenticatable implements PasskeyUser
     public function canSignInWithShiftQr(): bool
     {
         return ! $this->hasAnyRole(Role::excludedFromShiftQr());
+    }
+
+    /**
+     * A role's capabilities follow the user's restaurant: its admin may
+     * have changed the default grid for that restaurant alone.
+     */
+    protected function hasPermissionViaRole(Permission $permission): bool
+    {
+        return in_array(
+            $permission->getAttribute('name'),
+            app(RestaurantCapabilities::class)->forUser($this),
+            true,
+        );
+    }
+
+    /**
+     * @return Collection<int, Model>
+     */
+    public function getPermissionsViaRoles(): Collection
+    {
+        $names = app(RestaurantCapabilities::class)->forUser($this);
+
+        return app(PermissionRegistrar::class)
+            ->getPermissions(['guard_name' => 'web'])
+            ->filter(fn (Model $permission): bool => in_array($permission->getAttribute('name'), $names, true))
+            ->sortBy('name')
+            ->values();
     }
 
     /**

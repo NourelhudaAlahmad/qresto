@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
+use App\Concerns\BelongsToRestaurant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PermissionAudit extends Model
 {
+    use BelongsToRestaurant;
+
     public $timestamps = false;
 
     protected $fillable = [
+        'restaurant_id',
         'actor_id',
         'role',
         'permission',

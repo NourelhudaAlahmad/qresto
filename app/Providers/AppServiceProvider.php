@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\CurrentRestaurant;
 use App\Enums\Capability;
 use App\Models\User;
+use App\Services\RestaurantCapabilities;
 use App\Support\DeploymentCheck;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Console\AboutCommand;
@@ -26,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(CurrentRestaurant::class, function () {
             return new CurrentRestaurant;
         });
+
+        // Per request or job: it remembers each restaurant's grid changes.
+        $this->app->scoped(RestaurantCapabilities::class);
     }
 
     public function boot(): void

@@ -8,6 +8,7 @@ use App\Models\PermissionAudit;
 use App\Models\Restaurant;
 use App\Models\User;
 use App\Services\PermissionManager;
+use App\Services\RestaurantCapabilities;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role as SpatieRole;
@@ -29,26 +30,28 @@ class PermissionAuditTest extends TestCase
 
         $actor->assignRole(Role::ADMIN->value);
 
-        $role = SpatieRole::findByName(
-            Role::MANAGER->value,
-            'web',
-        );
-
-        $permissionManager = app(PermissionManager::class);
-
-        $permissionManager->grant(
+        app(PermissionManager::class)->grant(
             $actor,
-            $role,
+            Role::MANAGER,
             Capability::EDIT_MENU_PRICES,
         );
 
         $this->assertTrue(
-            $role->fresh()->hasPermissionTo(
+            app(RestaurantCapabilities::class)->roleHas(
+                $restaurant->id,
+                Role::MANAGER->value,
                 Capability::EDIT_MENU_PRICES->value,
             ),
         );
 
+        // The default grid is untouched.
+        $this->assertFalse(
+            SpatieRole::findByName(Role::MANAGER->value, 'web')
+                ->hasPermissionTo(Capability::EDIT_MENU_PRICES->value),
+        );
+
         $this->assertDatabaseHas('permission_audits', [
+            'restaurant_id' => $restaurant->id,
             'actor_id' => $actor->id,
             'role' => Role::MANAGER->value,
             'permission' => Capability::EDIT_MENU_PRICES->value,
@@ -68,32 +71,30 @@ class PermissionAuditTest extends TestCase
 
         $actor->assignRole(Role::ADMIN->value);
 
-        $role = SpatieRole::findByName(
-            Role::MANAGER->value,
-            'web',
-        );
-
         $permissionManager = app(PermissionManager::class);
 
         $permissionManager->grant(
             $actor,
-            $role,
+            Role::MANAGER,
             Capability::EDIT_MENU_PRICES,
         );
 
         $permissionManager->revoke(
             $actor,
-            $role,
+            Role::MANAGER,
             Capability::EDIT_MENU_PRICES,
         );
 
         $this->assertFalse(
-            $role->fresh()->hasPermissionTo(
+            app(RestaurantCapabilities::class)->roleHas(
+                $restaurant->id,
+                Role::MANAGER->value,
                 Capability::EDIT_MENU_PRICES->value,
             ),
         );
 
         $this->assertDatabaseHas('permission_audits', [
+            'restaurant_id' => $restaurant->id,
             'actor_id' => $actor->id,
             'role' => Role::MANAGER->value,
             'permission' => Capability::EDIT_MENU_PRICES->value,
@@ -101,5 +102,8 @@ class PermissionAuditTest extends TestCase
         ]);
 
         $this->assertCount(2, PermissionAudit::all());
+
+        // Back at the default: no override row left behind.
+        $this->assertDatabaseCount('restaurant_role_capabilities', 0);
     }
 }
