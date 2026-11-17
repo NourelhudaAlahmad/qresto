@@ -1,4 +1,5 @@
 import {
+    act,
     cleanup,
     fireEvent,
     render,
@@ -135,5 +136,37 @@ describe('Cashier view (#34)', () => {
         expect(
             screen.queryByRole('button', { name: 'Take payment' }),
         ).toBeNull();
+    });
+});
+
+describe('Cashier clock', () => {
+    it('keeps the ages counting between polls', () => {
+        vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
+        vi.setSystemTime(Date.parse('2026-11-17T20:00:00Z'));
+
+        const placed = new Date(Date.now() - 20 * 60_000).toISOString();
+
+        render(
+            <Cashier
+                {...props}
+                orders={[
+                    {
+                        ...order(41, 'A-1041', 'served', 9220, 7),
+                        placed_at: placed,
+                    },
+                ]}
+            />,
+        );
+
+        expect(screen.getAllByText('20 min').length).toBeGreaterThan(0);
+
+        act(() => {
+            vi.advanceTimersByTime(6 * 60_000);
+        });
+
+        expect(screen.getAllByText('26 min').length).toBeGreaterThan(0);
+        expect(screen.queryByText('20 min')).toBeNull();
+
+        vi.useRealTimers();
     });
 });

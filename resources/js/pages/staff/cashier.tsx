@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { Stat } from '@/components/qresto/stat';
 import { useLiveData } from '@/hooks/useLiveData';
+import { useNow } from '@/hooks/useNow';
 import { formatMinor } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 import { useTableCheckout } from '@/pages/staff/floor';
@@ -37,7 +38,8 @@ export default function Cashier({
     };
     const interval = qresto?.live?.floor_interval ?? 8000;
     const { isPaused } = useLiveData(interval, { only: ['orders'] });
-    const [now] = useState(() => Date.now());
+    // Ages keep counting between polls, so a waiting bill turns late.
+    const now = useNow();
     const [paying, setPaying] = useState<Ticket | null>(null);
 
     const { select, close, checkout } = useTableCheckout({
