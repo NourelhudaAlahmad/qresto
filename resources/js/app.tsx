@@ -41,9 +41,12 @@ createInertiaApp({
             case name.startsWith('auth/'):
                 return AuthLayout;
 
+            // Account settings and shift codes belong to the staff app: the
+            // same shell, sidebar and way back as every other staff screen.
             case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
+                return [StaffLayout, SettingsLayout];
 
+            case name === 'manager/shift-qr':
             case name.startsWith('staff/'):
                 return StaffLayout;
             default:

@@ -7,7 +7,9 @@ import {
     LayoutGrid,
     LogOut,
     MoreHorizontal,
+    QrCode,
     Settings2,
+    UserCog,
     UtensilsCrossed,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -26,6 +28,7 @@ import { useLiveConnection } from '@/hooks/useLiveConnection';
 import { useLiveData } from '@/hooks/useLiveData';
 import { activeLocale } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
+import { edit as editProfile } from '@/routes/profile';
 
 type StaffNavItem = {
     id: string;
@@ -69,6 +72,7 @@ const NAV_DOTS: Record<string, string> = {
     menu: 'var(--saffron-300)',
     floor: 'var(--teal-300)',
     reports: 'var(--herb-300)',
+    shift_qr: 'var(--teal-300)',
 };
 
 const NAV_ICONS: Record<string, typeof LayoutGrid> = {
@@ -79,6 +83,7 @@ const NAV_ICONS: Record<string, typeof LayoutGrid> = {
     menu: UtensilsCrossed,
     floor: LayoutGrid,
     reports: BarChart3,
+    shift_qr: QrCode,
 };
 
 function initials(name: string): string {
@@ -284,6 +289,14 @@ function Topbar({
                                 {userEmail}
                             </p>
                         </div>
+
+                        <Link
+                            href={editProfile().url}
+                            className="text-body mt-1 flex min-h-11 w-full items-center gap-2 rounded-[var(--radius-sm)] px-3 text-start hover:bg-[var(--action-ghost-hover)]"
+                        >
+                            <UserCog className="size-4" aria-hidden="true" />
+                            {t.shell.account_settings}
+                        </Link>
 
                         <Link
                             href="/logout"

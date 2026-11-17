@@ -20,6 +20,7 @@ return [
         'order_feed' => 'تدفق الطلبات',
         'ready_to_collect' => 'جاهز للاستلام',
         'unpaid_bills' => 'فواتير غير مدفوعة',
+        'shift_qr' => 'رمز الوردية',
     ],
 
     // The manager overview: tonight's numbers, active orders, the floor team.
@@ -120,6 +121,8 @@ return [
         'kitchen_pass_sub' => 'تدفق طلبات المطبخ المباشر',
         'shift_qr' => 'رمز QR للوردية',
         'shift_qr_sub' => 'إصدار رموز دخول الموظفين',
+        'settings' => 'الإعدادات',
+        'settings_sub' => 'ملفك الشخصي وكلمة المرور وتسجيل الدخول',
         'staff' => 'الموظفون',
     ],
 
@@ -186,6 +189,7 @@ return [
         'user_menu' => 'قائمة المستخدم',
         'more' => 'المزيد',
         'more_nav' => 'المزيد من القوائم',
+        'account_settings' => 'إعدادات الحساب',
         'service_in_progress' => ':date · الخدمة جارية',
     ],
 
@@ -675,5 +679,13 @@ return [
         'try_again' => 'حاول مرة أخرى',
         'empty' => 'لا جديد لديك.',
         'unread' => '(غير مقروء)',
+    ],
+
+    // Account settings: profile, password and sign-in, appearance.
+    'settings' => [
+        'nav' => 'الإعدادات',
+        'profile' => 'الملف الشخصي',
+        'security' => 'الأمان',
+        'appearance' => 'المظهر',
     ],
 ];

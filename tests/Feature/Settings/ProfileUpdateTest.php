@@ -86,3 +86,16 @@ test('a manager who issued shift QRs keeps their account and its audit trail', f
     expect($manager->fresh())->not->toBeNull()
         ->and(ShiftSignInToken::query()->where('issued_by', $manager->id)->count())->toBe(1);
 });
+
+test('account settings sit in the staff shell with their own title', function () {
+    $restaurant = Restaurant::factory()->create();
+    $user = User::factory()->create(['restaurant_id' => $restaurant->id, 'locale' => 'ar']);
+
+    $this->actingAs($user)
+        ->get(route('profile.edit'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('staffLayout.pageTitle', 'الإعدادات')
+            ->where('i18n.staff.shell.account_settings', 'إعدادات الحساب')
+            ->where('i18n.staff.settings.security', 'الأمان'));
+});

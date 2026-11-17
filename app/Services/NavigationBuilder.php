@@ -102,6 +102,14 @@ class NavigationBuilder
                     'badge' => null,
                     'capability' => Capability::FINANCIAL_REPORTS,
                 ],
+                // Only a manager issues shift sign-in codes (ShiftQrService).
+                [
+                    'id' => 'shift_qr',
+                    'title' => __('staff.nav.shift_qr'),
+                    'href' => '/manager/shift-qr',
+                    'badge' => null,
+                    'capability' => Capability::MANAGE_WAITER_ACCOUNTS,
+                ],
             ],
 
             Role::ADMIN->value => [

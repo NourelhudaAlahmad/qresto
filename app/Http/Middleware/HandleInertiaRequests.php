@@ -183,6 +183,13 @@ class HandleInertiaRequests extends Middleware
                 'staff.pages.shift_qr_sub',
             ],
 
+            'profile.edit',
+            'security.edit',
+            'appearance.edit' => [
+                'staff.pages.settings',
+                'staff.pages.settings_sub',
+            ],
+
             default => [
                 'staff.pages.staff',
                 '',

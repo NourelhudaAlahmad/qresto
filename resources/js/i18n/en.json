@@ -207,7 +207,8 @@
             "pass": "Pass",
             "order_feed": "Order feed",
             "ready_to_collect": "Ready to collect",
-            "unpaid_bills": "Unpaid bills"
+            "unpaid_bills": "Unpaid bills",
+            "shift_qr": "Shift QR"
         },
         "overview": {
             "service": "Tonight's service",
@@ -305,6 +306,8 @@
             "kitchen_pass_sub": "Live kitchen order feed",
             "shift_qr": "Shift QR",
             "shift_qr_sub": "Issue staff sign-in codes",
+            "settings": "Settings",
+            "settings_sub": "Your profile, password and sign-in",
             "staff": "Staff"
         },
         "roles": {
@@ -368,6 +371,7 @@
             "user_menu": "User menu",
             "more": "More",
             "more_nav": "More navigation",
+            "account_settings": "Account settings",
             "service_in_progress": ":date · service in progress"
         },
         "live": {
@@ -846,6 +850,12 @@
             "try_again": "Try again",
             "empty": "You’re all caught up.",
             "unread": "(unread)"
+        },
+        "settings": {
+            "nav": "Settings",
+            "profile": "Profile",
+            "security": "Security",
+            "appearance": "Appearance"
         }
     },
     "common": {

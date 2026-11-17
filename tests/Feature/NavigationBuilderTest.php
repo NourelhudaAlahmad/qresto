@@ -104,7 +104,7 @@ class NavigationBuilderTest extends TestCase
         );
 
         $this->assertSame(
-            ['manager', 'waiter', 'floor', 'reports'],
+            ['manager', 'waiter', 'floor', 'reports', 'shift_qr'],
             array_column($navigation, 'id'),
         );
 
@@ -114,6 +114,7 @@ class NavigationBuilderTest extends TestCase
                 '/app/orders',
                 '/app/floor',
                 '/app/reports',
+                '/manager/shift-qr',
             ],
             array_column($navigation, 'href'),
         );

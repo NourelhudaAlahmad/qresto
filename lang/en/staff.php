@@ -20,6 +20,7 @@ return [
         'order_feed' => 'Order feed',
         'ready_to_collect' => 'Ready to collect',
         'unpaid_bills' => 'Unpaid bills',
+        'shift_qr' => 'Shift QR',
     ],
 
     // The manager overview: tonight's numbers, active orders, the floor team.
@@ -120,6 +121,8 @@ return [
         'kitchen_pass_sub' => 'Live kitchen order feed',
         'shift_qr' => 'Shift QR',
         'shift_qr_sub' => 'Issue staff sign-in codes',
+        'settings' => 'Settings',
+        'settings_sub' => 'Your profile, password and sign-in',
         'staff' => 'Staff',
     ],
 
@@ -186,6 +189,7 @@ return [
         'user_menu' => 'User menu',
         'more' => 'More',
         'more_nav' => 'More navigation',
+        'account_settings' => 'Account settings',
         'service_in_progress' => ':date · service in progress',
     ],
 
@@ -675,5 +679,13 @@ return [
         'try_again' => 'Try again',
         'empty' => 'You’re all caught up.',
         'unread' => '(unread)',
+    ],
+
+    // Account settings: profile, password and sign-in, appearance.
+    'settings' => [
+        'nav' => 'Settings',
+        'profile' => 'Profile',
+        'security' => 'Security',
+        'appearance' => 'Appearance',
     ],
 ];
