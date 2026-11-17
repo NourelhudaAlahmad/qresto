@@ -368,3 +368,82 @@ it('returns the generated shift QR to the authorized manager page', function () 
                 ),
         );
 });
+
+function createShiftQrManager(Restaurant $restaurant): User
+{
+    $manager = User::factory()->create([
+        'restaurant_id' => $restaurant->id,
+        'is_active' => true,
+        'email_verified_at' => now(),
+    ]);
+
+    Role::findOrCreate('manager', 'web');
+    Permission::findOrCreate(Capability::MANAGE_WAITER_ACCOUNTS->value, 'web');
+
+    $manager->assignRole('manager');
+    $manager->givePermissionTo(Capability::MANAGE_WAITER_ACCOUNTS->value);
+
+    return $manager;
+}
+
+it('refuses to issue a shift QR for a manager or an admin', function (string $role) {
+    $restaurant = Restaurant::factory()->create();
+    $manager = createShiftQrManager($restaurant);
+
+    $target = User::factory()->create([
+        'restaurant_id' => $restaurant->id,
+        'is_active' => true,
+    ]);
+    $target->assignRole(Role::findOrCreate($role, 'web'));
+
+    $this->actingAs($manager)
+        ->post(route('auth.shift-qr.issue'), ['user_id' => $target->id])
+        ->assertSessionHasErrors('staff');
+
+    $this->assertDatabaseCount('shift_sign_in_tokens', 0);
+})->with(['manager', 'admin']);
+
+it('does not sign in a manager or an admin with a shift QR', function (string $role) {
+    $restaurant = Restaurant::factory()->create();
+
+    $target = User::factory()->create([
+        'restaurant_id' => $restaurant->id,
+        'is_active' => true,
+    ]);
+    $target->assignRole(Role::findOrCreate($role, 'web'));
+
+    $token = createShiftQrToken($target);
+
+    $this->post(route('auth.shift-qr.store'), [
+        'token' => $token,
+        'restaurant_slug' => $restaurant->slug,
+    ]);
+
+    $this->assertGuest();
+})->with(['manager', 'admin']);
+
+it('lists only floor staff on the manager shift QR page', function () {
+    $restaurant = Restaurant::factory()->create();
+    $manager = createShiftQrManager($restaurant);
+
+    $waiter = User::factory()->create([
+        'restaurant_id' => $restaurant->id,
+        'is_active' => true,
+    ]);
+    $waiter->assignRole(Role::findOrCreate('waiter', 'web'));
+
+    foreach (['manager', 'admin'] as $role) {
+        User::factory()->create([
+            'restaurant_id' => $restaurant->id,
+            'is_active' => true,
+        ])->assignRole(Role::findOrCreate($role, 'web'));
+    }
+
+    $this->actingAs($manager)
+        ->get(route('manager.shift-qr.index'))
+        ->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->has('staff', 1)
+                ->where('staff.0.id', $waiter->id),
+        );
+});

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Enums\Capability;
+use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -34,6 +35,8 @@ class ManagerShiftQrController extends Controller
             ->where('restaurant_id', $manager->restaurant_id)
             ->where('is_active', true)
             ->whereKeyNot($manager->id)
+            ->whereDoesntHave('roles', fn ($roles) => $roles
+                ->whereIn('name', Role::excludedFromShiftQr()))
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 

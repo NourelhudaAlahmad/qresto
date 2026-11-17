@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Role;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -81,6 +82,11 @@ class User extends Authenticatable implements PasskeyUser
     public function isDeactivated(): bool
     {
         return $this->deactivated_at !== null;
+    }
+
+    public function canSignInWithShiftQr(): bool
+    {
+        return ! $this->hasAnyRole(Role::excludedFromShiftQr());
     }
 
     /**

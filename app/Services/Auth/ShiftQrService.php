@@ -20,6 +20,7 @@ class ShiftQrService
             || $manager->restaurant_id === null
             || $manager->restaurant_id !== $staff->restaurant_id
             || ! $staff->is_active
+            || ! $staff->canSignInWithShiftQr()
         ) {
             throw ValidationException::withMessages([
                 'staff' => __('messages.auth.shift_qr_not_authorized'),
@@ -73,6 +74,7 @@ class ShiftQrService
 
             if (
                 $staff === null
+                || ! $staff->canSignInWithShiftQr()
                 || app(StaffAccountLockout::class)->isLocked($staff)
             ) {
                 return null;
