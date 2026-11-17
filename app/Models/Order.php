@@ -116,7 +116,9 @@ class Order extends Model
      */
     public function lines(): HasMany
     {
-        return $this->hasMany(OrderLine::class);
+        // chaperone(): each line knows its order, so reading its money
+        // (whose currency is the order's) costs no query per line.
+        return $this->hasMany(OrderLine::class)->chaperone();
     }
 
     /**
@@ -133,7 +135,8 @@ class Order extends Model
      */
     public function payments(): HasMany
     {
-        return $this->hasMany(Payment::class);
+        // chaperone(): as for lines, a payment's currency is its order's.
+        return $this->hasMany(Payment::class)->chaperone();
     }
 
     /**
