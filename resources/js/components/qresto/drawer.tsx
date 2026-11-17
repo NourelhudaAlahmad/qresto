@@ -2,6 +2,8 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import { useI18n } from '@/lib/i18n';
+
 type DrawerProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -24,6 +26,8 @@ export function Drawer({
     description,
     footer,
 }: DrawerProps) {
+    const { common } = useI18n();
+
     return (
         <Dialog.Root open={open} onOpenChange={onOpenChange}>
             <Dialog.Portal>
@@ -41,7 +45,7 @@ export function Drawer({
                         </Dialog.Title>
 
                         <Dialog.Close
-                            aria-label="Close"
+                            aria-label={common.close}
                             className="grid size-11 shrink-0 place-items-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--action-ghost-hover)]"
                         >
                             <X className="size-[19px]" aria-hidden="true" />

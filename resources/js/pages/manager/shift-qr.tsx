@@ -75,7 +75,10 @@ export default function ManagerShiftQr({
                         href="/dashboard"
                         className="text-label text-text-secondary hover:text-text-primary mb-8 inline-flex items-center gap-2"
                     >
-                        <ArrowLeft className="size-4" />
+                        <ArrowLeft
+                            className="size-4 rtl:rotate-180"
+                            aria-hidden="true"
+                        />
                         {t.back}
                     </a>
 

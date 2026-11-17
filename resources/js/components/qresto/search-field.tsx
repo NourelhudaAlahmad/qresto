@@ -2,11 +2,14 @@ import { SearchIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { Input } from '@/components/qresto/input';
+import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 type SearchFieldProps = React.ComponentProps<typeof Input>;
 
 function SearchField({ className, ...props }: SearchFieldProps) {
+    const { common } = useI18n();
+
     return (
         <div
             data-slot="qresto-search-field"
@@ -24,7 +27,7 @@ function SearchField({ className, ...props }: SearchFieldProps) {
                 {...props}
                 type="search"
                 className="ps-10"
-                aria-label={props['aria-label'] ?? 'Search'}
+                aria-label={props['aria-label'] ?? common.search}
             />
         </div>
     );

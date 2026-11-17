@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import { Button } from '@/components/qresto/button';
+import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 type QuantityStepperProps = {
@@ -22,6 +23,8 @@ function QuantityStepper({
     disabled = false,
     className,
 }: QuantityStepperProps) {
+    const { common } = useI18n();
+
     const decrease = () => {
         if (disabled || value <= min) {
             return;
@@ -58,7 +61,7 @@ function QuantityStepper({
                 type="button"
                 variant="ghost"
                 size="md"
-                aria-label="Decrease quantity"
+                aria-label={common.decrease}
                 disabled={disabled || isMin}
                 onClick={decrease}
                 className={cn(buttonSize, 'group')}
@@ -87,7 +90,7 @@ function QuantityStepper({
                 type="button"
                 variant="ghost"
                 size="md"
-                aria-label="Increase quantity"
+                aria-label={common.increase}
                 disabled={disabled || isMax}
                 onClick={increase}
                 className={cn(buttonSize, 'group')}

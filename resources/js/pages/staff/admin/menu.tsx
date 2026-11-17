@@ -215,7 +215,7 @@ function PanelHeader({
                     aria-label={t.back}
                     onClick={onBack}
                 >
-                    <ArrowLeft className="size-4" aria-hidden />
+                    <ArrowLeft className="size-4 rtl:rotate-180" aria-hidden />
                 </Button>
             )}
             <div className="min-w-0 flex-1">
