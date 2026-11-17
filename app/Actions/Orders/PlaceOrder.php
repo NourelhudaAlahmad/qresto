@@ -251,12 +251,14 @@ final class PlaceOrder
                 ],
             ]);
 
-            if ($this->isOfflineMethod($method)) {
-                $this->promotions->consume(
-                    restaurantId: $cart->restaurant_id,
-                    code: $promoCode,
-                );
+            // Claim the promo use before any money moves. If the code ran
+            // out meanwhile this throws and the whole order rolls back.
+            $this->promotions->consume(
+                restaurantId: $cart->restaurant_id,
+                code: $promoCode,
+            );
 
+            if ($this->isOfflineMethod($method)) {
                 return [
                     'order' => $order->fresh(),
                     'payment' => $payment->fresh(),
@@ -299,6 +301,11 @@ final class PlaceOrder
             if ($intent->failed()) {
                 $order->events()->delete();
 
+                $this->promotions->release(
+                    restaurantId: $cart->restaurant_id,
+                    code: $promoCode,
+                );
+
                 return [
                     'order' => $order->fresh(),
                     'payment' => $payment->fresh(),
@@ -314,11 +321,6 @@ final class PlaceOrder
                     'paid_at' => now(),
                 ]);
             }
-
-            $this->promotions->consume(
-                restaurantId: $cart->restaurant_id,
-                code: $promoCode,
-            );
 
             return [
                 'order' => $order->fresh(),

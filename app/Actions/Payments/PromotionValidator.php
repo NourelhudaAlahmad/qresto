@@ -75,7 +75,38 @@ final class PromotionValidator
         return $discount;
     }
 
+    /**
+     * Take one use of the code. The limit is checked in the same UPDATE
+     * that counts the use, so two guests racing for the last use cannot
+     * both get it: the loser is told the limit is reached.
+     */
     public function consume(
+        int $restaurantId,
+        ?string $code,
+    ): void {
+        if ($code === null || trim($code) === '') {
+            return;
+        }
+
+        $claimed = Promotion::query()
+            ->where('restaurant_id', $restaurantId)
+            ->where('code', strtoupper(trim($code)))
+            ->where(fn ($query) => $query
+                ->whereNull('max_uses')
+                ->orWhereColumn('uses', '<', 'max_uses'))
+            ->increment('uses');
+
+        if ($claimed === 0) {
+            throw ValidationException::withMessages([
+                'promo_code' => __('messages.promo.limit_reached'),
+            ]);
+        }
+    }
+
+    /**
+     * Give back a use taken for a payment that then failed.
+     */
+    public function release(
         int $restaurantId,
         ?string $code,
     ): void {
@@ -86,6 +117,7 @@ final class PromotionValidator
         Promotion::query()
             ->where('restaurant_id', $restaurantId)
             ->where('code', strtoupper(trim($code)))
-            ->increment('uses');
+            ->where('uses', '>', 0)
+            ->decrement('uses');
     }
 }

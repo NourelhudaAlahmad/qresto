@@ -156,3 +156,41 @@ it('increments promotion usage when consumed', function (): void {
 
     expect($promotion->fresh()->uses)->toBe(1);
 });
+
+it('refuses the use after the last one, even when both passed validation', function (): void {
+    $restaurant = Restaurant::factory()->create();
+
+    $promotion = Promotion::factory()
+        ->forRestaurant($restaurant)
+        ->active()
+        ->percent(10)
+        ->create(['code' => 'LASTONE', 'max_uses' => 1, 'uses' => 0]);
+
+    $promotions = app(PromotionValidator::class);
+    $subtotal = Money::fromMinor(10000, $restaurant->currency);
+
+    // Two guests both see one use left…
+    $promotions->validate($restaurant->id, 'LASTONE', $subtotal);
+    $promotions->validate($restaurant->id, 'LASTONE', $subtotal);
+
+    // …and only the first one gets it.
+    $promotions->consume($restaurant->id, 'LASTONE');
+
+    expect(fn () => $promotions->consume($restaurant->id, 'LASTONE'))
+        ->toThrow(ValidationException::class);
+
+    expect($promotion->fresh()->uses)->toBe(1);
+});
+
+it('gives a use back after a failed payment', function (): void {
+    $restaurant = Restaurant::factory()->create();
+
+    $promotion = Promotion::factory()
+        ->forRestaurant($restaurant)
+        ->active()
+        ->create(['code' => 'BACK', 'max_uses' => 5, 'uses' => 3]);
+
+    app(PromotionValidator::class)->release($restaurant->id, 'BACK');
+
+    expect($promotion->fresh()->uses)->toBe(2);
+});
