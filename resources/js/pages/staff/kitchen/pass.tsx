@@ -149,7 +149,8 @@ export default function Pass({
 
             router.post(
                 `/app/kds/tickets/${ticket.id}/bump`,
-                {},
+                // The status on screen: a stale tap is refused, not applied.
+                { from: ticket.status },
                 {
                     preserveScroll: true,
                     preserveState: true,

@@ -58,7 +58,7 @@ export default function Runner({ tickets, pollIntervalMs, signedInAs }: Props) {
 
         router.post(
             `/app/kds/tickets/${ticket.id}/bump`,
-            {},
+            { from: ticket.status },
             {
                 preserveScroll: true,
                 preserveState: true,

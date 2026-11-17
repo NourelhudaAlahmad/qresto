@@ -13,6 +13,7 @@ use App\Services\Integrations\IntegrationMonitor;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -72,25 +73,33 @@ class KitchenDisplayController extends Controller
 
         abort_unless((int) $order->restaurant_id === (int) $user->restaurant_id, 404);
 
-        // The pass bumps pending → preparing → ready; the runner's one
-        // action, "Collected", takes ready → served (#34).
-        $next = $this->isRunner($user)
-            ? ($order->status === OrderStatus::READY ? OrderStatus::SERVED : null)
-            : match ($order->status) {
-                OrderStatus::PENDING => OrderStatus::PREPARING,
-                OrderStatus::PREPARING => OrderStatus::READY,
-                default => null,
-            };
+        // The status the screen showed when it was tapped. A second tap, or
+        // a waiter voiding the order meanwhile, has already moved it on.
+        $seen = OrderStatus::tryFrom((string) $request->input('from'));
 
-        if ($next === null) {
-            throw ValidationException::withMessages([
-                'order' => $this->isRunner($user)
-                    ? "{$order->code} is not ready to collect."
-                    : "{$order->code} is no longer on the pass.",
-            ]);
-        }
+        DB::transaction(function () use ($order, $user, $seen): void {
+            $locked = Order::query()->lockForUpdate()->findOrFail($order->id);
 
-        $order->transitionTo($next, $user);
+            // The pass bumps pending → preparing → ready; the runner's one
+            // action, "Collected", takes ready → served (#34).
+            $next = $this->isRunner($user)
+                ? ($locked->status === OrderStatus::READY ? OrderStatus::SERVED : null)
+                : match ($locked->status) {
+                    OrderStatus::PENDING => OrderStatus::PREPARING,
+                    OrderStatus::PREPARING => OrderStatus::READY,
+                    default => null,
+                };
+
+            if ($next === null || ($seen !== null && $seen !== $locked->status)) {
+                throw ValidationException::withMessages([
+                    'order' => $this->isRunner($user)
+                        ? "{$locked->code} is not ready to collect."
+                        : "{$locked->code} is no longer on the pass.",
+                ]);
+            }
+
+            $locked->transitionTo($next, $user);
+        });
 
         return back();
     }

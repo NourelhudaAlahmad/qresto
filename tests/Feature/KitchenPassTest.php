@@ -166,3 +166,30 @@ it('names who is signed in, and signs the pass out to the sign-in screen (#52)',
 
     $this->get(route('login'))->assertOk();
 });
+
+it('refuses a second tap instead of skipping a stage', function () {
+    $order = order('#A-1044');
+
+    $this->actingAs($this->kitchen)
+        ->post("/app/kds/tickets/{$order->id}/bump", ['from' => 'pending'])
+        ->assertSessionHasNoErrors();
+
+    // The same tap again, from a screen that still showed "pending".
+    $this->actingAs($this->kitchen)
+        ->post("/app/kds/tickets/{$order->id}/bump", ['from' => 'pending'])
+        ->assertSessionHasErrors('order');
+
+    expect($order->fresh()->status)->toBe(OrderStatus::PREPARING)
+        ->and($order->events()->where('to_status', 'ready')->exists())->toBeFalse();
+});
+
+it('never brings a voided order back onto the pass', function () {
+    $order = order('#A-1044');
+    $order->transitionTo(OrderStatus::CANCELLED);
+
+    $this->actingAs($this->kitchen)
+        ->post("/app/kds/tickets/{$order->id}/bump", ['from' => 'pending'])
+        ->assertSessionHasErrors('order');
+
+    expect($order->fresh()->status)->toBe(OrderStatus::CANCELLED);
+});

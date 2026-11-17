@@ -183,7 +183,7 @@ describe('Kitchen pass (#33)', () => {
 
         expect(post).toHaveBeenCalledWith(
             '/app/kds/tickets/4/bump',
-            {},
+            { from: 'pending' },
             expect.objectContaining({ only: ['tickets', 'now'] }),
         );
         expect(screen.queryByText('#A-1044')).toBeNull();
@@ -206,7 +206,7 @@ describe('Kitchen pass (#33)', () => {
         // …and leaves the grid when it is pressed.
         expect(post).toHaveBeenCalledWith(
             '/app/kds/tickets/12/bump',
-            {},
+            { from: 'preparing' },
             expect.any(Object),
         );
         expect(screen.queryByText('#A-1043')).toBeNull();

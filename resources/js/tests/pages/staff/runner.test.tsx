@@ -63,7 +63,7 @@ describe('Runner view (#34)', () => {
 
         expect(post).toHaveBeenCalledWith(
             '/app/kds/tickets/42/bump',
-            {},
+            { from: 'ready' },
             expect.objectContaining({ only: ['tickets', 'now'] }),
         );
         expect(screen.queryByText('#A-1042')).toBeNull();
