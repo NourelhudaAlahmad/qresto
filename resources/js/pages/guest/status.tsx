@@ -210,7 +210,7 @@ export default function Status({
     session,
     cart_count = 0,
 }: Props) {
-    const { guest: g } = useI18n();
+    const { guest: g, common } = useI18n();
     const [helpOpen, setHelpOpen] = useState(false);
     const [callSheetOpen, setCallSheetOpen] = useState(false);
 
@@ -393,7 +393,10 @@ export default function Status({
                                     minutesStale < 1
                                         ? g.status.offline_just_now
                                         : fill(g.status.offline_ago, {
-                                              time: formatMinutes(minutesStale),
+                                              time: formatMinutes(
+                                                  minutesStale,
+                                                  common,
+                                              ),
                                           })
                                 }
                             />

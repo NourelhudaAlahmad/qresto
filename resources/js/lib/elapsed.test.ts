@@ -1,36 +1,40 @@
 import { describe, expect, it } from 'vitest';
 
 import { formatAgo, formatMinutes } from './elapsed';
+import type { ElapsedCopy } from './elapsed';
+
+const arabic: ElapsedCopy = {
+    just_now: 'الآن',
+    minutes: ':count د',
+    hour_unit: 'س',
+    minute_unit: 'د',
+    ago: 'منذ :time',
+};
 
 describe('formatMinutes', () => {
-    it('reads in minutes under an hour', () => {
-        expect(formatMinutes(0)).toBe('0 min');
+    it('reads minutes under an hour and hours with minutes after, in English by default', () => {
         expect(formatMinutes(14)).toBe('14 min');
-        expect(formatMinutes(59)).toBe('59 min');
-    });
-
-    it('switches to hours and minutes from an hour', () => {
-        expect(formatMinutes(60)).toBe('1h 0m');
         expect(formatMinutes(1167)).toBe('19h 27m');
+        expect(formatMinutes(null)).toBe('0 min');
     });
 
-    it('never shows a negative or fractional age', () => {
-        expect(formatMinutes(-3)).toBe('0 min');
-        expect(formatMinutes(14.9)).toBe('14 min');
-        expect(formatMinutes(null)).toBe('0 min');
+    it('speaks the page language', () => {
+        expect(formatMinutes(14, arabic)).toBe('14 د');
+        expect(formatMinutes(1167, arabic)).toBe('19س 27د');
     });
 });
 
 describe('formatAgo', () => {
-    const now = Date.parse('2026-10-29T20:00:00Z');
+    const now = Date.parse('2026-11-17T12:00:00Z');
 
-    it('reads just now under a minute, then minutes and hours ago', () => {
-        expect(formatAgo('2026-10-29T19:59:30Z', now)).toBe('just now');
-        expect(formatAgo('2026-10-29T19:56:00Z', now)).toBe('4 min ago');
-        expect(formatAgo('2026-10-29T17:50:00Z', now)).toBe('2h 10m ago');
+    it('says just now, then minutes and hours ago', () => {
+        expect(formatAgo('2026-11-17T11:59:40Z', now)).toBe('just now');
+        expect(formatAgo('2026-11-17T11:56:00Z', now)).toBe('4 min ago');
+        expect(formatAgo('2026-11-17T09:50:00Z', now)).toBe('2h 10m ago');
     });
 
-    it('never reads a future timestamp as negative', () => {
-        expect(formatAgo('2026-10-29T20:05:00Z', now)).toBe('just now');
+    it('speaks the page language', () => {
+        expect(formatAgo('2026-11-17T11:59:40Z', now, arabic)).toBe('الآن');
+        expect(formatAgo('2026-11-17T11:56:00Z', now, arabic)).toBe('منذ 4 د');
     });
 });

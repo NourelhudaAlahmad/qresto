@@ -24,12 +24,12 @@ const DOTS: Record<LiveStatus, string> = {
 
 /** "updated just now" / "updated 4 min ago", in the page language. */
 export function useUpdatedAgo(lastUpdatedAt: number): string {
-    const { staff: t } = useI18n();
+    const { staff: t, common } = useI18n();
     const minutes = useMinutesSince(lastUpdatedAt);
 
     return minutes < 1
         ? t.live.updated_just_now
-        : fill(t.live.updated_ago, { time: formatMinutes(minutes) });
+        : fill(t.live.updated_ago, { time: formatMinutes(minutes, common) });
 }
 
 export function LiveIndicator({

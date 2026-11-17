@@ -103,8 +103,6 @@ const AGE_COLORS = {
 const ORDER_GRID =
     'grid grid-cols-[84px_minmax(0,1fr)_auto_80px] items-center gap-3 px-5 min-[720px]:grid-cols-[90px_minmax(0,1fr)_112px_92px_74px]';
 
-const ageLabel = formatMinutes;
-
 type RoleCopy = SharedTranslations['staff']['roles'];
 
 /** Pick the `_one` or `_other` form and fill in the count. */
@@ -519,7 +517,10 @@ export default function ManagerOverview({
 }: Props) {
     const {
         staff: { overview: t, roles },
+        common,
     } = useI18n();
+    const ageLabel = (minutes: number | null | undefined): string =>
+        formatMinutes(minutes, common);
     const [busyOrderId, setBusyOrderId] = useState<number | null>(null);
     const [reassigning, setReassigning] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);

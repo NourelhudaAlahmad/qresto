@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Badge } from '@/components/qresto/badge';
 import { formatAgo } from '@/lib/elapsed';
+import type { ElapsedCopy } from '@/lib/elapsed';
 
 export type StaffNotification = {
     id: string;
@@ -22,12 +23,16 @@ const REFRESH_COUNT = {
 };
 
 /** "just now", "4 min ago", "2h 10m ago" */
-export function ago(iso: string | null, now = Date.now()): string {
+export function ago(
+    iso: string | null,
+    now = Date.now(),
+    copy?: ElapsedCopy,
+): string {
     if (!iso) {
         return '';
     }
 
-    return formatAgo(iso, now);
+    return formatAgo(iso, now, copy);
 }
 
 function count(n: number): string {

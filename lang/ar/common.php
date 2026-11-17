@@ -12,7 +12,8 @@ return [
     'decrease' => 'أزل واحداً',
     'search' => 'بحث',
     'just_now' => 'الآن',
-    'minutes_short' => ':count د',
-    'minutes_ago' => 'منذ :count د',
-    'hours_ago' => 'منذ :count س',
+    'minutes' => ':count د',
+    'hour_unit' => 'س',
+    'minute_unit' => 'د',
+    'ago' => 'منذ :time',
 ];

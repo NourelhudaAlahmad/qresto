@@ -8,6 +8,7 @@ import { showToast } from '@/components/qresto/toast';
 import { Tooltip } from '@/components/qresto/tooltip';
 import { useLiveData } from '@/hooks/useLiveData';
 import { formatAgo } from '@/lib/elapsed';
+import type { ElapsedCopy } from '@/lib/elapsed';
 import { activeLocale, currencySymbol, formatMinor } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 import type { SharedTranslations } from '@/lib/i18n';
@@ -112,12 +113,13 @@ export function lastSeen(
     iso: string | null,
     now: number,
     never: string,
+    copy?: ElapsedCopy,
 ): string {
     if (iso === null) {
         return never;
     }
 
-    return formatAgo(iso, now);
+    return formatAgo(iso, now, copy);
 }
 
 /** What the row says, before "last seen". */
@@ -239,6 +241,7 @@ export default function AdminSystem({
 }: Props) {
     const {
         staff: { admin_system: t, pages },
+        common,
     } = useI18n();
 
     // Optimistic overrides keyed "role:capability"; the server's next
@@ -638,6 +641,7 @@ export default function AdminSystem({
                                                             item.last_heartbeat_at,
                                                             now,
                                                             t.never,
+                                                            common,
                                                         ),
                                                     })}
                                                 </span>

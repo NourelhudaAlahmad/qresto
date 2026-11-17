@@ -101,6 +101,7 @@ export default function Pass({
 }: Props) {
     const {
         staff: { pass: t },
+        common,
     } = useI18n();
     // Bumped tickets leave at once; a refused bump brings them back.
     const [bumped, setBumped] = useState<Set<number>>(new Set());
@@ -255,7 +256,7 @@ export default function Pass({
                             ),
                             plural(totals.items, t.items_one, t.items_other),
                             fill(t.longest, {
-                                time: formatMinutes(totals.longest),
+                                time: formatMinutes(totals.longest, common),
                             }),
                         ].join(' · ')}
                     </p>
@@ -328,6 +329,7 @@ export default function Pass({
                                         code={ticket.code}
                                         elapsed={formatMinutes(
                                             ticket.elapsed_minutes,
+                                            common,
                                         )}
                                         elapsedLevel={level(
                                             ticket.elapsed_minutes,

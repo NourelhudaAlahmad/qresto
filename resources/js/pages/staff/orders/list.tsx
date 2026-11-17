@@ -158,6 +158,7 @@ function Age({
     warnMinutes,
     lateMinutes,
 }: Pick<Props, 'now' | 'warnMinutes' | 'lateMinutes'> & { order: Ticket }) {
+    const { common } = useI18n();
     const age = minutesOld(order.placed_at, now);
 
     return (
@@ -166,7 +167,7 @@ function Age({
                 AGE_COLORS[elapsedLevel(age, warnMinutes, lateMinutes)]
             }`}
         >
-            {formatMinutes(age)}
+            {formatMinutes(age, common)}
         </Numeric>
     );
 }

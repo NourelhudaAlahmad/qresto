@@ -12,7 +12,8 @@ return [
     'decrease' => 'Remove one',
     'search' => 'Search',
     'just_now' => 'just now',
-    'minutes_short' => ':count min',
-    'minutes_ago' => ':count min ago',
-    'hours_ago' => ':count h ago',
+    'minutes' => ':count min',
+    'hour_unit' => 'h',
+    'minute_unit' => 'm',
+    'ago' => ':time ago',
 ];

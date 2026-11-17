@@ -40,6 +40,7 @@ type Props = {
 export default function Runner({ tickets, pollIntervalMs, signedInAs }: Props) {
     const {
         staff: { runner: t },
+        common,
     } = useI18n();
     const [collected, setCollected] = useState<Set<number>>(new Set());
     const visible = tickets.filter((ticket) => !collected.has(ticket.id));
@@ -127,6 +128,7 @@ export default function Runner({ tickets, pollIntervalMs, signedInAs }: Props) {
                                         code={ticket.code}
                                         elapsed={formatMinutes(
                                             ticket.elapsed_minutes,
+                                            common,
                                         )}
                                         table={tableLabel(ticket)}
                                         guest={ticket.guest ?? t.guest}

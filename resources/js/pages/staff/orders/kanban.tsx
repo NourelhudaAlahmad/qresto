@@ -241,6 +241,7 @@ function KanbanTicket({
 }) {
     const {
         staff: { board: t },
+        common,
     } = useI18n();
     // Ages between polls without a round trip, with the shared SLA config.
     const { minutes, level } = useElapsed(order.placed_at);
@@ -250,7 +251,7 @@ function KanbanTicket({
     return (
         <OrderTicket
             code={orderCode(order.code)}
-            elapsed={formatMinutes(minutes)}
+            elapsed={formatMinutes(minutes, common)}
             elapsedLevel={level}
             accentColor={COLUMN_COLOR[column]}
             table={fill(t.table, { table: order.table ?? '—' })}
@@ -293,6 +294,7 @@ export default function Kanban({
 }: Props) {
     const {
         staff: { board: t },
+        common,
     } = useI18n();
     const columnTitle: Record<Column, string> = {
         new: t.col_new,
@@ -495,7 +497,7 @@ export default function Kanban({
                 <div className="flex flex-wrap items-center gap-3">
                     <p className="text-caption max-w-full break-words font-mono text-[var(--text-tertiary)]">
                         {tickets.length} open · {kitchenCount} waiting on the
-                        kitchen · oldest {formatMinutes(oldest)}
+                        kitchen · oldest {formatMinutes(oldest, common)}
                     </p>
 
                     <Button
