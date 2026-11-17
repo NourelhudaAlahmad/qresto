@@ -32,19 +32,13 @@ The default operational intervals are defined in `config/qresto.php`:
 
 \## Server contract
 
-Controllers expose live data as a dedicated prop:
+Controllers expose the volatile slice as its own closure prop, which Inertia evaluates only when a partial reload asks for it:
 
-'liveOrders' => LiveResponse::make($orders),
+'orders' => fn (): array => $this->orders($user),
 
-`LiveResponse` returns:
-
-\* `items`: the volatile collection
-
-\* `version`: the maximum `updated\_at` value plus the collection count
+The client polls with `only: \['orders']` (the pass and runner use `tickets` and `now`, the guest status screen uses `live`), so the rest of the page is never rebuilt on a poll.
 
 Live props must not be wrapped in `Inertia::defer()` because they need to be available during partial reloads.
-
-When a client sends an unchanged live-data version, the controller may short-circuit with an empty response instead of serializing the collection again.
 
 \## New-item alerts
 
