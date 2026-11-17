@@ -171,7 +171,8 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // No public registration: staff accounts are created by a manager
+        // or an admin and belong to their restaurant from the start.
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([
