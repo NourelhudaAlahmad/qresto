@@ -75,6 +75,11 @@ class QrController extends Controller
             );
     }
 
+    /**
+     * The "wrong table?" picker. It never carries another table's QR token:
+     * that token is the only proof a guest is sitting at the table, so the
+     * picker only tells the guest to scan the code on the table they chose.
+     */
     public function tables(string $qrToken): Response
     {
         $session = $this->tableSessionService
@@ -87,21 +92,11 @@ class QrController extends Controller
         $tables = RestaurantTable::query()
             ->where('restaurant_id', $restaurant->id)
             ->orderBy('sort_order')
-            ->get([
-                'id',
-                'number',
-                'seats',
-                'state',
-                'qr_token',
-            ])
+            ->get(['id', 'number', 'seats'])
             ->map(fn (RestaurantTable $table): array => [
                 'id' => $table->id,
                 'number' => $table->number,
                 'seats' => $table->seats,
-                'state' => $table->state->value,
-                'url' => route('table.show', [
-                    'qrToken' => $table->qr_token,
-                ]),
             ]);
 
         $response = Inertia::render('guest/tables', [

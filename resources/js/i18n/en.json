@@ -79,6 +79,7 @@
             "title": "Choose your table",
             "wrong_table": "Wrong table?",
             "hint": "Pick the number printed on your table.",
+            "scan_to_move": "Scan the QR code on table :table to move there.",
             "current": "Current table",
             "table": "Table :table",
             "seats_one": "1 seat",

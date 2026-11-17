@@ -47,22 +47,16 @@ const tables = [
         id: 11,
         number: '11',
         seats: 2,
-        state: 'free',
-        url: '/t/table-11-token',
     },
     {
         id: 12,
         number: '12',
         seats: 4,
-        state: 'seated',
-        url: '/t/table-12-token',
     },
     {
         id: 13,
         number: '13',
         seats: 1,
-        state: 'free',
-        url: '/t/table-13-token',
     },
 ];
 
@@ -98,8 +92,10 @@ describe('Guest tables picker', () => {
         ).toBeEnabled();
     });
 
-    it('visits the selected table', () => {
+    it('asks the guest to scan the chosen table instead of moving them', () => {
         render(<Tables current_table_id={12} tables={tables} />);
+
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
 
         fireEvent.click(
             screen.getByRole('button', {
@@ -107,10 +103,16 @@ describe('Guest tables picker', () => {
             }),
         );
 
-        expect(visit).toHaveBeenCalledWith('/t/table-11-token');
+        expect(visit).not.toHaveBeenCalled();
+        expect(screen.getByRole('status')).toHaveTextContent(
+            'Scan the QR code on table 11 to move there.',
+        );
+        expect(
+            screen.getByRole('button', { name: /table 11/i }),
+        ).toHaveAttribute('aria-pressed', 'true');
     });
 
-    it('does not navigate when the current table is selected', () => {
+    it('does nothing when the current table is selected', () => {
         render(<Tables current_table_id={12} tables={tables} />);
 
         fireEvent.click(
@@ -120,6 +122,7 @@ describe('Guest tables picker', () => {
         );
 
         expect(visit).not.toHaveBeenCalled();
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
 
     it('goes back when the picker is closed', () => {

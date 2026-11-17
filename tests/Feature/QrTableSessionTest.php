@@ -225,15 +225,34 @@ it('shows only tables from the current restaurant in the table picker', function
             ->has('tables', 2)
             ->where('tables.0.id', $otherTable->id)
             ->where('tables.0.number', '11')
-            ->where(
-                'tables.0.url',
-                route('table.show', [
-                    'qrToken' => $otherTable->qr_token,
-                ]),
-            )
             ->where('tables.1.id', $currentTable->id)
             ->where('tables.1.number', '12'),
     );
+});
+
+it('never hands the guest another table\'s qr token in the table picker', function (): void {
+    $restaurant = createQrRestaurant('al-bustan');
+
+    $currentTable = createQrTable($restaurant, '12', 'al-bustan-table-12', 12);
+    $otherTable = createQrTable($restaurant, '11', 'al-bustan-table-11', 11);
+
+    app(CurrentRestaurant::class)->set($restaurant);
+
+    $response = $this->get(route('table.tables', [
+        'qrToken' => $currentTable->qr_token,
+    ]));
+
+    $response->assertOk()
+        ->assertDontSee($otherTable->qr_token)
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->component('guest/tables')
+                ->has('tables.0', fn (Assert $table) => $table
+                    ->where('id', $otherTable->id)
+                    ->where('number', '11')
+                    ->where('seats', 4)
+                ),
+        );
 });
 
 it('returns 404 for a revoked qr token', function (): void {

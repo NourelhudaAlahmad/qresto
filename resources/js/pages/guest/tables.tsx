@@ -1,5 +1,6 @@
-import { Head, router } from '@inertiajs/react';
-import { Check } from 'lucide-react';
+import { Head } from '@inertiajs/react';
+import { Check, QrCode } from 'lucide-react';
+import { useState } from 'react';
 
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { Icon } from '@/components/ui/icon';
@@ -10,8 +11,6 @@ type Table = {
     id: number;
     number: string;
     seats: number;
-    state: string;
-    url?: string;
 };
 
 type TablesProps = {
@@ -21,17 +20,22 @@ type TablesProps = {
 
 export default function Tables({ current_table_id, tables }: TablesProps) {
     const { guest: g } = useI18n();
+    const [chosen, setChosen] = useState<Table | null>(null);
 
     const closePicker = () => {
         window.history.back();
     };
 
+    /**
+     * Only the code printed on a table proves the guest is sitting there,
+     * so choosing another table explains how to move instead of moving.
+     */
     const selectTable = (table: Table) => {
-        if (!table.url || table.id === current_table_id) {
+        if (table.id === current_table_id) {
             return;
         }
 
-        router.visit(table.url);
+        setChosen(table);
     };
 
     return (
@@ -64,6 +68,22 @@ export default function Tables({ current_table_id, tables }: TablesProps) {
                         </p>
                     </div>
 
+                    {chosen && (
+                        <p
+                            role="status"
+                            data-scan-to-move
+                            className="border-border-subtle bg-surface-sunken text-body text-text-primary mb-5 flex items-center gap-3 rounded-[var(--radius-lg)] border p-4"
+                        >
+                            <Icon
+                                iconNode={QrCode}
+                                className="text-clay-600 size-5 shrink-0"
+                            />
+                            {fill(g.tables.scan_to_move, {
+                                table: chosen.number,
+                            })}
+                        </p>
+                    )}
+
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                         {tables.map((table) => {
                             const isCurrent = table.id === current_table_id;
@@ -72,7 +92,8 @@ export default function Tables({ current_table_id, tables }: TablesProps) {
                                 <button
                                     key={table.id}
                                     type="button"
-                                    disabled={isCurrent || !table.url}
+                                    disabled={isCurrent}
+                                    aria-pressed={chosen?.id === table.id}
                                     onClick={() => selectTable(table)}
                                     className="border-border-subtle bg-surface-card focus-visible:ring-border-focus-color/30 duration-fast flex min-h-[112px] flex-col items-start justify-between rounded-[var(--radius-lg)] border p-4 text-start outline-none transition-[background-color,border-color,transform,opacity] focus-visible:ring-[3px] active:scale-[var(--press-scale)] disabled:cursor-default disabled:opacity-60 disabled:active:scale-100"
                                 >
