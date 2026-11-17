@@ -33,7 +33,7 @@ class DishRequest extends FormRequest
         return [
             'menu_category_id' => [
                 'required', 'integer',
-                Rule::exists('menu_categories', 'id')->where('restaurant_id', $user->restaurant_id),
+                Rule::exists('menu_categories', 'id')->where('restaurant_id', $user->restaurant_id)->withoutTrashed(),
             ],
             'name' => ['required', 'string', 'max:80'],
             'description' => ['nullable', 'string', 'max:600'],

@@ -27,7 +27,7 @@ class ReorderCategoriesRequest extends FormRequest
             'ids.*' => [
                 'integer',
                 'distinct',
-                Rule::exists('menu_categories', 'id')->where('restaurant_id', $user->restaurant_id),
+                Rule::exists('menu_categories', 'id')->where('restaurant_id', $user->restaurant_id)->withoutTrashed(),
             ],
         ];
     }

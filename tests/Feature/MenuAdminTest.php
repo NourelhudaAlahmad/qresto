@@ -312,3 +312,35 @@ it('sends dish prices in minor units for the page to format (#68)', function () 
                     && ! array_key_exists('price_formatted', $kofta);
             }));
 });
+
+it('keeps a deleted dish\'s sales history when its category is deleted', function () {
+    $this->actingAs($this->yusuf)->post('/app/menu/categories', ['name' => 'Specials'])->assertSessionHasNoErrors();
+    $specials = MenuCategory::query()->where('name', 'Specials')->firstOrFail();
+
+    $special = MenuItem::factory()->create([
+        'restaurant_id' => $this->restaurant->id,
+        'menu_category_id' => $specials->id,
+        'name' => 'Lamb ouzi',
+    ]);
+
+    $order = Order::factory()->paid()->create(['restaurant_id' => $this->restaurant->id]);
+    $line = OrderLine::factory()->create(['order_id' => $order->id, 'menu_item_id' => $special->id]);
+
+    // The dish is sold, then deleted, then its now-empty category goes.
+    $this->actingAs($this->yusuf)->delete("/app/menu/items/{$special->id}")->assertSessionHasNoErrors();
+    $this->actingAs($this->yusuf)->delete("/app/menu/categories/{$specials->id}")->assertSessionHasNoErrors();
+
+    expect(MenuCategory::query()->whereKey($specials->id)->exists())->toBeFalse()
+        ->and(MenuItem::withTrashed()->whereKey($special->id)->exists())->toBeTrue()
+        ->and($line->fresh()->menu_item_id)->toBe($special->id);
+});
+
+it('will not put a dish into a deleted category', function () {
+    $this->actingAs($this->yusuf)->post('/app/menu/categories', ['name' => 'Gone'])->assertSessionHasNoErrors();
+    $gone = MenuCategory::query()->where('name', 'Gone')->firstOrFail();
+    $this->actingAs($this->yusuf)->delete("/app/menu/categories/{$gone->id}")->assertSessionHasNoErrors();
+
+    $this->actingAs($this->yusuf)
+        ->put("/app/menu/items/{$this->kofta->id}", dishPayload($this->kofta, ['menu_category_id' => $gone->id]))
+        ->assertSessionHasErrors('menu_category_id');
+});
