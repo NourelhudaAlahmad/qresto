@@ -179,7 +179,9 @@ final class PlaceOrder
              * The table's bill is the sum of its session's unpaid orders,
              * which the floor and the guest status screen both show.
              */
-            $serviceTimestamp = now();
+            // The service day is the restaurant's own date, the one every
+            // report, dashboard and order-code sequence reads.
+            $serviceTimestamp = $cart->restaurant->localTime();
             $serviceDate = $serviceTimestamp->toDateString();
 
             $order = Order::query()->create([
@@ -198,7 +200,7 @@ final class PlaceOrder
                     ? null
                     : app(TableAccess::class)->waiterTonight((int) $session->restaurant_table_id),
                 'status' => OrderStatus::PLACED,
-                'placed_at' => $serviceTimestamp,
+                'placed_at' => now(),
                 'subtotal' => $totals->subtotal,
                 'service_pct' => $servicePct,
                 'service_amount' => $totals->serviceAmount,

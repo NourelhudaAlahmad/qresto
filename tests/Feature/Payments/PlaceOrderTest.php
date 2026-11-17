@@ -10,7 +10,9 @@ use App\Models\RestaurantTable;
 use App\Models\TableSession;
 use App\Payments\Gateways\FakeGateway;
 use App\Support\Money;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -212,4 +214,22 @@ it('places a card at table order with a pending payment without a gateway', func
         ->and($payment->gateway_intent_id)->toBeNull();
 
     expect($order->events()->count())->toBe(1);
+});
+
+it('files an order under the restaurant\'s own service day, not the UTC date', function (): void {
+    // 22:30 UTC is already 01:30 the next day in Istanbul.
+    $this->travelTo(CarbonImmutable::parse('2026-11-17 22:30:00', 'UTC'));
+
+    $cart = makeCheckoutCart();
+    $cart->restaurant->update(['timezone' => 'Europe/Istanbul']);
+
+    $order = app(PlaceOrder::class)->handle(
+        cart: $cart->fresh(),
+        method: PaymentMethod::CASH,
+        tipAmount: Money::fromMinor(0, 'TRY'),
+    )['order'];
+
+    expect((string) $order->service_date)->toStartWith('2026-11-18')
+        ->and($order->placed_at->utc()->toDateTimeString())->toBe('2026-11-17 22:30:00')
+        ->and(DB::table('order_sequences')->value('service_date'))->toStartWith('2026-11-18');
 });

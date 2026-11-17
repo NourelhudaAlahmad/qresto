@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class Restaurant extends Model
 {
@@ -85,6 +86,14 @@ class Restaurant extends Model
         return $translations[$locale][$field]
             ?? $translations[$this->default_locale][$field]
             ?? $this->{$field};
+    }
+
+    /**
+     * The given moment (now by default) on the restaurant's own clock.
+     */
+    public function localTime(?CarbonInterface $at = null): Carbon
+    {
+        return Carbon::instance($at ?? now())->setTimezone($this->timezone ?: (string) config('app.timezone'));
     }
 
     /**
