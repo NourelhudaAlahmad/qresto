@@ -206,6 +206,7 @@ final class PlaceOrder
                 'service_amount' => $totals->serviceAmount,
                 'tip_amount' => $tipAmount,
                 'discount_amount' => $discountAmount,
+                'promo_code' => is_string($promoCode) && trim($promoCode) !== '' ? strtoupper(trim($promoCode)) : null,
                 'split_ways' => $splitWays,
                 'share_amount' => $shareAmount,
                 'idempotency_key' => $idempotencyKey,

@@ -23,6 +23,7 @@ return [
         'challenge_invalid' => 'This payment challenge is no longer valid.',
         'auth_not_completed' => 'The card authentication was not completed.',
         'auth_required' => 'Card authentication is still required.',
+        'previous_payment_pending' => 'We could not confirm your last card payment yet. Try again in a moment.',
     ],
 
     'promo' => [

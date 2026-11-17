@@ -196,3 +196,19 @@ it('leaves two-decimal currencies untouched', function (string $currency) {
 
     expect($this->stripe->requests[0]['params']['amount'])->toBe(1250);
 })->with(['USD', 'EUR', 'SAR', 'EGP', 'LBP']);
+
+it('cancels an unfinished intent', function () {
+    $this->stripe->respond(FakeStripe::intent('pi_left', 'canceled'));
+
+    $result = $this->gateway->cancel('pi_left');
+
+    expect($result->status)->toBe('canceled')
+        ->and($this->stripe->requests[0]['url'])->toEndWith('/v1/payment_intents/pi_left/cancel');
+});
+
+it('reports an intent that was paid before it could be cancelled', function () {
+    $this->stripe->respond(['error' => ['type' => 'invalid_request_error', 'message' => 'already succeeded']], 400);
+    $this->stripe->respond(FakeStripe::intent('pi_paid', 'succeeded'));
+
+    expect($this->gateway->cancel('pi_paid')->succeeded())->toBeTrue();
+});

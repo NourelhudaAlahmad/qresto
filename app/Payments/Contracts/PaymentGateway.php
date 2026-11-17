@@ -38,4 +38,10 @@ interface PaymentGateway
     ): Result;
 
     public function status(string $intentId): Result;
+
+    /**
+     * Stop an unfinished intent so it can never be paid later. When it
+     * already succeeded the result says so and nothing is cancelled.
+     */
+    public function cancel(string $intentId): Result;
 }

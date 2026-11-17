@@ -272,6 +272,19 @@ final class FakeGateway implements PaymentGateway, ProbesHealth
         );
     }
 
+    public function cancel(string $intentId): Result
+    {
+        $this->sleep();
+
+        if ($this->storedStatus($intentId) === 'succeeded') {
+            return new Result(id: $intentId, status: 'succeeded');
+        }
+
+        $this->storeStatus($intentId, 'canceled');
+
+        return new Result(id: $intentId, status: 'canceled');
+    }
+
     public function status(string $intentId): Result
     {
         $this->sleep();

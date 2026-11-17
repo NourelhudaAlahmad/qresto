@@ -36,6 +36,7 @@ class Order extends Model
         'service_amount',
         'tip_amount',
         'discount_amount',
+        'promo_code',
         'split_ways',
         'share_amount',
         'idempotency_key',

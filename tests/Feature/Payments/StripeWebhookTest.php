@@ -1,10 +1,15 @@
 <?php
 
 use App\Enums\PaymentStatus;
+use App\Enums\TableState;
+use App\Models\Cart;
+use App\Models\CartLine;
 use App\Models\Order;
 use App\Models\OrderEvent;
 use App\Models\Payment;
 use App\Models\Restaurant;
+use App\Models\RestaurantTable;
+use App\Models\TableSession;
 use App\Models\User;
 use App\Notifications\PaymentDisputed;
 use Database\Seeders\RolesSeeder;
@@ -251,4 +256,20 @@ it('reads a dashboard refund in a three-decimal currency back into hundredths', 
 
     expect($payment->refunded_amount->amount())->toBe(500)
         ->and($payment->status)->toBe(PaymentStatus::PAID->value);
+});
+
+it('finishes the order when 3-D Secure completes after the guest closed the page', function () {
+    $table = RestaurantTable::factory()->forRestaurant($this->restaurant)->create(['state' => TableState::SEATED]);
+    $session = TableSession::factory()->forTable($table)->active()->create();
+    $cart = Cart::factory()->forTableSession($session)->create(['currency' => 'USD']);
+    CartLine::factory()->forCart($cart)->create();
+
+    $this->order->update(['table_id' => $table->id, 'table_session_id' => $session->id]);
+
+    deliver(stripeEvent('evt_late_3ds', 'payment_intent.succeeded', FakeStripe::intent('pi_live', 'succeeded')))
+        ->assertOk();
+
+    expect($this->order->fresh()->is_paid)->toBeTrue()
+        ->and($cart->lines()->count())->toBe(0)
+        ->and($table->fresh()->state)->toBe(TableState::ORDERED);
 });

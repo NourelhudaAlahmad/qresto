@@ -167,6 +167,21 @@ final class StripeGateway implements PaymentGateway, ProbesHealth
     }
 
     /**
+     * An intent that succeeded meanwhile cannot be cancelled: Stripe
+     * refuses, and the intent's own status then says it was paid.
+     */
+    public function cancel(string $intentId): Result
+    {
+        try {
+            $intent = $this->stripe->paymentIntents->cancel($intentId);
+
+            return new Result($intent->id, 'canceled');
+        } catch (ApiErrorException) {
+            return $this->status($intentId);
+        }
+    }
+
+    /**
      * For system health (#30).
      *
      * @return array{status: 'ok'|'warning'|'failing', detail: string}

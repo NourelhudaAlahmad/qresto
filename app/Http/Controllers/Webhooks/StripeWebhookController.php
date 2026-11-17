@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Webhooks;
 
+use App\Actions\Orders\FinishPlacedOrder;
 use App\Actions\Payments\SettlePayment;
 use App\Enums\Capability;
 use App\Enums\PaymentStatus;
@@ -117,6 +118,11 @@ class StripeWebhookController extends Controller
 
         if ($result['payment']->status === PaymentStatus::PAID->value) {
             $this->event($payment->order, 'payment_settled', ['intent' => $intent['id'] ?? null]);
+
+            // The guest may have closed the page during 3-D Secure, so the
+            // browser never finished the order: empty its cart and mark its
+            // table ordered here.
+            app(FinishPlacedOrder::class)->handle($payment->order);
         }
     }
 
