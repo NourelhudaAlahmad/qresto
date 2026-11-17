@@ -34,7 +34,7 @@ it('sends a waiter back to their own screen from a 403', function () {
             ->component('errors/show')
             ->where('status', 403)
             ->where('home', '/app/my-orders')
-            ->where('message', null));
+            ->where('message', 'Your account doesn’t have access to this screen. If you think it should, ask your manager.'));
 });
 
 it('shows a message we wrote on purpose, but not the framework default', function () {
@@ -83,4 +83,32 @@ it('keeps Retry-After and the rate-limit headers on the designed 429 page', func
         ->assertHeader('Retry-After')
         ->assertHeader('X-RateLimit-Limit', '1')
         ->assertInertia(fn ($page) => $page->component('errors/show')->where('status', 429));
+});
+
+it('speaks Arabic to an Arabic browser on an unknown URL', function () {
+    $this->withHeader('Accept-Language', 'ar')
+        ->get('/no-such-page')
+        ->assertNotFound()
+        ->assertSee('lang="ar"', false)
+        ->assertSee('dir="rtl"', false)
+        ->assertInertia(fn ($page) => $page
+            ->where('title', 'لم نجد هذه الصفحة')
+            ->where('message', 'ربما نُقلت الصفحة، أو أن الرابط قديم.')
+            ->where('homeLabel', 'العودة إلى البداية')
+            ->where('backLabel', 'رجوع'));
+});
+
+it('follows a signed-in waiter\'s chosen language on a 403', function () {
+    $waiter = User::factory()->create([
+        'restaurant_id' => Restaurant::factory()->create()->id,
+        'locale' => 'ar',
+    ]);
+    $waiter->assignRole('waiter');
+
+    $this->actingAs($waiter)
+        ->get('/app/system')
+        ->assertForbidden()
+        ->assertInertia(fn ($page) => $page
+            ->where('title', 'هذه الصفحة غير متاحة لك')
+            ->where('homeLabel', 'العودة إلى شاشتك'));
 });

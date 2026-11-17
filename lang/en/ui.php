@@ -39,4 +39,30 @@ return [
         'quantity' => 'Quantity',
         'note' => 'Kitchen note',
     ],
+
+    'errors' => [
+        'back_home_staff' => 'Back to your screen',
+        'back_home_guest' => 'Back to the start',
+        'go_back' => 'Go back',
+        '403' => [
+            'title' => 'This isn’t open to you',
+            'body' => 'Your account doesn’t have access to this screen. If you think it should, ask your manager.',
+        ],
+        '404' => [
+            'title' => 'We couldn’t find that',
+            'body' => 'The page may have moved, or the link is out of date.',
+        ],
+        '429' => [
+            'title' => 'Slow down a moment',
+            'body' => 'Too many requests in a short time. Try again in a minute.',
+        ],
+        '500' => [
+            'title' => 'Something went wrong on our side',
+            'body' => 'It isn’t anything you did. Try again in a moment.',
+        ],
+        '503' => [
+            'title' => 'Back in a moment',
+            'body' => 'QResto is being updated. This usually takes a minute.',
+        ],
+    ],
 ];

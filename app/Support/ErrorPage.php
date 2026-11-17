@@ -31,15 +31,20 @@ final class ErrorPage
             return $response;
         }
 
+        app()->setLocale(self::locale($request));
+
         [$home, $homeLabel] = self::home($request);
 
         $designed = Inertia::render('errors/show', [
             'status' => $status,
+            'title' => __("ui.errors.{$status}.title"),
             // A message we wrote on purpose (abort(403, 'This table is not
             // yours tonight.')) is worth showing; framework defaults are not.
-            'message' => $status === 403 ? self::ownMessage($exception) : null,
+            'message' => ($status === 403 ? self::ownMessage($exception) : null)
+                ?? __("ui.errors.{$status}.body"),
             'home' => $home,
             'homeLabel' => $homeLabel,
+            'backLabel' => __('ui.errors.go_back'),
         ])
             ->toResponse($request)
             ->setStatusCode($status);
@@ -67,10 +72,24 @@ final class ErrorPage
         $user = $request->user();
 
         if ($user !== null && $user->restaurant_id !== null) {
-            return [app(StaffLoginDestination::class)->for($user), 'Back to your screen'];
+            return [app(StaffLoginDestination::class)->for($user), __('ui.errors.back_home_staff')];
         }
 
-        return ['/', 'Back to the start'];
+        return ['/', __('ui.errors.back_home_guest')];
+    }
+
+    /**
+     * Inside the web stack SetLocale has already chosen the language. An
+     * unknown URL never reaches it (no route, no session), so the browser's
+     * preference decides there.
+     */
+    private static function locale(Request $request): string
+    {
+        if ($request->hasSession()) {
+            return app()->getLocale();
+        }
+
+        return $request->getPreferredLanguage(['en', 'ar']) ?? 'en';
     }
 
     private static function ownMessage(Throwable $exception): ?string

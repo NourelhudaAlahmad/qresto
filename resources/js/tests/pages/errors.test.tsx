@@ -11,12 +11,15 @@ vi.mock('@inertiajs/react', () => ({
 }));
 
 describe('Designed error page', () => {
-    it('explains a 403 and links back to the person\u2019s own screen', () => {
+    it('explains a 403 and links back to the person’s own screen', () => {
         render(
             <ErrorShow
                 status={403}
+                title="This isn’t open to you"
+                message="Your account doesn’t have access to this screen."
                 home="/app/my-orders"
                 homeLabel="Back to your screen"
+                backLabel="Go back"
             />,
         );
 
@@ -29,18 +32,24 @@ describe('Designed error page', () => {
         ).toHaveAttribute('href', '/app/my-orders');
     });
 
-    it('prefers a reason we wrote on purpose', () => {
+    it('shows the copy the server sent in the page language', () => {
         render(
             <ErrorShow
-                status={403}
-                message="This table is not yours tonight."
-                home="/app/my-orders"
-                homeLabel="Back to your screen"
+                status={404}
+                title="لم نجد هذه الصفحة"
+                message="ربما نُقلت الصفحة، أو أن الرابط قديم."
+                home="/"
+                homeLabel="العودة إلى البداية"
+                backLabel="رجوع"
             />,
         );
 
         expect(
-            screen.getByText('This table is not yours tonight.'),
+            screen.getByRole('heading', { name: 'لم نجد هذه الصفحة' }),
         ).toBeInTheDocument();
+        expect(
+            screen.getByText('ربما نُقلت الصفحة، أو أن الرابط قديم.'),
+        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'رجوع' })).toBeInTheDocument();
     });
 });
