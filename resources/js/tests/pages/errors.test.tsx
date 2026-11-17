@@ -50,6 +50,8 @@ describe('Designed error page', () => {
         expect(
             screen.getByText('ربما نُقلت الصفحة، أو أن الرابط قديم.'),
         ).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'رجوع' })).toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: 'رجوع' }),
+        ).toBeInTheDocument();
     });
 });

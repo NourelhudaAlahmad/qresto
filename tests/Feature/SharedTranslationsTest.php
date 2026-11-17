@@ -14,7 +14,7 @@ uses(RefreshDatabase::class);
  * component tests, so it must match lang/en exactly.
  */
 
-$groups = ['guest', 'orders', 'tables', 'staff'];
+$groups = ['guest', 'orders', 'tables', 'staff', 'common'];
 
 it('keeps resources/js/i18n/en.json identical to lang/en', function () use ($groups) {
     $json = json_decode(

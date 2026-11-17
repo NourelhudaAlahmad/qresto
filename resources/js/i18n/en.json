@@ -836,5 +836,17 @@
             "collected_toast": ":code collected",
             "not_collected": "Not collected"
         }
+    },
+    "common": {
+        "loading": "Loading…",
+        "close": "Close",
+        "back": "Back",
+        "increase": "Add one",
+        "decrease": "Remove one",
+        "search": "Search",
+        "just_now": "just now",
+        "minutes_short": ":count min",
+        "minutes_ago": ":count min ago",
+        "hours_ago": ":count h ago"
     }
 }

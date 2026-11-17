@@ -62,6 +62,7 @@ class HandleInertiaRequests extends Middleware
                 'orders' => trans('orders'),
                 'tables' => trans('tables'),
                 'staff' => trans('staff'),
+                'common' => trans('common'),
             ],
 
             'qresto' => [

@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority';
 import type { VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
+import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
@@ -131,6 +132,7 @@ function Button({
     ...props
 }: ButtonProps) {
     const Comp = asChild ? Slot : 'button';
+    const { common } = useI18n();
 
     const isDisabled = disabled || loading;
 
@@ -159,7 +161,7 @@ function Button({
                         aria-hidden="true"
                         className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
                     />
-                    <span>Loading...</span>
+                    <span>{common.loading}</span>
                 </>
             ) : (
                 children
