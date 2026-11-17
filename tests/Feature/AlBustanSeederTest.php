@@ -191,3 +191,13 @@ it('still opens a session from a QR token issued before a re-seed (#44)', functi
 
     expect($session->restaurant_table_id)->toBe($table->id);
 });
+
+it('refuses to seed the demo in production, where its shared password would be live', function () {
+    $this->app['env'] = 'production';
+
+    expect(fn () => app(AlBustanSeeder::class)->setContainer(app())->run())
+        ->toThrow(RuntimeException::class, 'cannot be seeded in production');
+
+    expect(Restaurant::query()->where('slug', 'al-bustan')->exists())->toBeFalse()
+        ->and(User::query()->where('email', 'like', '%al-bustan%')->exists())->toBeFalse();
+});
