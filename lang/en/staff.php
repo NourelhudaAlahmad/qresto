@@ -186,6 +186,7 @@ return [
         'user_menu' => 'User menu',
         'more' => 'More',
         'more_nav' => 'More navigation',
+        'service_in_progress' => ':date · service in progress',
     ],
 
     // Whether the screen's live data can be trusted (#58).
@@ -573,6 +574,7 @@ return [
         'sort_total' => 'Total (highest first)',
         'nothing' => 'Nothing here right now',
         'show_more' => 'Show :count more',
+        'summary' => ':open open · :kitchen waiting on the kitchen · oldest :oldest',
         'col_order' => 'Order',
         'col_table_guest' => 'Table · Guest',
         'col_status' => 'Status',
@@ -662,5 +664,16 @@ return [
         'collected_aria' => 'Collected :code for :table',
         'collected_toast' => ':code collected',
         'not_collected' => 'Not collected',
+    ],
+
+    // The topbar notification bell.
+    'bell' => [
+        'title' => 'Notifications',
+        'unread_aria' => 'Notifications, :count unread',
+        'mark_all_read' => 'Mark all read',
+        'load_failed' => 'Couldn’t load notifications.',
+        'try_again' => 'Try again',
+        'empty' => 'You’re all caught up.',
+        'unread' => '(unread)',
     ],
 ];

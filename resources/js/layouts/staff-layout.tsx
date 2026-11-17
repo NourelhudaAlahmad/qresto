@@ -24,7 +24,8 @@ import { TabBar } from '@/components/qresto/tab-bar';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { useLiveConnection } from '@/hooks/useLiveConnection';
 import { useLiveData } from '@/hooks/useLiveData';
-import { useI18n } from '@/lib/i18n';
+import { activeLocale } from '@/lib/formatMoney';
+import { fill, useI18n } from '@/lib/i18n';
 
 type StaffNavItem = {
     id: string;
@@ -93,17 +94,16 @@ function formatCount(count: number): string {
     return count > 99 ? '99+' : String(count);
 }
 
-function serviceDateLabel(now?: number): string {
-    const parts = new Intl.DateTimeFormat('en-GB', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'short',
-    }).formatToParts(now ? new Date(now) : new Date());
+/**
+ * "Tuesday 17 Nov" in English, the page language's own form otherwise.
+ */
+export function serviceDateLabel(now?: number): string {
+    const locale = activeLocale();
 
-    const pick = (type: string): string =>
-        parts.find((part) => part.type === type)?.value ?? '';
-
-    return `${pick('weekday')} ${pick('day')} ${pick('month')}`;
+    return new Intl.DateTimeFormat(
+        !locale || locale.startsWith('en') ? 'en-GB' : locale,
+        { weekday: 'long', day: 'numeric', month: 'short' },
+    ).format(now ? new Date(now) : new Date());
 }
 
 function SidebarLink({
@@ -403,7 +403,9 @@ export default function StaffLayout({
 
     const subtitle =
         variant === 'console'
-            ? `${serviceDateLabel(now)} · service in progress`
+            ? fill(t.shell.service_in_progress, {
+                  date: serviceDateLabel(now),
+              })
             : (shell?.pageSubtitle ?? '');
 
     return (

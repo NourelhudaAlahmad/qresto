@@ -496,8 +496,11 @@ export default function Kanban({
 
                 <div className="flex flex-wrap items-center gap-3">
                     <p className="text-caption max-w-full break-words font-mono text-[var(--text-tertiary)]">
-                        {tickets.length} open · {kitchenCount} waiting on the
-                        kitchen · oldest {formatMinutes(oldest, common)}
+                        {fill(t.summary, {
+                            open: tickets.length,
+                            kitchen: kitchenCount,
+                            oldest: formatMinutes(oldest, common),
+                        })}
                     </p>
 
                     <Button

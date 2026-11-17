@@ -96,6 +96,17 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('Waiter kanban on the design components', () => {
+    it('sums the board up in the shared copy', () => {
+        mount();
+
+        // Three open tickets, two still with the kitchen, the oldest 26 min.
+        expect(
+            screen.getByText(
+                '3 open · 2 waiting on the kitchen · oldest 26 min',
+            ),
+        ).toBeInTheDocument();
+    });
+
     it('renders every order as an OrderTicket in its column', () => {
         mount();
 

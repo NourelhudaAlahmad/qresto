@@ -11,8 +11,10 @@ import { ago, NotificationBell } from './notification-bell';
 
 const post = vi.fn();
 const visit = vi.fn();
+const page = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));
 
 vi.mock('@inertiajs/react', () => ({
+    usePage: () => page,
     router: {
         post: (...args: unknown[]) => post(...args),
         visit: (...args: unknown[]) => visit(...args),
@@ -52,6 +54,7 @@ function respond(body: unknown, ok = true) {
 }
 
 beforeEach(() => {
+    page.props = {};
     post.mockReset();
     visit.mockReset();
 });
@@ -170,5 +173,49 @@ describe('NotificationBell', () => {
         expect(ago('2026-10-29T19:59:30Z', now)).toBe('just now');
         expect(ago('2026-10-29T19:56:00Z', now)).toBe('4 min ago');
         expect(ago(null, now)).toBe('');
+    });
+});
+
+describe('NotificationBell in Arabic', () => {
+    it('labels the bell, the panel and the times in the page language', async () => {
+        page.props = {
+            i18n: {
+                staff: {
+                    bell: {
+                        title: 'الإشعارات',
+                        unread_aria: 'الإشعارات، :count غير مقروءة',
+                        mark_all_read: 'تحديد الكل كمقروء',
+                        load_failed: 'تعذّر تحميل الإشعارات.',
+                        try_again: 'حاول مرة أخرى',
+                        empty: 'لا جديد لديك.',
+                        unread: '(غير مقروء)',
+                    },
+                },
+                common: {
+                    loading: 'جارٍ التحميل…',
+                    just_now: 'الآن',
+                    minutes: ':count د',
+                    hour_unit: 'س',
+                    minute_unit: 'د',
+                    ago: 'منذ :time',
+                },
+            },
+        };
+        respond({ notifications, unread: 1 });
+
+        render(<NotificationBell unread={1} />);
+
+        fireEvent.click(
+            screen.getByRole('button', { name: 'الإشعارات، 1 غير مقروءة' }),
+        );
+
+        expect(
+            await screen.findByRole('button', { name: 'تحديد الكل كمقروء' }),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('dialog', { name: 'الإشعارات' }),
+        ).toBeInTheDocument();
+        expect(screen.getByText('منذ 4 د')).toBeInTheDocument();
+        expect(screen.getByText('منذ 2س 10د')).toBeInTheDocument();
     });
 });

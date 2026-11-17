@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Badge } from '@/components/qresto/badge';
 import { formatAgo } from '@/lib/elapsed';
 import type { ElapsedCopy } from '@/lib/elapsed';
+import { fill, useI18n } from '@/lib/i18n';
 
 export type StaffNotification = {
     id: string;
@@ -45,6 +46,10 @@ function count(n: number): string {
  * Opening a notification marks it read and goes where it points.
  */
 export function NotificationBell({ unread }: { unread: number }) {
+    const {
+        staff: { bell: t },
+        common,
+    } = useI18n();
     const [open, setOpen] = useState(false);
     const [items, setItems] = useState<StaffNotification[] | null>(null);
     const [failed, setFailed] = useState(false);
@@ -145,8 +150,8 @@ export function NotificationBell({ unread }: { unread: number }) {
                 type="button"
                 aria-label={
                     unread > 0
-                        ? `Notifications, ${unread} unread`
-                        : 'Notifications'
+                        ? fill(t.unread_aria, { count: unread })
+                        : t.title
                 }
                 aria-expanded={open}
                 aria-haspopup="dialog"
@@ -175,12 +180,12 @@ export function NotificationBell({ unread }: { unread: number }) {
             {open && (
                 <div
                     role="dialog"
-                    aria-label="Notifications"
+                    aria-label={t.title}
                     className="absolute end-0 top-12 z-50 flex max-h-[min(480px,70dvh)] w-[min(360px,calc(100vw-32px))] flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-pop)]"
                 >
                     <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] px-4 py-3">
                         <h2 className="font-display text-title-3 flex-1 font-semibold">
-                            Notifications
+                            {t.title}
                         </h2>
 
                         {items?.some((item) => !item.read) && (
@@ -190,7 +195,7 @@ export function NotificationBell({ unread }: { unread: number }) {
                                 className="text-label touch-target flex min-h-9 items-center gap-1 rounded-[var(--radius-sm)] px-2 font-semibold text-[var(--text-link)] hover:bg-[var(--action-ghost-hover)]"
                             >
                                 <CheckCheck className="size-4" aria-hidden />
-                                Mark all read
+                                {t.mark_all_read}
                             </button>
                         )}
                     </div>
@@ -198,22 +203,22 @@ export function NotificationBell({ unread }: { unread: number }) {
                     <div className="min-h-0 flex-1 overflow-y-auto">
                         {failed ? (
                             <p className="text-body p-4 text-[var(--text-secondary)]">
-                                Couldn’t load notifications.{' '}
+                                {t.load_failed}{' '}
                                 <button
                                     type="button"
                                     className="font-semibold text-[var(--text-link)]"
                                     onClick={() => void load()}
                                 >
-                                    Try again
+                                    {t.try_again}
                                 </button>
                             </p>
                         ) : items === null ? (
                             <p className="text-body p-4 text-[var(--text-tertiary)]">
-                                Loading…
+                                {common.loading}
                             </p>
                         ) : items.length === 0 ? (
                             <p className="text-body p-6 text-center text-[var(--text-tertiary)]">
-                                You’re all caught up.
+                                {t.empty}
                             </p>
                         ) : (
                             <ul>
@@ -248,7 +253,7 @@ export function NotificationBell({ unread }: { unread: number }) {
                                                     {!item.read && (
                                                         <span className="sr-only">
                                                             {' '}
-                                                            (unread)
+                                                            {t.unread}
                                                         </span>
                                                     )}
                                                 </span>
@@ -256,7 +261,11 @@ export function NotificationBell({ unread }: { unread: number }) {
                                                     {item.message}
                                                 </span>
                                                 <span className="text-micro mt-0.5 block font-mono text-[var(--text-tertiary)]">
-                                                    {ago(item.created_at)}
+                                                    {ago(
+                                                        item.created_at,
+                                                        undefined,
+                                                        common,
+                                                    )}
                                                 </span>
                                             </span>
                                         </button>

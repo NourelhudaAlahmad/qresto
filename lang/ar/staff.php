@@ -186,6 +186,7 @@ return [
         'user_menu' => 'قائمة المستخدم',
         'more' => 'المزيد',
         'more_nav' => 'المزيد من القوائم',
+        'service_in_progress' => ':date · الخدمة جارية',
     ],
 
     // Whether the screen's live data can be trusted (#58).
@@ -573,6 +574,7 @@ return [
         'sort_total' => 'الإجمالي (الأعلى أولاً)',
         'nothing' => 'لا شيء هنا الآن',
         'show_more' => 'اعرض :count إضافية',
+        'summary' => ':open مفتوحة · :kitchen بانتظار المطبخ · الأقدم :oldest',
         'col_order' => 'الطلب',
         'col_table_guest' => 'الطاولة · الضيف',
         'col_status' => 'الحالة',
@@ -662,5 +664,16 @@ return [
         'collected_aria' => 'تم استلام :code لـ :table',
         'collected_toast' => 'تم استلام :code',
         'not_collected' => 'تعذّر تسجيل الاستلام',
+    ],
+
+    // The topbar notification bell.
+    'bell' => [
+        'title' => 'الإشعارات',
+        'unread_aria' => 'الإشعارات، :count غير مقروءة',
+        'mark_all_read' => 'تحديد الكل كمقروء',
+        'load_failed' => 'تعذّر تحميل الإشعارات.',
+        'try_again' => 'حاول مرة أخرى',
+        'empty' => 'لا جديد لديك.',
+        'unread' => '(غير مقروء)',
     ],
 ];

@@ -23,7 +23,7 @@ import { useMinutesSince } from '@/hooks/useLiveConnection';
 import { useLiveData } from '@/hooks/useLiveData';
 import GuestLayout from '@/layouts/guest-layout';
 import { formatMinutes } from '@/lib/elapsed';
-import { formatMoney } from '@/lib/formatMoney';
+import { activeLocale, formatMoney } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 import type { Money, OrderStatus } from '@/types';
 
@@ -136,7 +136,7 @@ function formatTime(value: string | null): string | undefined {
         return undefined;
     }
 
-    return new Intl.DateTimeFormat(undefined, {
+    return new Intl.DateTimeFormat(activeLocale(), {
         hour: '2-digit',
         minute: '2-digit',
     }).format(new Date(value));
