@@ -11,6 +11,7 @@ use App\Models\OrderEvent;
 use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\PaymentDisputed;
+use App\Payments\StripeAmount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -154,7 +155,10 @@ class StripeWebhookController extends Controller
             return;
         }
 
-        $refunded = (int) ($charge['amount_refunded'] ?? 0);
+        $refunded = StripeAmount::fromStripe(
+            (int) ($charge['amount_refunded'] ?? 0),
+            $payment->amount->currency(),
+        );
         $already = $payment->refunded_amount?->amount() ?? 0;
 
         // Our own refunds already updated the payment; only move forward.
@@ -188,7 +192,10 @@ class StripeWebhookController extends Controller
         }
 
         $order = $payment->order;
-        $amount = (int) ($dispute['amount'] ?? 0);
+        $amount = StripeAmount::fromStripe(
+            (int) ($dispute['amount'] ?? 0),
+            $payment->amount->currency(),
+        );
         $reason = (string) ($dispute['reason'] ?? 'unknown');
 
         $this->event($order, 'payment_disputed', [

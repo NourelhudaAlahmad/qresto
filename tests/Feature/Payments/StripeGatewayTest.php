@@ -164,3 +164,35 @@ it('answers the system-health probe', function () {
 
     expect($this->gateway->probe()['status'])->toBe('failing');
 });
+
+it('sends three-decimal currencies to Stripe in thousandths', function () {
+    $order = Order::factory()->create(['currency' => 'KWD']);
+    $bill = Money::fromMinor(1250, 'KWD'); // 12.50 KWD
+
+    $this->stripe->respond(FakeStripe::intent('pi_kwd', 'succeeded'));
+    $this->gateway->createIntent($order, $bill, ['payment_method' => 'pm_card_visa']);
+
+    $this->stripe->respond(FakeStripe::intent('pi_kwd', 'succeeded'));
+    $this->gateway->capture('pi_kwd', $bill);
+
+    $payment = Payment::factory()->forOrder($order)->create([
+        'gateway' => 'stripe',
+        'gateway_intent_id' => 'pi_kwd',
+        'amount' => 1250,
+    ]);
+
+    $this->stripe->respond(['id' => 're_kwd', 'object' => 'refund', 'status' => 'succeeded', 'amount' => 5000]);
+    $this->gateway->refund($payment, Money::fromMinor(500, 'KWD'));
+
+    expect($this->stripe->requests[0]['params'])->toMatchArray(['amount' => 12500, 'currency' => 'kwd'])
+        ->and($this->stripe->requests[1]['params'])->toMatchArray(['amount_to_capture' => 12500])
+        ->and($this->stripe->requests[2]['params'])->toMatchArray(['amount' => 5000]);
+});
+
+it('leaves two-decimal currencies untouched', function (string $currency) {
+    $this->stripe->respond(FakeStripe::intent('pi_two', 'succeeded'));
+
+    $this->gateway->createIntent($this->order, Money::fromMinor(1250, $currency));
+
+    expect($this->stripe->requests[0]['params']['amount'])->toBe(1250);
+})->with(['USD', 'EUR', 'SAR', 'EGP', 'LBP']);

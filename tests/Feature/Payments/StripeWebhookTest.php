@@ -235,3 +235,20 @@ it('is reachable without a CSRF token, with the CSRF guard really on', function 
     // …while an ordinary form post still needs its token.
     $this->post('/checkout/promo', ['promo_code' => 'X'])->assertStatus(419);
 });
+
+it('reads a dashboard refund in a three-decimal currency back into hundredths', function () {
+    $this->order->update(['currency' => 'JOD']);
+    $this->payment->update(['status' => PaymentStatus::PAID->value]);
+
+    deliver(stripeEvent('evt_refund_jod', 'charge.refunded', [
+        'id' => 'ch_jod',
+        'object' => 'charge',
+        'payment_intent' => 'pi_live',
+        'amount_refunded' => 5000, // 5.000 JOD in fils
+    ]))->assertOk();
+
+    $payment = $this->payment->fresh();
+
+    expect($payment->refunded_amount->amount())->toBe(500)
+        ->and($payment->status)->toBe(PaymentStatus::PAID->value);
+});

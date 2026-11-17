@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Payments\Contracts\PaymentGateway;
 use App\Payments\Contracts\ProbesHealth;
+use App\Payments\StripeAmount;
 use App\Payments\ValueObjects\Failure;
 use App\Payments\ValueObjects\Intent;
 use App\Payments\ValueObjects\Result;
@@ -36,7 +37,7 @@ final class StripeGateway implements PaymentGateway, ProbesHealth
     public function createIntent(Order $order, Money $amount, array $meta = []): Intent
     {
         $params = [
-            'amount' => $amount->amount(),
+            'amount' => StripeAmount::toStripe($amount),
             'currency' => strtolower($amount->currency()),
             'automatic_payment_methods' => ['enabled' => true, 'allow_redirects' => 'never'],
             'description' => "QResto {$order->code}",
@@ -111,7 +112,7 @@ final class StripeGateway implements PaymentGateway, ProbesHealth
 
         try {
             return $this->toResult($this->stripe->paymentIntents->capture($intentId, [
-                'amount_to_capture' => $amount->amount(),
+                'amount_to_capture' => StripeAmount::toStripe($amount),
             ]));
         } catch (ApiErrorException) {
             return new Result($intentId, 'failed', failure: $this->unavailable());
@@ -131,7 +132,7 @@ final class StripeGateway implements PaymentGateway, ProbesHealth
         try {
             $refund = $this->stripe->refunds->create([
                 'payment_intent' => (string) $payment->gateway_intent_id,
-                'amount' => $amount->amount(),
+                'amount' => StripeAmount::toStripe($amount),
             ], [
                 // One refund per amount step, safe to retry.
                 'idempotency_key' => sprintf('qresto-refund-%d-%d-%d', $payment->id, $payment->refunded_amount?->amount() ?? 0, $amount->amount()),
