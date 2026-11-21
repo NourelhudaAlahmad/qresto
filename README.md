@@ -157,6 +157,7 @@ Each of these must change from `.env.example` before going live. `php artisan qr
 | `APP_KEY`                                                                                      | `php artisan key:generate --show`, then keep it forever (see Backups) |         |
 | `APP_DEBUG`                                                                                    | `false`                                                               |    ✓    |
 | `APP_URL`                                                                                      | `https://your-domain`. Table QR codes are printed with it             |    ✓    |
+| `SESSION_SECURE_COOKIE`                                                                        | `true`, so sign-in and table cookies only travel over HTTPS           |    ✓    |
 | `LOG_LEVEL`                                                                                    | `warning` or `error`                                                  |         |
 | `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`             | Your MySQL, MariaDB or PostgreSQL server                              |    ✓    |
 | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` | Your mail service                                                     |    ✓    |

@@ -29,6 +29,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useLiveData } from '@/hooks/useLiveData';
 import { formatMinor } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
+import { failInPlace } from '@/lib/visit-failure';
 import type { OrderStatus, TableState } from '@/types';
 
 type PaymentMethod = 'cash' | 'pos';
@@ -232,6 +233,7 @@ function EmailReceiptForm({
                     setError(
                         errors.email ?? firstError(errors, t.receipt_failed),
                     ),
+                ...failInPlace(() => setError(t.receipt_failed)),
                 onFinish: () => setSending(false),
             },
         );
@@ -917,6 +919,13 @@ export function useTableCheckout({
                     title: t.action_failed,
                     description: firstError(errors, t.action_failed_body),
                 }),
+            ...failInPlace(() =>
+                showToast({
+                    type: 'error',
+                    title: t.action_failed,
+                    description: t.action_failed_body,
+                }),
+            ),
             onFinish: () => setBusy(null),
         });
     };
@@ -983,6 +992,13 @@ export function useTableCheckout({
                         title: t.ack_failed,
                         description: firstError(errors, t.try_again),
                     }),
+                ...failInPlace(() =>
+                    showToast({
+                        type: 'error',
+                        title: t.ack_failed,
+                        description: t.try_again,
+                    }),
+                ),
                 onFinish: () => setBusy(null),
             },
         );

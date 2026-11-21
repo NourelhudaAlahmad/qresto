@@ -15,6 +15,7 @@ import { useLiveData } from '@/hooks/useLiveData';
 import { useNewItemAlert } from '@/hooks/useNewItemAlert';
 import { formatMinutes } from '@/lib/elapsed';
 import { fill, useI18n } from '@/lib/i18n';
+import { failInPlace } from '@/lib/visit-failure';
 import type { OrderStatus } from '@/types';
 
 type Line = {
@@ -195,6 +196,10 @@ export default function Pass({
                                 errors.order ?? Object.values(errors)[0],
                         });
                     },
+                    ...failInPlace(() => {
+                        forget();
+                        showToast({ type: 'error', title: t.not_bumped });
+                    }),
                     onFinish: () => {
                         busy.current = false;
                     },

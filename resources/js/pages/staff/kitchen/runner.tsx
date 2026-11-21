@@ -13,6 +13,7 @@ import { useLiveData } from '@/hooks/useLiveData';
 import { useNewItemAlert } from '@/hooks/useNewItemAlert';
 import { formatMinutes } from '@/lib/elapsed';
 import { fill, useI18n } from '@/lib/i18n';
+import { failInPlace } from '@/lib/visit-failure';
 import type { OrderStatus } from '@/types';
 
 type Ticket = {
@@ -57,6 +58,14 @@ export default function Runner({ tickets, pollIntervalMs, signedInAs }: Props) {
     function collect(ticket: Ticket) {
         setCollected((current) => new Set(current).add(ticket.id));
 
+        const putBack = () =>
+            setCollected((current) => {
+                const next = new Set(current);
+                next.delete(ticket.id);
+
+                return next;
+            });
+
         router.post(
             `/app/kds/tickets/${ticket.id}/bump`,
             { from: ticket.status },
@@ -70,18 +79,17 @@ export default function Runner({ tickets, pollIntervalMs, signedInAs }: Props) {
                         title: fill(t.collected_toast, { code: ticket.code }),
                     }),
                 onError: (errors) => {
-                    setCollected((current) => {
-                        const next = new Set(current);
-                        next.delete(ticket.id);
-
-                        return next;
-                    });
+                    putBack();
                     showToast({
                         type: 'error',
                         title: t.not_collected,
                         description: errors.order ?? Object.values(errors)[0],
                     });
                 },
+                ...failInPlace(() => {
+                    putBack();
+                    showToast({ type: 'error', title: t.not_collected });
+                }),
             },
         );
     }

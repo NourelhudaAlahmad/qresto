@@ -161,6 +161,39 @@ describe('Waiter kanban on the design components', () => {
         ).toBeInTheDocument();
     });
 
+    it.each([
+        ['a dropped connection', 'onNetworkError', undefined],
+        ['a server error', 'onHttpException', { status: 500 }],
+    ] as const)(
+        'puts the card back and stays on the board after %s',
+        (_label, callback, response) => {
+            mount();
+
+            fireEvent.click(
+                screen.getByRole('button', { name: 'Start cooking' }),
+            );
+
+            const options = patch.mock.calls.at(-1)?.[2] as Record<
+                string,
+                (arg?: unknown) => unknown
+            >;
+
+            let kept: unknown;
+
+            act(() => {
+                kept = options[callback](response);
+            });
+
+            // false: Inertia does not swap the board for an error page.
+            expect(kept).toBe(false);
+            expect(
+                within(screen.getByRole('region', { name: 'New' })).getByText(
+                    '#A-1044',
+                ),
+            ).toBeInTheDocument();
+        },
+    );
+
     it('points served tickets at the floor map for payment', () => {
         mount();
 

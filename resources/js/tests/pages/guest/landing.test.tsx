@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Landing, { areaOf } from '@/pages/guest/landing';
@@ -206,6 +206,25 @@ describe('Guest landing page', () => {
             'text-[var(--clay-600)]',
         );
         expect(screen.getByText('Until 22:00')).toBeInTheDocument();
+    });
+
+    it('opens the booking dialog with focus inside, closes on Escape and hands focus back', async () => {
+        render(<Landing {...landingProps} />);
+
+        const trigger = screen.getByRole('button', { name: /book a table/i });
+
+        trigger.focus();
+        fireEvent.click(trigger);
+
+        const dialog = await screen.findByRole('dialog');
+
+        expect(dialog).toHaveAccessibleName(/book/i);
+        expect(dialog.contains(document.activeElement)).toBe(true);
+
+        fireEvent.keyDown(dialog, { key: 'Escape' });
+
+        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+        expect(document.activeElement).toBe(trigger);
     });
 
     it('takes the area after the last comma, English or Arabic', () => {

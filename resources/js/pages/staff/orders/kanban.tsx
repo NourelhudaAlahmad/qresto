@@ -10,6 +10,7 @@ import { OrderTicket } from '@/components/qresto/order-ticket';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { Textarea } from '@/components/qresto/textarea';
 import { showToast } from '@/components/qresto/toast';
+import { usePopoverMenu } from '@/hooks/use-popover-menu';
 import { useElapsed } from '@/hooks/useElapsed';
 import { useLiveAlertMute } from '@/hooks/useLiveAlertMute';
 import { useLiveData } from '@/hooks/useLiveData';
@@ -17,6 +18,7 @@ import { useNewItemAlert } from '@/hooks/useNewItemAlert';
 import { formatMinutes } from '@/lib/elapsed';
 import { formatMinor } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
+import { failInPlace } from '@/lib/visit-failure';
 
 import OrderList, {
     actionLabel,
@@ -153,36 +155,13 @@ function TicketMenu({
     const {
         staff: { board: t },
     } = useI18n();
-    const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!open) {
-            return;
-        }
-
-        const close = (event: MouseEvent | KeyboardEvent) => {
-            if (
-                event instanceof KeyboardEvent
-                    ? event.key === 'Escape'
-                    : !ref.current?.contains(event.target as Node)
-            ) {
-                setOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', close);
-        document.addEventListener('keydown', close);
-
-        return () => {
-            document.removeEventListener('mousedown', close);
-            document.removeEventListener('keydown', close);
-        };
-    }, [open]);
+    const { open, setOpen, containerRef, triggerRef, menuRef, onMenuKeyDown } =
+        usePopoverMenu();
 
     return (
-        <div ref={ref} className="relative shrink-0">
+        <div ref={containerRef} className="relative shrink-0">
             <button
+                ref={triggerRef}
                 type="button"
                 aria-label={fill(t.more_actions, {
                     code: orderCode(order.code),
@@ -197,7 +176,9 @@ function TicketMenu({
 
             {open && (
                 <div
+                    ref={menuRef}
                     role="menu"
+                    onKeyDown={onMenuKeyDown}
                     className="absolute bottom-12 end-0 z-20 min-w-44 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-1 shadow-[var(--shadow-pop)]"
                 >
                     <button
@@ -398,6 +379,15 @@ export default function Kanban({
         );
         setBusy(order.id);
 
+        const restore = () => {
+            setTickets(previous);
+            showToast({
+                type: 'error',
+                title: t.update_failed,
+                description: t.board_restored,
+            });
+        };
+
         router.patch(
             `/app/orders/${order.id}/advance`,
             {},
@@ -411,14 +401,8 @@ export default function Kanban({
                             code: orderCode(order.code),
                         }),
                     }),
-                onError: () => {
-                    setTickets(previous);
-                    showToast({
-                        type: 'error',
-                        title: t.update_failed,
-                        description: t.board_restored,
-                    });
-                },
+                onError: restore,
+                ...failInPlace(restore),
                 onFinish: () => setBusy(null),
             },
         );
@@ -463,6 +447,10 @@ export default function Kanban({
                     setTickets(previous);
                     setError(errors.reason ?? errors.order ?? t.void_failed);
                 },
+                ...failInPlace(() => {
+                    setTickets(previous);
+                    setError(t.void_failed);
+                }),
                 onFinish: () => setBusy(null),
             },
         );

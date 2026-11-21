@@ -1,4 +1,4 @@
-import { Form, Head, usePage } from '@inertiajs/react';
+import { Form, Head, setLayoutProps, usePage } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import Heading from '@/components/heading';
@@ -7,6 +7,7 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useI18n } from '@/lib/i18n';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
 import type { Auth } from '@/types';
@@ -26,19 +27,33 @@ export default function Profile({
     const { translations } = usePage<{
         translations: { language: string };
     }>().props;
+    const {
+        staff: {
+            account: { profile: t, fields },
+        },
+    } = useI18n();
+
+    setLayoutProps({
+        breadcrumbs: [
+            {
+                title: t.head,
+                href: edit(),
+            },
+        ],
+    });
 
     return (
         <>
-            <Head title="Profile settings" />
+            <Head title={t.head} />
 
-            <h1 className="sr-only">Profile settings</h1>
+            <h1 className="sr-only">{t.head}</h1>
 
             <div className="space-y-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <Heading
                         variant="small"
-                        title="Profile"
-                        description="Update your name and email address"
+                        title={t.title}
+                        description={t.description}
                     />
 
                     <div className="flex flex-col gap-2">
@@ -59,7 +74,7 @@ export default function Profile({
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
+                                <Label htmlFor="name">{fields.name}</Label>
 
                                 <Input
                                     id="name"
@@ -68,7 +83,7 @@ export default function Profile({
                                     name="name"
                                     required
                                     autoComplete="name"
-                                    placeholder="Full name"
+                                    placeholder={fields.name_placeholder}
                                 />
 
                                 <InputError
@@ -78,7 +93,9 @@ export default function Profile({
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                                <Label htmlFor="email">
+                                    {fields.email_address}
+                                </Label>
 
                                 <Input
                                     id="email"
@@ -88,7 +105,7 @@ export default function Profile({
                                     name="email"
                                     required
                                     autoComplete="username"
-                                    placeholder="Email address"
+                                    placeholder={fields.email_address}
                                 />
 
                                 <InputError
@@ -101,22 +118,20 @@ export default function Profile({
                                 auth.user.email_verified_at === null && (
                                     <div>
                                         <p className="text-muted-foreground -mt-4 text-sm">
-                                            Your email address is unverified.{' '}
+                                            {t.unverified}{' '}
                                             <Link
                                                 href={send()}
                                                 as="button"
                                                 className="text-foreground hover:decoration-current! underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out dark:decoration-neutral-500"
                                             >
-                                                Click here to re-send the
-                                                verification email.
+                                                {t.resend}
                                             </Link>
                                         </p>
 
                                         {status ===
                                             'verification-link-sent' && (
                                             <div className="mt-2 text-sm font-medium text-green-600">
-                                                A new verification link has been
-                                                sent to your email address.
+                                                {t.link_sent}
                                             </div>
                                         )}
                                     </div>
@@ -127,7 +142,7 @@ export default function Profile({
                                     disabled={processing}
                                     data-test="update-profile-button"
                                 >
-                                    Save
+                                    {fields.save}
                                 </Button>
                             </div>
                         </>
@@ -137,12 +152,3 @@ export default function Profile({
         </>
     );
 }
-
-Profile.layout = {
-    breadcrumbs: [
-        {
-            title: 'Profile settings',
-            href: edit(),
-        },
-    ],
-};

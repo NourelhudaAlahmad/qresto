@@ -9,6 +9,7 @@ use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetCurrentRestaurant;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\SetSecurityHeaders;
 use App\Services\Auth\StaffLoginDestination;
 use App\Support\ErrorPage;
 use Illuminate\Foundation\Application;
@@ -35,6 +36,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Every request, the /up health check and webhooks included: a
         // production deploy with development defaults is refused (#59).
         $middleware->prepend(EnsureDeploymentIsSafe::class);
+
+        // Clickjacking, sniffing, referrer and camera policy (and HSTS in
+        // production) on every response, error pages included.
+        $middleware->append(SetSecurityHeaders::class);
 
         $middleware->alias([
             'table.session' => EnsureTableSession::class,

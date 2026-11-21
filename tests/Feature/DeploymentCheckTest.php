@@ -17,6 +17,7 @@ function productionReadyConfig(): void
     config([
         'app.debug' => false,
         'app.url' => 'https://qresto.example',
+        'session.secure' => true,
         'database.connections.deploy_check' => ['driver' => 'pgsql'],
         'database.default' => 'deploy_check',
         'mail.default' => 'smtp',
@@ -53,6 +54,7 @@ it('names each development default that breaks a service', function (array $over
 })->with([
     'debug on' => [['app.debug' => true], 'APP_DEBUG'],
     'plain http' => [['app.url' => 'http://qresto.example'], 'APP_URL'],
+    'cookies over http' => [['session.secure' => null], 'SESSION_SECURE_COOKIE'],
     'sqlite' => [['database.default' => 'sqlite'], 'DB_CONNECTION is sqlite'],
     'mail to the log' => [['mail.default' => 'log'], 'staff invitations and password resets are never sent'],
     'mail to an array' => [['mail.default' => 'array'], 'MAIL_MAILER is array'],
@@ -66,12 +68,13 @@ it('flags the .env.example defaults all at once', function () {
     config([
         'app.debug' => true,
         'app.url' => 'http://localhost:8000',
+        'session.secure' => null,
         'database.default' => 'sqlite',
         'mail.default' => 'log',
         'qresto.payments.driver' => 'fake',
     ]);
 
-    expect(app(DeploymentCheck::class)->problems())->toHaveCount(5);
+    expect(app(DeploymentCheck::class)->problems())->toHaveCount(6);
 });
 
 it('refuses to serve production with a development default, health check included', function () {

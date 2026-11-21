@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { Ellipsis, Plus, TrendingDown, TrendingUp } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 
 import { Numeric } from '@/components/numeric';
@@ -16,11 +16,13 @@ import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { Stat } from '@/components/qresto/stat';
 import { StatusPill } from '@/components/qresto/status-pill';
 import { showToast } from '@/components/qresto/toast';
+import { usePopoverMenu } from '@/hooks/use-popover-menu';
 import { useLiveData } from '@/hooks/useLiveData';
 import { formatMinutes } from '@/lib/elapsed';
 import { activeLocale, formatMinor } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 import type { SharedTranslations } from '@/lib/i18n';
+import { failInPlace } from '@/lib/visit-failure';
 import type { OrderStatus } from '@/types';
 
 type Stats = {
@@ -424,32 +426,8 @@ function MemberMenu({
     const {
         staff: { overview: t },
     } = useI18n();
-    const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!open) {
-            return;
-        }
-
-        const close = (event: MouseEvent | KeyboardEvent) => {
-            if (
-                event instanceof KeyboardEvent
-                    ? event.key === 'Escape'
-                    : !ref.current?.contains(event.target as Node)
-            ) {
-                setOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', close);
-        document.addEventListener('keydown', close);
-
-        return () => {
-            document.removeEventListener('mousedown', close);
-            document.removeEventListener('keydown', close);
-        };
-    }, [open]);
+    const { open, setOpen, containerRef, triggerRef, menuRef, onMenuKeyDown } =
+        usePopoverMenu();
 
     const item = (label: string, action: () => void, danger = false) => (
         <button
@@ -470,8 +448,9 @@ function MemberMenu({
     );
 
     return (
-        <div ref={ref} className="relative shrink-0">
+        <div ref={containerRef} className="relative shrink-0">
             <button
+                ref={triggerRef}
                 type="button"
                 aria-label={fill(t.actions_for, { name: member.name })}
                 aria-haspopup="menu"
@@ -484,7 +463,9 @@ function MemberMenu({
 
             {open && (
                 <div
+                    ref={menuRef}
                     role="menu"
+                    onKeyDown={onMenuKeyDown}
                     className="absolute end-0 top-12 z-20 min-w-52 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-1 shadow-[var(--shadow-pop)]"
                 >
                     {member.active ? (
@@ -587,6 +568,13 @@ export default function ManagerOverview({
                             errors.order ??
                             t.try_again,
                     }),
+                ...failInPlace(() =>
+                    showToast({
+                        type: 'error',
+                        title: t.reassign_failed,
+                        description: t.try_again,
+                    }),
+                ),
                 onFinish: () => setBusyOrderId(null),
             },
         );
@@ -604,6 +592,10 @@ export default function ManagerOverview({
         preserveScroll: true,
         preserveState: true,
         only: [...LIVE_PROPS, 'waiters', 'flash'],
+        // The overview stays up mid-service; say what failed instead.
+        ...failInPlace(() =>
+            showToast({ type: 'error', title: t.action_failed }),
+        ),
     };
 
     function saveMember(form: WaiterForm) {

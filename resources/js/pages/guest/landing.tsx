@@ -1,4 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
+import * as Dialog from '@radix-ui/react-dialog';
 import type { Html5Qrcode } from 'html5-qrcode';
 import { MapPin, Phone, QrCode, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -173,6 +174,9 @@ export default function Landing({
     const [scannerError, setScannerError] = useState<string | null>(null);
 
     const scannerInstanceRef = useRef<Html5Qrcode | null>(null);
+    // A closed dialog hands focus back to the button that opened it.
+    const scannerTriggerRef = useRef<HTMLButtonElement>(null);
+    const bookingTriggerRef = useRef<HTMLButtonElement>(null);
 
     const nextLocale = locale === 'en' ? 'ar' : 'en';
     const nextLanguageLabel = nextLocale === 'ar' ? 'العربية' : 'English';
@@ -316,34 +320,36 @@ export default function Landing({
                 </div>
             )}
 
-            {scannerOpen && (
-                <div
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="landing-scanner-title"
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+            {/*
+             * Radix dialogs: focus moves in and stays in, Escape closes, and
+             * focus returns to the button that opened them. Not portalled,
+             * so the scanner's reader element exists where it expects.
+             */}
+            <Dialog.Root open={scannerOpen} onOpenChange={setScannerOpen}>
+                <Dialog.Overlay className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" />
+                <Dialog.Content
+                    onCloseAutoFocus={(event) => {
+                        event.preventDefault();
+                        scannerTriggerRef.current?.focus();
+                    }}
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 outline-none"
                 >
                     <div className="bg-surface-card relative w-full max-w-[420px] rounded-[var(--radius-xl)] p-4 shadow-xl">
-                        <button
-                            type="button"
-                            onClick={() => setScannerOpen(false)}
+                        <Dialog.Close
                             aria-label={scannerCopy.close}
                             className="hover:bg-action-ghost-hover focus-visible:ring-ring/30 absolute end-3 top-3 z-10 flex size-11 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2"
                         >
                             <X aria-hidden="true" className="size-5" />
-                        </button>
+                        </Dialog.Close>
 
                         <div className="pe-12">
-                            <h2
-                                id="landing-scanner-title"
-                                className="font-display text-[26px] font-semibold leading-tight tracking-[-0.02em]"
-                            >
+                            <Dialog.Title className="font-display text-[26px] font-semibold leading-tight tracking-[-0.02em]">
                                 {scannerCopy.title}
-                            </h2>
+                            </Dialog.Title>
 
-                            <p className="text-text-secondary text-body mt-2 leading-6">
+                            <Dialog.Description className="text-text-secondary text-body mt-2 leading-6">
                                 {scannerCopy.description}
-                            </p>
+                            </Dialog.Description>
                         </div>
 
                         <div className="mt-5 overflow-hidden rounded-[var(--radius-lg)] bg-black">
@@ -362,37 +368,34 @@ export default function Landing({
                             </div>
                         )}
                     </div>
-                </div>
-            )}
+                </Dialog.Content>
+            </Dialog.Root>
 
-            {bookingOpen && (
-                <div
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="landing-booking-title"
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+            <Dialog.Root open={bookingOpen} onOpenChange={setBookingOpen}>
+                <Dialog.Overlay className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" />
+                <Dialog.Content
+                    onCloseAutoFocus={(event) => {
+                        event.preventDefault();
+                        bookingTriggerRef.current?.focus();
+                    }}
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 outline-none"
                 >
                     <div className="bg-surface-card relative w-full max-w-[420px] rounded-[var(--radius-xl)] p-5 shadow-xl">
-                        <button
-                            type="button"
-                            onClick={() => setBookingOpen(false)}
+                        <Dialog.Close
                             aria-label={bookingCopy.close}
                             className="hover:bg-action-ghost-hover focus-visible:ring-ring/30 absolute end-3 top-3 flex size-11 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2"
                         >
                             <X aria-hidden="true" className="size-5" />
-                        </button>
+                        </Dialog.Close>
 
                         <div className="pe-12">
-                            <h2
-                                id="landing-booking-title"
-                                className="font-display text-[26px] font-semibold leading-tight tracking-[-0.02em]"
-                            >
+                            <Dialog.Title className="font-display text-[26px] font-semibold leading-tight tracking-[-0.02em]">
                                 {bookingCopy.title}
-                            </h2>
+                            </Dialog.Title>
 
-                            <p className="text-text-secondary text-body mt-2 leading-6">
+                            <Dialog.Description className="text-text-secondary text-body mt-2 leading-6">
                                 {bookingCopy.description}
-                            </p>
+                            </Dialog.Description>
                         </div>
 
                         <div className="mt-6">
@@ -427,8 +430,8 @@ export default function Landing({
                             )}
                         </div>
                     </div>
-                </div>
-            )}
+                </Dialog.Content>
+            </Dialog.Root>
 
             {/* Glass header: wordmark, open/closed badge, language toggle. */}
             <header className="sticky top-0 z-30 border-b border-[var(--border-subtle)] bg-[var(--alpha-paper-88)] backdrop-blur-[12px]">
@@ -513,6 +516,7 @@ export default function Landing({
                         className="flex flex-col gap-3 px-[var(--gutter-mobile)] py-5 md:flex-row md:flex-wrap md:items-center md:gap-4 md:px-0 md:py-6"
                     >
                         <Button
+                            ref={scannerTriggerRef}
                             type="button"
                             variant="primary"
                             fullWidth
@@ -524,6 +528,7 @@ export default function Landing({
                         </Button>
 
                         <Button
+                            ref={bookingTriggerRef}
                             type="button"
                             variant="outline"
                             fullWidth

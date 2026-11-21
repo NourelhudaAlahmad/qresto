@@ -31,6 +31,10 @@ class DeploymentCheck
             $problems[] = 'APP_URL is not https: table QR codes, secure cookies and wallet payments need it. Set APP_URL=https://your-domain.';
         }
 
+        if (config('session.secure') !== true) {
+            $problems[] = 'SESSION_SECURE_COOKIE is not true: the staff sign-in cookie and the guest table cookie can travel over plain http. Set SESSION_SECURE_COOKIE=true.';
+        }
+
         $connection = (string) config('database.default');
 
         if (config("database.connections.{$connection}.driver") === 'sqlite') {

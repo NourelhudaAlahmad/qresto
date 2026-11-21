@@ -334,7 +334,7 @@ export default function StaffLogin({
                                             <Divider className="flex-1" />
 
                                             <span className="text-caption text-text-tertiary whitespace-nowrap">
-                                                or
+                                                {t.or}
                                             </span>
 
                                             <Divider className="flex-1" />

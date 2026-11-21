@@ -1,10 +1,11 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, setLayoutProps, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/qresto/button';
 import { Input } from '@/components/qresto/input';
 import { Label } from '@/components/qresto/label';
+import { useI18n } from '@/lib/i18n';
 
 type Props = {
     token: string;
@@ -17,6 +18,17 @@ type Props = {
  * to the shift (#27). The link expires; the server says so if it has.
  */
 export default function SetPassword({ token, email, passwordRules }: Props) {
+    const {
+        staff: {
+            account: { set_password: t, fields },
+        },
+    } = useI18n();
+
+    setLayoutProps({
+        title: t.title,
+        description: t.description,
+    });
+
     const form = useForm({
         token,
         email,
@@ -34,11 +46,11 @@ export default function SetPassword({ token, email, passwordRules }: Props) {
 
     return (
         <>
-            <Head title="Set your password" />
+            <Head title={t.title} />
 
             <form onSubmit={submit} className="flex flex-col gap-5" noValidate>
                 <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="email">Work email</Label>
+                    <Label htmlFor="email">{fields.work_email}</Label>
                     <Input
                         id="email"
                         type="email"
@@ -57,7 +69,7 @@ export default function SetPassword({ token, email, passwordRules }: Props) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="password">New password</Label>
+                    <Label htmlFor="password">{fields.new_password}</Label>
                     <PasswordInput
                         id="password"
                         name="password"
@@ -78,7 +90,7 @@ export default function SetPassword({ token, email, passwordRules }: Props) {
 
                 <div className="flex flex-col gap-1.5">
                     <Label htmlFor="password_confirmation">
-                        Confirm password
+                        {fields.confirm_password}
                     </Label>
                     <PasswordInput
                         id="password_confirmation"
@@ -102,14 +114,9 @@ export default function SetPassword({ token, email, passwordRules }: Props) {
                     fullWidth
                     loading={form.processing}
                 >
-                    Set password
+                    {t.submit}
                 </Button>
             </form>
         </>
     );
 }
-
-SetPassword.layout = {
-    title: 'Set your password',
-    description: 'Choose a password to sign in to QResto.',
-};
