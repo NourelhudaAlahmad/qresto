@@ -441,6 +441,10 @@ export default function CheckoutPage({
                 preserveScroll: true,
                 preserveState: true,
                 onError: () => {
+                    // A refused checkout placed no order. The next try is a
+                    // new payment: reusing the key makes Stripe refuse it as
+                    // a conflicting retry of the declined one.
+                    setIdempotencyKey(generateIdempotencyKey());
                     setSubmitting(false);
                 },
                 onSuccess: () => {
@@ -579,7 +583,10 @@ export default function CheckoutPage({
                     preserveScroll: true,
                     preserveState: true,
                     onSuccess: () => walletEvent.complete('success'),
-                    onError: () => walletEvent.complete('fail'),
+                    onError: () => {
+                        setIdempotencyKey(generateIdempotencyKey());
+                        walletEvent.complete('fail');
+                    },
                 },
             );
         },

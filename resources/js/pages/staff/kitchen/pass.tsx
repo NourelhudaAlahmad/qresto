@@ -103,9 +103,16 @@ export default function Pass({
         staff: { pass: t },
         common,
     } = useI18n();
-    // Bumped tickets leave at once; a refused bump brings them back.
-    const [bumped, setBumped] = useState<Set<number>>(new Set());
-    const visible = tickets.filter((ticket) => !bumped.has(ticket.id));
+    // A bumped ticket leaves its column at once, and only that column: it
+    // is hidden while it still shows the status it was bumped from. A
+    // ticket bumped to cooking comes back as cooking, ready for its next
+    // bump; a refused bump brings it back as it was.
+    const [bumped, setBumped] = useState<Map<number, Ticket['status']>>(
+        new Map(),
+    );
+    const visible = tickets.filter(
+        (ticket) => bumped.get(ticket.id) !== ticket.status,
+    );
     const busy = useRef(false);
 
     const {
@@ -146,7 +153,17 @@ export default function Pass({
             }
 
             busy.current = true;
-            setBumped((current) => new Set(current).add(ticket.id));
+            setBumped((current) =>
+                new Map(current).set(ticket.id, ticket.status),
+            );
+
+            const forget = () =>
+                setBumped((current) => {
+                    const next = new Map(current);
+                    next.delete(ticket.id);
+
+                    return next;
+                });
 
             router.post(
                 `/app/kds/tickets/${ticket.id}/bump`,
@@ -156,7 +173,9 @@ export default function Pass({
                     preserveScroll: true,
                     preserveState: true,
                     only: ['tickets', 'now'],
-                    onSuccess: () =>
+                    onSuccess: () => {
+                        // The fresh tickets now carry the new status.
+                        forget();
                         showToast({
                             type: 'success',
                             title: fill(
@@ -165,14 +184,10 @@ export default function Pass({
                                     : t.bumped_ready,
                                 { code: ticket.code },
                             ),
-                        }),
-                    onError: (errors) => {
-                        setBumped((current) => {
-                            const next = new Set(current);
-                            next.delete(ticket.id);
-
-                            return next;
                         });
+                    },
+                    onError: (errors) => {
+                        forget();
                         showToast({
                             type: 'error',
                             title: t.not_bumped,

@@ -24,6 +24,7 @@ return [
         'auth_not_completed' => 'The card authentication was not completed.',
         'auth_required' => 'Card authentication is still required.',
         'previous_payment_pending' => 'We could not confirm your last card payment yet. Try again in a moment.',
+        'item_unavailable' => ':dish is no longer available. Remove it from your cart to continue.',
     ],
 
     'promo' => [
@@ -65,6 +66,7 @@ return [
 
     'orders' => [
         'cannot_advance' => 'This order cannot be advanced.',
+        'awaiting_card_authentication' => 'The guest has not finished paying for this order yet.',
         'cannot_void' => 'This order cannot be voided.',
         'reassign_waiter' => 'Select an active waiter from this restaurant.',
         'reassign_active_only' => 'Only active orders can be reassigned.',

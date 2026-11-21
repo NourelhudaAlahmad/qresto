@@ -210,6 +210,7 @@ class HandleInertiaRequests extends Middleware
             ? Order::query()
                 ->where('restaurant_id', $restaurant->id)
                 ->active()
+                ->releasedToStaff()
                 ->count()
             : null;
 

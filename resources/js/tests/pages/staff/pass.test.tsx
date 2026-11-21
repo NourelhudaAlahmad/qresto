@@ -193,6 +193,47 @@ describe('Kitchen pass (#33)', () => {
         expect(screen.getByText('#A-1044')).toBeInTheDocument();
     });
 
+    it('brings a ticket bumped to cooking back, ready for its bump to ready', () => {
+        let succeed: (() => void) | undefined;
+        post.mockImplementation(
+            (
+                _url: string,
+                _data: unknown,
+                options: { onSuccess?: () => void; onFinish?: () => void },
+            ) => {
+                succeed = () => {
+                    options.onSuccess?.();
+                    options.onFinish?.();
+                };
+            },
+        );
+
+        const { rerender } = render(<Pass {...props} />);
+        fireEvent.click(screen.getByRole('button', { name: /Bump #A-1044/ }));
+
+        expect(screen.queryByText('#A-1044')).toBeNull();
+
+        // The server answers with the ticket, now cooking. A poll can land
+        // before the bump's own success: either way it is back on screen.
+        const cooking = props.tickets.map((each) =>
+            each.id === 4 ? { ...each, status: 'preparing' as const } : each,
+        );
+
+        rerender(<Pass {...props} tickets={cooking} />);
+
+        expect(screen.getByText('#A-1044')).toBeInTheDocument();
+
+        act(() => succeed?.());
+
+        fireEvent.click(screen.getByRole('button', { name: /Bump #A-1044/ }));
+
+        expect(post).toHaveBeenLastCalledWith(
+            '/app/kds/tickets/4/bump',
+            { from: 'preparing' },
+            expect.any(Object),
+        );
+    });
+
     it('bumps the nth ticket from the keypad', () => {
         render(<Pass {...props} />);
 

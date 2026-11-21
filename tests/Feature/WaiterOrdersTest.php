@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\Role;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\Restaurant;
 use App\Models\User;
 use App\Notifications\KitchenOrderVoided;
@@ -210,6 +212,74 @@ class WaiterOrdersTest extends TestCase
             1,
             $order->events()->count()
         );
+    }
+
+    public function test_card_order_waiting_on_3ds_is_kept_off_staff_screens(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+
+        $waiter = $this->staff($restaurant, Role::WAITER);
+
+        $released = Order::factory()->assignedTo($waiter)->placed()->create();
+
+        $awaiting = Order::factory()->assignedTo($waiter)->placed()->create();
+        $this->awaitingCardAuthentication($awaiting);
+
+        $this->actingAs($waiter)
+            ->get('/app/my-orders')
+            ->assertOk()
+            ->assertInertia(
+                fn (Assert $page) => $page
+                    ->has('orders', 1)
+                    ->where('orders.0.id', $released->id)
+                    ->etc()
+            );
+    }
+
+    public function test_card_order_waiting_on_3ds_cannot_be_sent_to_the_kitchen(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+
+        $waiter = $this->staff($restaurant, Role::WAITER);
+
+        $order = Order::factory()->assignedTo($waiter)->placed()->create();
+        $this->awaitingCardAuthentication($order);
+
+        $this->actingAs($waiter)
+            ->patch("/app/orders/{$order->id}/advance")
+            ->assertSessionHasErrors([
+                'order' => __('messages.orders.awaiting_card_authentication'),
+            ]);
+
+        $this->assertSame(OrderStatus::PLACED, $order->fresh()->status);
+        $this->assertSame(0, $order->events()->count());
+    }
+
+    public function test_card_order_reaches_staff_once_3ds_settles(): void
+    {
+        $restaurant = Restaurant::factory()->create();
+
+        $waiter = $this->staff($restaurant, Role::WAITER);
+
+        $order = Order::factory()->assignedTo($waiter)->placed()->create();
+        $payment = $this->awaitingCardAuthentication($order);
+
+        $payment->update(['status' => PaymentStatus::PAID->value, 'requires_3ds' => false]);
+
+        $this->actingAs($waiter)
+            ->patch("/app/orders/{$order->id}/advance")
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(OrderStatus::PENDING, $order->fresh()->status);
+    }
+
+    private function awaitingCardAuthentication(Order $order): Payment
+    {
+        return Payment::factory()
+            ->forOrder($order)
+            ->requires3ds()
+            ->create(['status' => PaymentStatus::REQUIRES_ACTION->value]);
     }
 
     public function test_waiter_cannot_advance_another_waiters_order(): void

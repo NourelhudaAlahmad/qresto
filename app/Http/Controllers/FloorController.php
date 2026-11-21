@@ -62,6 +62,7 @@ final class FloorController extends Controller
             ->where('table_id', $table->id)
             ->where('is_paid', false)
             ->where('status', '!=', OrderStatus::CANCELLED->value)
+            ->releasedToStaff()
             ->with(['lines', 'payments'])
             ->orderBy('id')
             ->get();
@@ -449,6 +450,7 @@ final class FloorController extends Controller
                 '!=',
                 OrderStatus::CANCELLED->value,
             )
+            ->releasedToStaff()
             ->with('payments')
             ->get()
             ->groupBy('table_id');

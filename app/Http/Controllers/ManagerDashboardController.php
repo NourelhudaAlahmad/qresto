@@ -269,6 +269,7 @@ class ManagerDashboardController extends Controller
                 OrderStatus::PAID->value,
                 OrderStatus::CANCELLED->value,
             ])
+            ->releasedToStaff()
             ->with([
                 'table:id,number',
                 'assignedUser:id,name',

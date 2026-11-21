@@ -113,6 +113,12 @@ class WaiterOrderController extends Controller
                 ]);
             }
 
+            if ($locked->isAwaitingCardAuthentication()) {
+                throw ValidationException::withMessages([
+                    'order' => __('messages.orders.awaiting_card_authentication'),
+                ]);
+            }
+
             $locked->transitionTo($next, $request->user());
         });
 
@@ -247,6 +253,7 @@ class WaiterOrderController extends Controller
                 OrderStatus::READY->value,
                 OrderStatus::SERVED->value,
             ])
+            ->releasedToStaff()
             ->with([
                 'table:id,number',
                 'lines:id,order_id,name_snapshot,qty,note',

@@ -3,8 +3,10 @@
 use App\Enums\OrderStatus;
 use App\Models\Cart;
 use App\Models\CartLine;
+use App\Models\CartLineAddon;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
+use App\Models\MenuItemAddon;
 use App\Models\Order;
 use App\Models\Promotion;
 use App\Models\Restaurant;
@@ -1408,4 +1410,72 @@ it('tells the guest a second round joins the same table bill (#50)', function ()
         ->withCookie(...$cookie)
         ->get(route('checkout'))
         ->assertInertia(fn (Assert $page) => $page->where('earlier_rounds', 1));
+});
+
+/*
+ * A dish is checked when it enters the cart, but the cart can wait while
+ * the kitchen sells out of it, takes it off the schedule or deletes it.
+ */
+it('refuses to place a dish that stopped being orderable after it was added', function (string $change): void {
+    $context = createCheckoutTestContext();
+
+    createCheckoutTestLine(context: $context, qty: 1);
+
+    match ($change) {
+        'sold out' => $context['item']->update(['is_available' => false]),
+        'deleted' => $context['item']->delete(),
+        'off its schedule' => $context['item']->update([
+            'is_scheduled' => true,
+            'available_from' => now()->addHour(),
+        ]),
+    };
+
+    $this
+        ->withCookie('qresto_table_session', $context['session']->token)
+        ->post(route('checkout.store'), [
+            'method' => 'cash',
+            'tip_pct' => 0,
+            'split_ways' => 1,
+            'idempotency_key' => 'checkout-stale-dish',
+        ])
+        ->assertSessionHasErrors([
+            'cart' => __('messages.checkout.item_unavailable', ['dish' => 'Lamb Kofta']),
+        ]);
+
+    expect(Order::query()->count())->toBe(0)
+        ->and(CartLine::query()->where('cart_id', $context['cart']->id)->count())->toBe(1);
+})->with(['sold out', 'deleted', 'off its schedule']);
+
+it('refuses to place a dish whose add-on sold out after it was added', function (): void {
+    $context = createCheckoutTestContext();
+
+    $line = createCheckoutTestLine(context: $context, qty: 1);
+
+    $addon = MenuItemAddon::factory()->create([
+        'menu_item_id' => $context['item']->id,
+        'label' => 'Extra Sauce',
+        'price_delta' => 200,
+        'is_available' => true,
+    ]);
+
+    CartLineAddon::query()->create([
+        'cart_line_id' => $line->id,
+        'menu_item_addon_id' => $addon->id,
+        'label_snapshot' => 'Extra Sauce',
+        'price_delta' => Money::fromMinor(200, 'USD'),
+    ]);
+
+    $addon->update(['is_available' => false]);
+
+    $this
+        ->withCookie('qresto_table_session', $context['session']->token)
+        ->post(route('checkout.store'), [
+            'method' => 'cash',
+            'tip_pct' => 0,
+            'split_ways' => 1,
+            'idempotency_key' => 'checkout-stale-addon',
+        ])
+        ->assertSessionHasErrors('cart');
+
+    expect(Order::query()->count())->toBe(0);
 });

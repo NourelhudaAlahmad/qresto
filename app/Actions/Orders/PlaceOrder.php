@@ -7,7 +7,10 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Cart;
+use App\Models\CartLine;
+use App\Models\CartLineAddon;
 use App\Models\MenuItem;
+use App\Models\MenuItemAddon;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Payments\PaymentManager;
@@ -16,6 +19,7 @@ use App\Services\Floor\TableAccess;
 use App\Support\Money;
 use App\Support\OrderCodeGenerator;
 use App\Support\OrderTotals;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -122,6 +126,11 @@ final class PlaceOrder
                     ];
                 }
             }
+
+            $this->ensureLinesCanStillBeOrdered(
+                restaurantId: $cart->restaurant_id,
+                lines: $lines,
+            );
 
             $subtotal = Money::fromMinor(
                 0,
@@ -331,6 +340,53 @@ final class PlaceOrder
                 'client_secret' => $intent->clientSecret,
             ];
         });
+    }
+
+    /**
+     * A dish is checked when it enters the cart, but the cart can sit for a
+     * while: the kitchen may mark it sold out, take it off the schedule or
+     * delete it meanwhile. Refuse the order rather than send the kitchen a
+     * dish it cannot make.
+     *
+     * @param  Collection<int, CartLine>  $lines
+     */
+    private function ensureLinesCanStillBeOrdered(
+        int $restaurantId,
+        Collection $lines,
+    ): void {
+        $orderableItemIds = MenuItem::query()
+            ->where('restaurant_id', $restaurantId)
+            ->whereIn('id', $lines->pluck('menu_item_id')->unique()->all())
+            ->availableNow()
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+
+        $unavailableAddonIds = MenuItemAddon::query()
+            ->whereIn(
+                'id',
+                $lines->flatMap(fn (CartLine $line) => $line->addons->pluck('menu_item_addon_id'))->unique()->all(),
+            )
+            ->where('is_available', false)
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+
+        foreach ($lines as $line) {
+            $itemGone = ! in_array((int) $line->menu_item_id, $orderableItemIds, true);
+
+            $addonGone = $line->addons->contains(
+                fn (CartLineAddon $addon): bool => in_array((int) $addon->menu_item_addon_id, $unavailableAddonIds, true),
+            );
+
+            if ($itemGone || $addonGone) {
+                throw ValidationException::withMessages([
+                    'cart' => __('messages.checkout.item_unavailable', [
+                        'dish' => $line->name_snapshot,
+                    ]),
+                ]);
+            }
+        }
     }
 
     /**

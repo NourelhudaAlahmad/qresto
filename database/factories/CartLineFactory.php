@@ -26,7 +26,11 @@ class CartLineFactory extends Factory
 
         return [
             'cart_id' => Cart::factory(),
-            'menu_item_id' => MenuItem::factory(),
+            // The dish belongs to the cart's own restaurant, as one a guest
+            // could actually add (checkout re-checks it).
+            'menu_item_id' => fn (array $attributes) => MenuItem::factory()->state([
+                'restaurant_id' => Cart::query()->withoutGlobalScopes()->whereKey($attributes['cart_id'])->value('restaurant_id'),
+            ]),
             'name_snapshot' => fake()->words(2, true),
             'unit_price' => $unitPrice,
             'qty' => $qty,

@@ -12,6 +12,11 @@ Schedule::command('qresto:close-idle-table-sessions')
     ->everyFiveMinutes()
     ->withoutOverlapping();
 
+// Card orders a guest left at 3-D Secure and never came back to.
+Schedule::command('qresto:expire-abandoned-checkouts')
+    ->everyFiveMinutes()
+    ->withoutOverlapping();
+
 // System health (#30).
 Schedule::command('qresto:probe-gateway')
     ->everyFiveMinutes()

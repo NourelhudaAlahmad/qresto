@@ -28,6 +28,12 @@ use Illuminate\Validation\ValidationException;
  */
 final class ResolveAbandonedCheckout
 {
+    public const PAID = 'paid';
+
+    public const DISCARDED = 'discarded';
+
+    public const UNDECIDED = 'undecided';
+
     public function __construct(
         private readonly PaymentManager $payments,
         private readonly SettlePayment $settle,
@@ -48,34 +54,58 @@ final class ResolveAbandonedCheckout
             ->get();
 
         foreach ($waiting as $order) {
-            $payment = $order->payments->firstWhere('status', PaymentStatus::REQUIRES_ACTION->value);
+            $outcome = $this->resolve($order);
 
-            if (! $payment instanceof Payment) {
-                continue;
-            }
-
-            $result = $this->payments
-                ->driver($payment->gateway ?: null)
-                ->cancel((string) $payment->gateway_intent_id);
-
-            if ($result->succeeded()) {
-                $this->settle->handle($payment);
-                $this->finish->handle($order);
-
+            if ($outcome === self::PAID) {
                 return $order->fresh();
             }
 
-            if ($result->status !== 'canceled') {
+            if ($outcome === self::UNDECIDED) {
                 throw ValidationException::withMessages([
                     'payment' => __('messages.checkout.previous_payment_pending'),
                 ]);
             }
-
-            $this->promotions->release($order->restaurant_id, $order->promo_code);
-            $this->discard($order);
         }
 
         return null;
+    }
+
+    /**
+     * Cancel one order's 3-D Secure payment at the gateway, then finish the
+     * order if it turned out paid, or discard it if it was cancelled.
+     *
+     * @return self::PAID|self::DISCARDED|self::UNDECIDED
+     */
+    public function resolve(Order $order): string
+    {
+        $payment = $order->payments()
+            ->where('status', PaymentStatus::REQUIRES_ACTION->value)
+            ->latest('id')
+            ->first();
+
+        if (! $payment instanceof Payment) {
+            return self::UNDECIDED;
+        }
+
+        $result = $this->payments
+            ->driver($payment->gateway ?: null)
+            ->cancel((string) $payment->gateway_intent_id);
+
+        if ($result->succeeded()) {
+            $this->settle->handle($payment);
+            $this->finish->handle($order);
+
+            return self::PAID;
+        }
+
+        if ($result->status !== 'canceled') {
+            return self::UNDECIDED;
+        }
+
+        $this->promotions->release($order->restaurant_id, $order->promo_code);
+        $this->discard($order);
+
+        return self::DISCARDED;
     }
 
     /**

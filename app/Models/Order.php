@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\MoneyCast;
 use App\Concerns\BelongsToRestaurant;
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -152,6 +153,33 @@ class Order extends Model
             OrderStatus::PAID->value,
             OrderStatus::CANCELLED->value,
         ]);
+    }
+
+    /**
+     * Orders the guest has actually finished placing. A card order waiting
+     * on 3-D Secure is not one yet: the guest may still abandon it, and
+     * then it is discarded. Staff screens must not show it, or a waiter
+     * could send an unpaid order to the kitchen.
+     *
+     * @param  Builder<Order>  $query
+     * @return Builder<Order>
+     */
+    public function scopeReleasedToStaff(Builder $query): Builder
+    {
+        return $query->whereDoesntHave(
+            'payments',
+            fn (Builder $payments) => $payments->where('status', PaymentStatus::REQUIRES_ACTION->value),
+        );
+    }
+
+    /**
+     * Whether a card payment of this order still waits on 3-D Secure.
+     */
+    public function isAwaitingCardAuthentication(): bool
+    {
+        return $this->payments()
+            ->where('status', PaymentStatus::REQUIRES_ACTION->value)
+            ->exists();
     }
 
     /**

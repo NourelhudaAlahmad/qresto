@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import CheckoutPage from '@/pages/guest/checkout';
@@ -467,6 +467,56 @@ describe('Guest checkout page', () => {
             expect.any(Object),
         );
     });
+    it('retries a refused checkout with a new idempotency key', () => {
+        renderCheckout();
+
+        fireEvent.submit(getPaymentForm());
+
+        const [, firstPayload, firstOptions] = post.mock.calls[0] as [
+            string,
+            { idempotency_key: string },
+            { onError: () => void },
+        ];
+
+        act(() => firstOptions.onError());
+
+        fireEvent.submit(getPaymentForm());
+
+        const [, secondPayload] = post.mock.calls[1] as [
+            string,
+            { idempotency_key: string },
+        ];
+
+        expect(secondPayload.idempotency_key).not.toBe(
+            firstPayload.idempotency_key,
+        );
+    });
+
+    it('keeps the idempotency key when a checkout is resent without an answer', () => {
+        renderCheckout();
+
+        fireEvent.submit(getPaymentForm());
+
+        const [, firstPayload, firstOptions] = post.mock.calls[0] as [
+            string,
+            { idempotency_key: string },
+            { onFinish: () => void },
+        ];
+
+        act(() => firstOptions.onFinish());
+
+        fireEvent.submit(getPaymentForm());
+
+        const [, secondPayload] = post.mock.calls[1] as [
+            string,
+            { idempotency_key: string },
+        ];
+
+        expect(secondPayload.idempotency_key).toBe(
+            firstPayload.idempotency_key,
+        );
+    });
+
     it('returns to the cart from the back button', () => {
         renderCheckout();
 

@@ -74,6 +74,11 @@ return [
 
     'undo_window_seconds' => 6,
 
+    // A card order still waiting on 3-D Secure this long after it was
+    // placed is cancelled at the gateway and discarded, so an abandoned
+    // checkout never lingers as an order (qresto:expire-abandoned-checkouts).
+    'abandoned_checkout_minutes' => (int) env('QRESTO_ABANDONED_CHECKOUT_MINUTES', 30),
+
     // Menu management (#31): dish photos.
     'menu' => [
         'photo_disk' => env('QRESTO_MENU_PHOTO_DISK', 'public'),
