@@ -33,28 +33,28 @@ class TableController extends Controller
 
         $table = $this->tables->add($admin, $this->data($request));
 
-        return back()->with('success', "Table {$table->number} added.");
+        return back();
     }
 
     public function update(TableRequest $request, RestaurantTable $table): RedirectResponse
     {
         $this->tables->update($table, $this->data($request));
 
-        return back()->with('success', "Table {$table->number} saved.");
+        return back();
     }
 
     public function retire(RestaurantTable $table): RedirectResponse
     {
         $this->tables->retire($table);
 
-        return back()->with('success', "Table {$table->number} retired.");
+        return back();
     }
 
     public function reissue(RestaurantTable $table): RedirectResponse
     {
         $this->tables->reissue($table);
 
-        return back()->with('success', "New code for Table {$table->number}. Print and replace the sticker.");
+        return back();
     }
 
     /**

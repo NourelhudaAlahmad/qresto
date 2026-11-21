@@ -22,6 +22,7 @@ import { TabBar } from '@/components/qresto/tab-bar';
 import GuestLayout from '@/layouts/guest-layout';
 import { formatMoney } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
+import { readStorage, writeStorage } from '@/lib/safe-storage';
 import type { Money } from '@/types';
 
 type Allergen = {
@@ -94,7 +95,7 @@ function saveLastTab(sessionId: number, tab: GuestTab): void {
         return;
     }
 
-    window.localStorage.setItem(`qresto_last_tab_${sessionId}`, tab);
+    writeStorage(`qresto_last_tab_${sessionId}`, tab);
 }
 
 export default function Menu({
@@ -124,9 +125,7 @@ export default function Menu({
             return;
         }
 
-        const lastTab = window.localStorage.getItem(
-            `qresto_last_tab_${session.id}`,
-        );
+        const lastTab = readStorage(`qresto_last_tab_${session.id}`);
 
         if (lastTab === 'order') {
             router.visit('/cart');

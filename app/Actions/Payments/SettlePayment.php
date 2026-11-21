@@ -31,11 +31,15 @@ final class SettlePayment
         ?User $takenBy = null,
         array $payload = [],
     ): array {
-        return DB::transaction(function () use (
+        /*
+         * Checked under lock, then the lock is let go before the gateway
+         * is asked (a network call must not hold rows), and taken again to
+         * record its answer. Cash and POS never leave the first step.
+         */
+        $settled = DB::transaction(function () use (
             $payment,
             $takenBy,
-            $payload,
-        ): array {
+        ): ?array {
             $payment = Payment::query()
                 ->lockForUpdate()
                 ->findOrFail($payment->id);
@@ -92,14 +96,43 @@ final class SettlePayment
                 ]);
             }
 
-            $gateway = $this->payments->driver(
-                $payment->gateway ?: null,
-            );
+            return null;
+        });
 
-            $result = $gateway->confirm(
-                intentId: $payment->gateway_intent_id,
+        if ($settled !== null) {
+            return $settled;
+        }
+
+        $payment->refresh();
+
+        $result = $this->payments
+            ->driver($payment->gateway ?: null)
+            ->confirm(
+                intentId: (string) $payment->gateway_intent_id,
                 payload: $payload,
             );
+
+        return DB::transaction(function () use ($payment, $takenBy, $result): array {
+            $payment = Payment::query()
+                ->lockForUpdate()
+                ->findOrFail($payment->id);
+
+            $order = $payment->order()
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $payment->setRelation('order', $order);
+
+            // Settled meanwhile (the browser and the webhook can race):
+            // already recorded, nothing to add.
+            if ($payment->status === PaymentStatus::PAID->value) {
+                return [
+                    'payment' => $payment,
+                    'failure' => null,
+                    'requires_action' => false,
+                    'client_secret' => null,
+                ];
+            }
 
             if ($result->failed()) {
                 $payment->update([

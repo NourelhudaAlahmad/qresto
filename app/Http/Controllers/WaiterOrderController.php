@@ -122,10 +122,7 @@ class WaiterOrderController extends Controller
             $locked->transitionTo($next, $request->user());
         });
 
-        return back()->with(
-            'success',
-            'Order status updated.'
-        );
+        return back();
     }
 
     public function void(
@@ -206,10 +203,7 @@ class WaiterOrderController extends Controller
             ),
         );
 
-        return back()->with(
-            'success',
-            'Order voided.'
-        );
+        return back();
     }
 
     private function authorizeOrder(

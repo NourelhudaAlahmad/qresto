@@ -134,6 +134,39 @@ describe('Guest table page', () => {
         expect(visit).toHaveBeenCalledWith('/t/table-12-valid-token/tables');
     });
 
+    it('still opens the menu when the browser blocks storage', () => {
+        const blocked = () => {
+            throw new DOMException('Storage is blocked', 'SecurityError');
+        };
+        const getItem = vi
+            .spyOn(Storage.prototype, 'getItem')
+            .mockImplementation(blocked);
+        const setItem = vi
+            .spyOn(Storage.prototype, 'setItem')
+            .mockImplementation(blocked);
+
+        try {
+            renderTable();
+
+            fireEvent.change(
+                screen.getByRole('textbox', { name: /first name/i }),
+                { target: { value: 'Rami' } },
+            );
+            fireEvent.click(
+                screen.getByRole('button', { name: /open the menu/i }),
+            );
+
+            expect(post).toHaveBeenCalledWith(
+                '/t/table-12-valid-token/confirm',
+                { first_name: 'Rami' },
+                expect.any(Object),
+            );
+        } finally {
+            getItem.mockRestore();
+            setItem.mockRestore();
+        }
+    });
+
     it('restores a previously saved first name', () => {
         window.localStorage.setItem('qresto_guest_first_name', 'Layla');
 

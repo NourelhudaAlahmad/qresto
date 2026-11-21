@@ -70,7 +70,6 @@ return [
         'cannot_void' => 'This order cannot be voided.',
         'reassign_waiter' => 'Select an active waiter from this restaurant.',
         'reassign_active_only' => 'Only active orders can be reassigned.',
-        'reassigned' => 'Order reassigned successfully.',
     ],
 
     'menu' => [
@@ -90,6 +89,8 @@ return [
         'shift_qr_invalid' => 'Invalid or expired shift QR.',
         'shift_qr_used' => 'Invalid, expired, or already used shift QR.',
         'account_unavailable' => 'This account is unavailable.',
+        'invitation_expired' => 'This link has expired or was already used. Ask your manager for a new one.',
+        'password_set' => 'Your password is set. Sign in to start your shift.',
         'locked_after_attempts' => 'Account locked for 10 minutes after 3 failed sign-in attempts.',
         'shift_qr_not_authorized' => 'Not authorized to issue a shift QR for this staff member.',
         'locked_for' => 'Account locked. Try again in :minutes minute(s).',

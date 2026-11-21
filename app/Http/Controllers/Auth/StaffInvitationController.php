@@ -57,13 +57,13 @@ class StaffInvitationController extends Controller
         if ($status !== Password::PASSWORD_RESET) {
             throw ValidationException::withMessages([
                 'email' => $status === Password::INVALID_TOKEN
-                    ? 'This link has expired or was already used. Ask your manager for a new one.'
+                    ? __('messages.auth.invitation_expired')
                     : __($status),
             ]);
         }
 
         return redirect()
             ->route('login')
-            ->with('status', 'Your password is set. Sign in to start your shift.');
+            ->with('status', __('messages.auth.password_set'));
     }
 }

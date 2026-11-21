@@ -262,7 +262,7 @@ export const StripeCardFields = forwardRef<StripeCardFieldsHandle, Props>(
 
         const errorLine = (field: CardField) =>
             message(field) ? (
-                <span role="alert" className="text-caption text-danger">
+                <span role="alert" className="text-caption text-danger-fg">
                     {message(field)}
                 </span>
             ) : null;

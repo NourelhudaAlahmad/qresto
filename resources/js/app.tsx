@@ -1,5 +1,6 @@
 import { createInertiaApp } from '@inertiajs/react';
 
+import { syncDocumentLocaleOnNavigate } from '@/components/locale-sync';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
@@ -71,3 +72,4 @@ createInertiaApp({
 });
 
 initializeTheme();
+syncDocumentLocaleOnNavigate();

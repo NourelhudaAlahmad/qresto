@@ -9,6 +9,7 @@ import { StickyDock } from '@/components/qresto/sticky-dock';
 import { Icon } from '@/components/ui/icon';
 import GuestLayout from '@/layouts/guest-layout';
 import { fill, useI18n } from '@/lib/i18n';
+import { readStorage, writeStorage } from '@/lib/safe-storage';
 
 type TableProps = {
     restaurant: {
@@ -34,7 +35,7 @@ function getSavedFirstName(): string {
         return '';
     }
 
-    return window.localStorage.getItem(FIRST_NAME_STORAGE_KEY) ?? '';
+    return readStorage(FIRST_NAME_STORAGE_KEY) ?? '';
 }
 
 export default function Table({
@@ -82,7 +83,7 @@ export default function Table({
             return;
         }
 
-        window.localStorage.setItem(FIRST_NAME_STORAGE_KEY, trimmedName);
+        writeStorage(FIRST_NAME_STORAGE_KEY, trimmedName);
 
         router.post(
             `/t/${encodeURIComponent(qr_token)}/confirm`,

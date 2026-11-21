@@ -79,3 +79,33 @@ it('gives the motion utilities real values', function () {
         expect($css)->toContain("--ease-{$curve}: var(--ease-{$curve});");
     }
 });
+
+/*
+ * The same silent failure through Tailwind: a colour utility with no theme
+ * token behind it generates no CSS at all. `text-danger` (only
+ * `--color-danger-fg` exists) left every payment error in body grey.
+ */
+it('uses no colour utility from the design tokens without a theme colour behind it', function () {
+    $defined = cssVariablesDefined();
+
+    $prefixes = 'text|bg|border|ring|outline|fill|stroke|divide|placeholder|caret|accent|decoration|from|via|to';
+    $families = 'danger|warning|success|info|surface|text|action|border';
+
+    $missing = [];
+
+    foreach (frontendSourceFiles() as $path) {
+        preg_match_all(
+            "/(?<![\w-])(?:[a-z-]+:)*(?:{$prefixes})-((?:{$families})(?:-[a-z0-9]+)*)(?:\/\d+)?(?![\w-])/",
+            (string) file_get_contents($path),
+            $matches,
+        );
+
+        foreach (array_unique($matches[1]) as $colour) {
+            if (! isset($defined["--color-{$colour}"])) {
+                $missing[$colour][] = str_replace(resource_path('js').DIRECTORY_SEPARATOR, '', $path);
+            }
+        }
+    }
+
+    expect($missing)->toBe([]);
+});

@@ -57,7 +57,7 @@ const buttonVariants = cva(
                     'bg-surface-card',
                     'text-text-primary',
                     'hover:bg-action-ghost-hover',
-                    'focus-visible:ring-border-focus-color/30',
+                    'focus-visible:ring-ring/30',
                 ],
 
                 ghost: [
@@ -65,7 +65,7 @@ const buttonVariants = cva(
                     'bg-transparent',
                     'text-text-primary',
                     'hover:bg-action-ghost-hover',
-                    'focus-visible:ring-border-focus-color/30',
+                    'focus-visible:ring-ring/30',
                 ],
 
                 destructive: [
@@ -75,7 +75,7 @@ const buttonVariants = cva(
                     '[&_svg]:!text-[var(--text-on-brand)]',
                     'hover:!text-[var(--text-on-brand)]',
                     'hover:opacity-90',
-                    'focus-visible:ring-danger/30',
+                    'focus-visible:ring-danger-solid/30',
                 ],
 
                 disabled: [

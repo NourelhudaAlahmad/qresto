@@ -107,7 +107,7 @@ class RestaurantSettingsController extends Controller
 
         $restaurant->forceFill($request->validated())->save();
 
-        return back()->with('success', 'Restaurant details saved.');
+        return back();
     }
 
     public function updateHours(UpdateHoursRequest $request): RedirectResponse
@@ -123,7 +123,7 @@ class RestaurantSettingsController extends Controller
             }
         });
 
-        return back()->with('success', 'Opening hours saved.');
+        return back();
     }
 
     private function restaurant(Request $request): Restaurant

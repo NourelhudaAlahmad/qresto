@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Actions\Orders\ResolveAbandonedCheckout;
-use App\Enums\PaymentStatus;
 use App\Models\Order;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -19,7 +18,7 @@ class ExpireAbandonedCheckouts extends Command
 {
     protected $signature = 'qresto:expire-abandoned-checkouts';
 
-    protected $description = 'Cancel and discard card orders left waiting on 3-D Secure past the configured limit';
+    protected $description = 'Cancel and discard card orders left unfinished (at 3-D Secure, or never answered by the gateway) past the configured limit';
 
     public function handle(ResolveAbandonedCheckout $abandoned): int
     {
@@ -29,7 +28,7 @@ class ExpireAbandonedCheckouts extends Command
             ->withoutGlobalScopes()
             ->where('is_paid', false)
             ->where('placed_at', '<', now()->subMinutes($minutes))
-            ->whereHas('payments', fn ($payments) => $payments->where('status', PaymentStatus::REQUIRES_ACTION->value))
+            ->whereHas('payments', fn ($payments) => Order::unfinishedOnlinePayment($payments))
             ->get();
 
         $outcomes = [

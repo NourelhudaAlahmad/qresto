@@ -28,7 +28,7 @@ class StaffController extends Controller
     ): RedirectResponse {
         $member = $create->handle($this->actor($request), $request->staffData());
 
-        return back()->with('success', "{$member->name} added to tonight.");
+        return back();
     }
 
     public function update(
@@ -40,7 +40,7 @@ class StaffController extends Controller
 
         $update->handle($this->actor($request), $member, $request->staffData());
 
-        return back()->with('success', "{$member->name} updated.");
+        return back();
     }
 
     public function deactivate(
@@ -52,7 +52,7 @@ class StaffController extends Controller
 
         $deactivate->handle($this->actor($request), $member);
 
-        return back()->with('success', "{$member->name} deactivated.");
+        return back();
     }
 
     public function reactivate(
@@ -64,7 +64,7 @@ class StaffController extends Controller
 
         $reactivate->handle($this->actor($request), $member);
 
-        return back()->with('success', "{$member->name} can sign in again.");
+        return back();
     }
 
     public function invite(
@@ -78,7 +78,7 @@ class StaffController extends Controller
 
         $invite->handle($this->actor($request), $member);
 
-        return back()->with('success', "Set-password link sent to {$member->name}.");
+        return back();
     }
 
     private function actor(Request $request): User

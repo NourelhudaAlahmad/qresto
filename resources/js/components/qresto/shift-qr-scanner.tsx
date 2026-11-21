@@ -221,7 +221,7 @@ export function ShiftQrScanner({ onClose }: Props) {
             />
 
             {error && (
-                <p role="alert" className="text-caption text-text-danger mt-3">
+                <p role="alert" className="text-caption text-danger-fg mt-3">
                     {error}
                 </p>
             )}

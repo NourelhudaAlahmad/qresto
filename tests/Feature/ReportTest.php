@@ -201,6 +201,28 @@ it('exports a CSV with a header row that matches the rendered rows exactly', fun
         ->and($export->row_count)->toBe(count($rows));
 });
 
+// Staff choose their own name in profile settings; a spreadsheet must not
+// run it as a formula when a manager opens the export.
+it('exports a waiter name that looks like a formula as plain text', function (string $name) {
+    $this->nadia->update(['name' => $name]);
+
+    sale($this->restaurant, $this->nadia, '2026-10-20', 4000, tip: 400);
+
+    $csv = test()->actingAs($this->sara)
+        ->get('/app/reports/export.csv?preset=month')
+        ->assertOk()
+        ->streamedContent();
+
+    $lines = array_map('str_getcsv', array_filter(explode("\n", trim($csv))));
+
+    expect($lines[1][1])->toBe("'".$name);
+})->with([
+    '=HYPERLINK("http://evil.test","Nadia")',
+    '+1+1',
+    '-2+3',
+    '@SUM(A1)',
+]);
+
 it('renders the PDF from the print view', function () {
     if (! class_exists(Dompdf::class)) {
         $this->markTestSkipped('PDF export needs dompdf: composer require dompdf/dompdf');

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\MoneyCast;
 use App\Concerns\BelongsToRestaurant;
 use App\Enums\OrderStatus;
+use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -168,18 +169,38 @@ class Order extends Model
     {
         return $query->whereDoesntHave(
             'payments',
-            fn (Builder $payments) => $payments->where('status', PaymentStatus::REQUIRES_ACTION->value),
+            fn (Builder $payments) => self::unfinishedOnlinePayment($payments),
         );
     }
 
     /**
-     * Whether a card payment of this order still waits on 3-D Secure.
+     * Whether a card payment of this order is still unfinished: waiting on
+     * 3-D Secure, or not yet answered by the gateway.
      */
     public function isAwaitingCardAuthentication(): bool
     {
         return $this->payments()
-            ->where('status', PaymentStatus::REQUIRES_ACTION->value)
+            ->where(fn (Builder $payments) => self::unfinishedOnlinePayment($payments))
             ->exists();
+    }
+
+    /**
+     * A card or wallet payment the guest has not finished: waiting on 3-D
+     * Secure, or created and not yet answered by the gateway (no intent).
+     *
+     * @template TModel of Model
+     *
+     * @param  Builder<TModel>  $payments
+     * @return Builder<TModel>
+     */
+    public static function unfinishedOnlinePayment(Builder $payments): Builder
+    {
+        return $payments->where(fn (Builder $query) => $query
+            ->where('status', PaymentStatus::REQUIRES_ACTION->value)
+            ->orWhere(fn (Builder $query) => $query
+                ->where('status', PaymentStatus::PENDING->value)
+                ->whereNull('gateway_intent_id')
+                ->whereIn('method', [PaymentMethod::CARD->value, PaymentMethod::WALLET->value])));
     }
 
     /**

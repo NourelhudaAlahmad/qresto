@@ -42,9 +42,6 @@ final class EmailReceiptController extends Controller
             new ReceiptMail($order),
         );
 
-        return back()->with(
-            'success',
-            'Receipt email queued successfully.',
-        );
+        return back();
     }
 }

@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
+import { readStorage, writeStorage } from '@/lib/safe-storage';
+
 export type ResolvedAppearance = 'light' | 'dark';
 export type Appearance = ResolvedAppearance | 'system';
 
@@ -34,7 +36,7 @@ const getStoredAppearance = (): Appearance => {
         return 'system';
     }
 
-    return (localStorage.getItem('appearance') as Appearance) || 'system';
+    return (readStorage('appearance') as Appearance | null) || 'system';
 };
 
 const isDarkMode = (appearance: Appearance): boolean => {
@@ -75,8 +77,8 @@ export function initializeTheme(): void {
         return;
     }
 
-    if (!localStorage.getItem('appearance')) {
-        localStorage.setItem('appearance', 'system');
+    if (!readStorage('appearance')) {
+        writeStorage('appearance', 'system');
         setCookie('appearance', 'system');
     }
 
@@ -102,7 +104,7 @@ export function useAppearance(): UseAppearanceReturn {
         currentAppearance = mode;
 
         // Store in localStorage for client-side persistence...
-        localStorage.setItem('appearance', mode);
+        writeStorage('appearance', mode);
 
         // Store in cookie for SSR...
         setCookie('appearance', mode);

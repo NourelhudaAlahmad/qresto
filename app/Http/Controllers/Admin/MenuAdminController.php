@@ -128,7 +128,7 @@ class MenuAdminController extends Controller
             'is_active' => true,
         ]);
 
-        return back()->with('success', 'Category added.');
+        return back();
     }
 
     public function updateCategory(CategoryRequest $request, MenuCategory $category): RedirectResponse
@@ -137,7 +137,7 @@ class MenuAdminController extends Controller
 
         $category->update(['name' => trim((string) $request->validated('name'))]);
 
-        return back()->with('success', 'Category renamed.');
+        return back();
     }
 
     public function destroyCategory(Request $request, MenuCategory $category): RedirectResponse
@@ -152,7 +152,7 @@ class MenuAdminController extends Controller
 
         $category->delete();
 
-        return back()->with('success', 'Category deleted.');
+        return back();
     }
 
     /**
@@ -199,7 +199,7 @@ class MenuAdminController extends Controller
             $photos->handle($item, $request->file('photo'));
         }
 
-        return back()->with('success', "{$item->name} added.")->with('created_dish_id', $item->id);
+        return back();
     }
 
     public function updateItem(DishRequest $request, MenuItem $item, StoreMenuPhoto $photos): RedirectResponse
@@ -215,7 +215,7 @@ class MenuAdminController extends Controller
             $photos->handle($item, $request->file('photo'));
         }
 
-        return back()->with('success', "{$item->name} saved.");
+        return back();
     }
 
     /**
@@ -232,7 +232,7 @@ class MenuAdminController extends Controller
             'updated_by' => $request->user()?->getKey(),
         ])->save();
 
-        return back()->with('success', $available ? "{$item->name} is back on." : "{$item->name} is sold out.");
+        return back();
     }
 
     /**
@@ -258,7 +258,7 @@ class MenuAdminController extends Controller
         $item->forceFill(['updated_by' => $request->user()?->getKey()])->saveQuietly();
         $item->delete();
 
-        return back()->with('success', "{$item->name} deleted.");
+        return back();
     }
 
     // ── Helpers ──────────────────────────────────────────────────────

@@ -66,7 +66,7 @@ class ReportController extends Controller
             foreach ($data['rows'] as $row) {
                 fputcsv($out, [
                     $row['date'],
-                    $row['waiter'],
+                    self::text($row['waiter']),
                     $row['covers'],
                     $row['orders'],
                     self::decimal($row['net_minor']),
@@ -161,6 +161,16 @@ class ReportController extends Controller
             'row_count' => $rows,
             'generated_at' => now(),
         ]);
+    }
+
+    /**
+     * A cell a person typed (a waiter's own name) that a spreadsheet would
+     * run as a formula: =, +, -, @, tab or carriage return first. Prefixed
+     * with an apostrophe so Excel and Sheets show it as plain text.
+     */
+    private static function text(string $value): string
+    {
+        return preg_match('/^[=+\-@\t\r]/', $value) === 1 ? "'".$value : $value;
     }
 
     private static function decimal(int $minor): string

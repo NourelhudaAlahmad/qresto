@@ -19,6 +19,14 @@ final class FakeStripe implements ClientInterface
     /** @var list<array{0: string, 1: int, 2: array<string, string>}> */
     private array $responses = [];
 
+    /**
+     * Runs at the moment each call reaches "Stripe", to observe the app's
+     * state then (open transactions, committed rows).
+     *
+     * @var (\Closure(string, string): void)|null
+     */
+    public ?\Closure $onRequest = null;
+
     public static function install(): self
     {
         $fake = new self;
@@ -77,6 +85,10 @@ final class FakeStripe implements ClientInterface
     public function request($method, $absUrl, $headers, $params, $hasFile, $apiMode = 'v1', $maxNetworkRetries = null)
     {
         $this->requests[] = ['method' => $method, 'url' => $absUrl, 'headers' => $headers, 'params' => $params];
+
+        if ($this->onRequest !== null) {
+            ($this->onRequest)($method, $absUrl);
+        }
 
         if ($this->responses === []) {
             throw new RuntimeException("Unexpected Stripe call: {$method} {$absUrl}");

@@ -13,6 +13,7 @@ use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\PaymentDisputed;
 use App\Payments\StripeAmount;
+use App\Payments\WebhookArrivedEarly;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -54,22 +55,27 @@ class StripeWebhookController extends Controller
             return response()->json(['message' => 'Invalid signature.'], 400);
         }
 
-        $handled = DB::transaction(function () use ($event, $settle): bool {
-            $recorded = DB::table('webhook_events')->insertOrIgnore([
-                'provider' => 'stripe',
-                'event_id' => $event->id,
-                'type' => $event->type,
-                'received_at' => now(),
-            ]);
+        try {
+            $handled = DB::transaction(function () use ($event, $settle): bool {
+                $recorded = DB::table('webhook_events')->insertOrIgnore([
+                    'provider' => 'stripe',
+                    'event_id' => $event->id,
+                    'type' => $event->type,
+                    'received_at' => now(),
+                ]);
 
-            if ($recorded === 0) {
-                return false; // already processed: a replay or a retry
-            }
+                if ($recorded === 0) {
+                    return false; // already processed: a replay or a retry
+                }
 
-            $this->handle($event, $settle);
+                $this->handle($event, $settle);
 
-            return true;
-        });
+                return true;
+            });
+        } catch (WebhookArrivedEarly) {
+            // Rolled back, event unrecorded: Stripe retries shortly.
+            return response()->json(['message' => 'Not ready; retry.'], 503);
+        }
 
         return response()->json(['received' => true, 'duplicate' => ! $handled]);
     }
@@ -93,7 +99,7 @@ class StripeWebhookController extends Controller
      */
     private function succeeded(array $intent, SettlePayment $settle): void
     {
-        $payment = $this->paymentFor((string) ($intent['id'] ?? ''));
+        $payment = $this->paymentForIntent($intent);
 
         if ($payment === null || $payment->status === PaymentStatus::PAID->value) {
             return;
@@ -131,7 +137,7 @@ class StripeWebhookController extends Controller
      */
     private function failed(array $intent): void
     {
-        $payment = $this->paymentFor((string) ($intent['id'] ?? ''));
+        $payment = $this->paymentForIntent($intent);
 
         if ($payment === null || $payment->status === PaymentStatus::PAID->value) {
             return;
@@ -217,6 +223,44 @@ class StripeWebhookController extends Controller
             ->filter(fn (User $user): bool => $user->can(Capability::FINANCIAL_REPORTS->value));
 
         Notification::send($managers, new PaymentDisputed($order, $amount, $reason));
+    }
+
+    /**
+     * The payment behind a payment_intent event. Checkout commits the order
+     * before it asks Stripe, then records the intent id; an event landing
+     * in between finds the order (by the intent's metadata) with a card
+     * payment that has no intent yet, and is sent back to be retried.
+     *
+     * @param  array<string, mixed>  $intent
+     */
+    private function paymentForIntent(array $intent): ?Payment
+    {
+        $intentId = (string) ($intent['id'] ?? '');
+
+        $payment = Payment::query()
+            ->where('gateway', 'stripe')
+            ->where('gateway_intent_id', $intentId)
+            ->with('order')
+            ->first();
+
+        if ($payment !== null) {
+            return $payment;
+        }
+
+        $metadata = is_array($intent['metadata'] ?? null) ? $intent['metadata'] : [];
+        $orderId = (int) ($metadata['order_id'] ?? 0);
+
+        $stillRecording = $orderId > 0 && Payment::query()
+            ->where('order_id', $orderId)
+            ->where('status', PaymentStatus::PENDING->value)
+            ->whereNull('gateway_intent_id')
+            ->exists();
+
+        if ($stillRecording) {
+            throw new WebhookArrivedEarly("Order {$orderId} is still recording intent {$intentId}.");
+        }
+
+        return $this->paymentFor($intentId);
     }
 
     private function paymentFor(string $intentId): ?Payment

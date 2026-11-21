@@ -106,10 +106,7 @@ final class ServiceRequestController extends Controller
             ])->save();
         });
 
-        return back()->with(
-            'success',
-            'Request sent.',
-        );
+        return back();
     }
 
     public function acknowledge(
@@ -143,10 +140,7 @@ final class ServiceRequestController extends Controller
             ]);
         }
 
-        return back()->with(
-            'success',
-            'Request acknowledged.',
-        );
+        return back();
     }
 
     private function tableSession(

@@ -214,6 +214,32 @@ it('ignores intents that are not ours', function () {
     expect($this->payment->fresh()->status)->toBe(PaymentStatus::REQUIRES_ACTION->value);
 });
 
+// Checkout commits the order before it asks Stripe, then records the
+// intent id. An event that lands in between must not be lost.
+it('asks Stripe to retry an event that arrives before checkout recorded its intent', function () {
+    $this->payment->update(['gateway_intent_id' => null, 'status' => PaymentStatus::PENDING->value]);
+
+    $intent = [
+        ...FakeStripe::intent('pi_early', 'succeeded'),
+        'metadata' => ['order_id' => (string) $this->order->id],
+    ];
+
+    deliver(stripeEvent('evt_early', 'payment_intent.succeeded', $intent))
+        ->assertStatus(503);
+
+    // Not recorded as handled, so the retry is processed.
+    expect(DB::table('webhook_events')->where('event_id', 'evt_early')->exists())->toBeFalse();
+
+    // Checkout finishes recording; Stripe's retry then settles it.
+    $this->payment->update(['gateway_intent_id' => 'pi_early']);
+
+    deliver(stripeEvent('evt_early', 'payment_intent.succeeded', $intent))
+        ->assertOk()
+        ->assertJson(['duplicate' => false]);
+
+    expect($this->payment->fresh()->status)->toBe(PaymentStatus::PAID->value);
+});
+
 it('refuses to run without a webhook secret', function () {
     config(['qresto.payments.stripe.webhook_secret' => '']);
 

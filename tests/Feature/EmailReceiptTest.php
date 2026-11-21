@@ -62,7 +62,7 @@ it('queues a receipt email for an authorized waiter', function (): void {
             'email' => 'guest@example.com',
         ])
         ->assertSessionHasNoErrors()
-        ->assertSessionHas('success');
+        ->assertRedirect();
 
     Mail::assertQueued(ReceiptMail::class, function (ReceiptMail $mail) use ($order): bool {
         return $mail->hasTo('guest@example.com')

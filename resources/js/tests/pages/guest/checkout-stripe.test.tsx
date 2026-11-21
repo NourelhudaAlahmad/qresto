@@ -303,6 +303,37 @@ describe('Checkout on Stripe (#35)', () => {
         );
     });
 
+    it.each(['onHttpException', 'onNetworkError'] as const)(
+        'closes the wallet sheet as failed on %s, so it never spins',
+        async (callback) => {
+            walletSupport = { applePay: true, googlePay: false };
+
+            await renderStripe();
+
+            fireEvent.click(
+                await screen.findByRole('button', { name: 'Apple Pay' }),
+            );
+
+            const complete = vi.fn();
+
+            act(() =>
+                walletHandler?.({
+                    paymentMethod: { id: 'pm_wallet' },
+                    complete,
+                }),
+            );
+
+            const options = post.mock.calls.at(-1)?.[2] as Record<
+                string,
+                (arg?: unknown) => void
+            >;
+
+            act(() => options[callback]());
+
+            expect(complete).toHaveBeenCalledWith('fail');
+        },
+    );
+
     it('hides wallet buttons entirely when none is available', async () => {
         walletSupport = null;
 

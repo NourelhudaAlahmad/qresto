@@ -6,11 +6,13 @@ use App\Models\CartLine;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\Restaurant;
 use App\Models\RestaurantTable;
 use App\Models\TableSession;
 use App\Support\Money;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\Support\FakeStripe;
 
 uses(RefreshDatabase::class);
@@ -155,4 +157,65 @@ it('keeps a processing payment pending for the webhook to settle', function () {
 
     expect($order->is_paid)->toBeFalse()
         ->and($order->payments()->first()->status)->toBe(PaymentStatus::PENDING->value);
+});
+
+/*
+ * Stripe is never called while a database transaction is open: a network
+ * call must not hold row locks, and an order must not roll away after its
+ * card was charged.
+ */
+it('commits the order before asking Stripe for the money, and confirms 3-D Secure outside a transaction', function () {
+    $stripe = useStripe()->respond(FakeStripe::intent('pi_3ds', 'requires_action'));
+
+    $baseline = DB::transactionLevel();
+    $seen = [];
+
+    $stripe->onRequest = function () use (&$seen): void {
+        $seen[] = [
+            'level' => DB::transactionLevel(),
+            'orders' => Order::query()->withoutGlobalScopes()->count(),
+        ];
+    };
+
+    pay(['payment_method' => 'pm_card_threeDSecure2Required'])->assertRedirect(route('checkout'));
+
+    $order = Order::query()->firstOrFail();
+
+    $stripe->respond(FakeStripe::intent('pi_3ds', 'succeeded'));
+
+    test()->withCookie('qresto_table_session', $this->session->token)
+        ->withSession(['checkout.pending_order_id' => $order->id])
+        ->post('/checkout/confirm', ['order_id' => $order->id, 'confirmed' => true])
+        ->assertSessionHasNoErrors();
+
+    expect($seen)->toHaveCount(2)
+        ->and(array_column($seen, 'level'))->each->toBe($baseline)
+        // The order already exists when the intent is created.
+        ->and($seen[0]['orders'])->toBe(1)
+        ->and($order->fresh()->is_paid)->toBeTrue();
+});
+
+it('takes the order back when the call to Stripe blows up', function () {
+    // No answer queued: the fake network throws, as a broken connection would.
+    useStripe();
+
+    $this->withoutExceptionHandling();
+
+    expect(fn () => pay(['payment_method' => 'pm_card_visa']))
+        ->toThrow(RuntimeException::class);
+
+    expect(Order::query()->withoutGlobalScopes()->count())->toBe(0);
+});
+
+it('keeps an order whose card is still with Stripe off staff screens', function () {
+    $order = Order::factory()->placed()->create();
+
+    Payment::factory()->forOrder($order)->create([
+        'method' => 'card',
+        'status' => PaymentStatus::PENDING->value,
+        'gateway_intent_id' => null,
+    ]);
+
+    expect(Order::query()->withoutGlobalScopes()->releasedToStaff()->whereKey($order->id)->exists())->toBeFalse()
+        ->and($order->isAwaitingCardAuthentication())->toBeTrue();
 });

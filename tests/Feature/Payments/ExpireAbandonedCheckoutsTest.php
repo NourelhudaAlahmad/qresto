@@ -1,6 +1,8 @@
 <?php
 
+use App\Enums\PaymentStatus;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\Promotion;
 use App\Payments\Gateways\FakeGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -105,4 +107,53 @@ it('never touches an order that was paid', function () {
     $this->artisan('qresto:expire-abandoned-checkouts')->assertSuccessful();
 
     expect(Order::query()->where('idempotency_key', 'paid-at-once')->first()?->is_paid)->toBeTrue();
+});
+
+it('discards an order whose card the gateway never answered', function () {
+    config(['qresto.abandoned_checkout_minutes' => 30]);
+
+    $context = createCheckoutTestContext();
+    createCheckoutTestLine(context: $context, qty: 1, unitPrice: 5570);
+
+    // A checkout that died between saving the order and hearing back.
+    $order = Order::factory()->placed()->create([
+        'restaurant_id' => $context['restaurant']->id,
+        'table_session_id' => $context['session']->id,
+        'placed_at' => now(),
+    ]);
+
+    Payment::factory()->forOrder($order)->create([
+        'method' => 'card',
+        'status' => PaymentStatus::PENDING->value,
+        'gateway' => null,
+        'gateway_intent_id' => null,
+    ]);
+
+    $this->travel(31)->minutes();
+
+    $this->artisan('qresto:expire-abandoned-checkouts')->assertSuccessful();
+
+    expect(Order::query()->withoutGlobalScopes()->whereKey($order->id)->exists())->toBeFalse();
+});
+
+it('never discards a cash order waiting to be paid at the table', function () {
+    config(['qresto.abandoned_checkout_minutes' => 30]);
+
+    $context = createCheckoutTestContext();
+    createCheckoutTestLine(context: $context, qty: 1, unitPrice: 5570);
+
+    test()->withCookie('qresto_table_session', $context['session']->token)
+        ->post(route('checkout.store'), [
+            'method' => 'cash',
+            'tip_pct' => 0,
+            'split_ways' => 1,
+            'idempotency_key' => 'cash-later',
+        ])
+        ->assertSessionHasNoErrors();
+
+    $this->travel(3)->hours();
+
+    $this->artisan('qresto:expire-abandoned-checkouts')->assertSuccessful();
+
+    expect(Order::query()->withoutGlobalScopes()->where('idempotency_key', 'cash-later')->exists())->toBeTrue();
 });

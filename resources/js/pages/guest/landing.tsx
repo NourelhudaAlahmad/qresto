@@ -328,7 +328,7 @@ export default function Landing({
                             type="button"
                             onClick={() => setScannerOpen(false)}
                             aria-label={scannerCopy.close}
-                            className="hover:bg-action-ghost-hover focus-visible:ring-border-focus-color/30 absolute end-3 top-3 z-10 flex size-11 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2"
+                            className="hover:bg-action-ghost-hover focus-visible:ring-ring/30 absolute end-3 top-3 z-10 flex size-11 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2"
                         >
                             <X aria-hidden="true" className="size-5" />
                         </button>
@@ -377,7 +377,7 @@ export default function Landing({
                             type="button"
                             onClick={() => setBookingOpen(false)}
                             aria-label={bookingCopy.close}
-                            className="hover:bg-action-ghost-hover focus-visible:ring-border-focus-color/30 absolute end-3 top-3 flex size-11 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2"
+                            className="hover:bg-action-ghost-hover focus-visible:ring-ring/30 absolute end-3 top-3 flex size-11 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2"
                         >
                             <X aria-hidden="true" className="size-5" />
                         </button>
@@ -400,7 +400,7 @@ export default function Landing({
                                 <>
                                     <div
                                         dir="ltr"
-                                        className="bg-surface-muted mb-4 rounded-[var(--radius-md)] px-4 py-3 text-center font-mono text-base font-semibold"
+                                        className="bg-surface-sunken mb-4 rounded-[var(--radius-md)] px-4 py-3 text-center font-mono text-base font-semibold"
                                     >
                                         {restaurant.phone}
                                     </div>

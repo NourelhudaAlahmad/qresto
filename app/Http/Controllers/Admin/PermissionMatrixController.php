@@ -26,17 +26,15 @@ class PermissionMatrixController extends Controller
         UpdatePermissionRequest $request,
         PermissionMatrix $matrix,
     ): RedirectResponse {
-        $changed = $matrix->set(
+        // The grid shows its own toast; nothing to flash here.
+        $matrix->set(
             $this->actor($request),
             $request->role(),
             $request->capability(),
             $request->granted(),
         );
 
-        return back()->with(
-            'success',
-            $changed ? 'Permission updated.' : 'Nothing to change.',
-        );
+        return back();
     }
 
     public function audits(Request $request, PermissionMatrix $matrix): JsonResponse

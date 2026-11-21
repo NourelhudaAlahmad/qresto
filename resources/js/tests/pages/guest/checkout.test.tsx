@@ -467,6 +467,20 @@ describe('Guest checkout page', () => {
             expect.any(Object),
         );
     });
+    it('shows a refusal that has no field of its own on the page', () => {
+        currentSharedProps = {
+            errors: {
+                tip_pct: 'The selected tip pct is invalid.',
+            },
+        };
+
+        renderCheckout();
+
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            'The selected tip pct is invalid.',
+        );
+    });
+
     it('retries a refused checkout with a new idempotency key', () => {
         renderCheckout();
 

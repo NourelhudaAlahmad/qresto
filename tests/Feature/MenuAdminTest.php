@@ -74,7 +74,7 @@ it('toggles availability with no form submit, and the guest menu shows it at onc
     $this->actingAs($this->yusuf)
         ->patch("/app/menu/items/{$this->bass->id}/availability", ['available' => false])
         ->assertRedirect()
-        ->assertSessionHas('success');
+        ->assertSessionHasNoErrors();
 
     expect($this->bass->fresh()->is_available)->toBeFalse()
         ->and($this->bass->fresh()->updated_by)->toBe($this->yusuf->id);

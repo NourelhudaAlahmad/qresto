@@ -90,6 +90,17 @@ function moneyMinor(money: Money): number {
     return Number(money.amount);
 }
 
+/** Errors this page shows beside their own field or section. */
+const FIELD_ERROR_KEYS = [
+    'payment',
+    'cart',
+    'method',
+    'promo_code',
+    'card_number',
+    'card_expiry',
+    'card_cvc',
+];
+
 function generateIdempotencyKey(): string {
     if (
         typeof crypto !== 'undefined' &&
@@ -318,6 +329,12 @@ export default function CheckoutPage({
     // Stripe reports card problems in the browser, before any request.
     const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
     const errors: Record<string, string> = { ...serverErrors, ...cardErrors };
+    // Anything the server refused that has no field of its own on this page
+    // (tip, split, payment method id…): shown once, so a refused checkout
+    // never just re-enables the button with no word.
+    const otherError = Object.entries(errors).find(
+        ([key]) => !FIELD_ERROR_KEYS.includes(key),
+    )?.[1];
 
     const stripeOn =
         gateway.driver === 'stripe' && Boolean(gateway.publishable_key);
@@ -587,6 +604,10 @@ export default function CheckoutPage({
                         setIdempotencyKey(generateIdempotencyKey());
                         walletEvent.complete('fail');
                     },
+                    // The wallet sheet waits for an answer: without one it
+                    // spins until the device gives up.
+                    onHttpException: () => walletEvent.complete('fail'),
+                    onNetworkError: () => walletEvent.complete('fail'),
                 },
             );
         },
@@ -686,7 +707,7 @@ export default function CheckoutPage({
                                     {errors.payment || authError ? (
                                         <p
                                             role="alert"
-                                            className="text-caption text-danger"
+                                            className="text-caption text-danger-fg"
                                         >
                                             {authError ?? errors.payment}
                                         </p>
@@ -840,7 +861,7 @@ export default function CheckoutPage({
 
                                                 {method === 'card' &&
                                                 availableMethods.has('card') ? (
-                                                    <div className="border-border-subtle bg-surface-subtle -mt-1 rounded-md border p-4">
+                                                    <div className="border-border-subtle bg-surface-sunken -mt-1 rounded-md border p-4">
                                                         {stripeOn ? (
                                                             <StripeCardFields
                                                                 ref={stripeCard}
@@ -896,7 +917,7 @@ export default function CheckoutPage({
                                                                     {errors.card_number ? (
                                                                         <span
                                                                             role="alert"
-                                                                            className="text-caption text-danger"
+                                                                            className="text-caption text-danger-fg"
                                                                         >
                                                                             {
                                                                                 errors.card_number
@@ -942,7 +963,7 @@ export default function CheckoutPage({
                                                                         {errors.card_expiry ? (
                                                                             <span
                                                                                 role="alert"
-                                                                                className="text-caption text-danger"
+                                                                                className="text-caption text-danger-fg"
                                                                             >
                                                                                 {
                                                                                     errors.card_expiry
@@ -994,7 +1015,7 @@ export default function CheckoutPage({
                                                                         {errors.card_cvc ? (
                                                                             <span
                                                                                 role="alert"
-                                                                                className="text-caption text-danger"
+                                                                                className="text-caption text-danger-fg"
                                                                             >
                                                                                 {
                                                                                     errors.card_cvc
@@ -1216,7 +1237,7 @@ export default function CheckoutPage({
                                                 {errors.promo_code ? (
                                                     <p
                                                         role="alert"
-                                                        className="text-caption text-danger"
+                                                        className="text-caption text-danger-fg"
                                                     >
                                                         {errors.promo_code}
                                                     </p>
@@ -1310,7 +1331,7 @@ export default function CheckoutPage({
                                         {errors.cart ? (
                                             <p
                                                 role="alert"
-                                                className="text-caption text-danger"
+                                                className="text-caption text-danger-fg"
                                             >
                                                 {errors.cart}
                                             </p>
@@ -1319,9 +1340,18 @@ export default function CheckoutPage({
                                         {errors.method ? (
                                             <p
                                                 role="alert"
-                                                className="text-caption text-danger"
+                                                className="text-caption text-danger-fg"
                                             >
                                                 {errors.method}
+                                            </p>
+                                        ) : null}
+
+                                        {otherError ? (
+                                            <p
+                                                role="alert"
+                                                className="text-caption text-danger-fg"
+                                            >
+                                                {otherError}
                                             </p>
                                         ) : null}
                                     </div>

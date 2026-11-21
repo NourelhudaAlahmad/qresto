@@ -71,20 +71,28 @@ final class ResolveAbandonedCheckout
     }
 
     /**
-     * Cancel one order's 3-D Secure payment at the gateway, then finish the
-     * order if it turned out paid, or discard it if it was cancelled.
+     * Cancel one order's unfinished card payment at the gateway, then finish
+     * the order if it turned out paid, or discard it if it was cancelled.
+     * A payment the gateway never answered (no intent) moved no money and
+     * is simply discarded.
      *
      * @return self::PAID|self::DISCARDED|self::UNDECIDED
      */
     public function resolve(Order $order): string
     {
-        $payment = $order->payments()
-            ->where('status', PaymentStatus::REQUIRES_ACTION->value)
+        $payment = Order::unfinishedOnlinePayment($order->payments()->getQuery())
             ->latest('id')
             ->first();
 
         if (! $payment instanceof Payment) {
             return self::UNDECIDED;
+        }
+
+        if ($payment->gateway_intent_id === null) {
+            $this->promotions->release($order->restaurant_id, $order->promo_code);
+            $this->discard($order);
+
+            return self::DISCARDED;
         }
 
         $result = $this->payments

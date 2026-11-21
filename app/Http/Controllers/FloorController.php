@@ -202,10 +202,7 @@ final class FloorController extends Controller
             $lockedTable->occupy($partySize);
         });
 
-        return back()->with(
-            'success',
-            'Guests seated successfully.',
-        );
+        return back();
     }
 
     public function free(
@@ -246,10 +243,7 @@ final class FloorController extends Controller
             $lockedTable->free();
         });
 
-        return back()->with(
-            'success',
-            'Table freed successfully.',
-        );
+        return back();
     }
 
     public function payment(
@@ -414,10 +408,7 @@ final class FloorController extends Controller
             // once the entire bill is paid.
         });
 
-        return back()->with(
-            'success',
-            'Payment received successfully.',
-        );
+        return back();
     }
 
     /**

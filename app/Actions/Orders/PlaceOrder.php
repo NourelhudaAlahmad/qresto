@@ -22,6 +22,8 @@ use App\Support\OrderTotals;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use LogicException;
+use Throwable;
 
 final class PlaceOrder
 {
@@ -50,15 +52,27 @@ final class PlaceOrder
         int $splitWays = 1,
         ?string $idempotencyKey = null,
     ): array {
-        return DB::transaction(function () use (
+        $order = null;
+        $payment = null;
+
+        /*
+         * The order is written and committed first, with its payment
+         * pending and no intent yet; the gateway is called only after.
+         * Calling Stripe inside the transaction held row locks for the
+         * length of a network call, rolled the order away if anything
+         * failed after a card was charged, and hid the payment from a
+         * webhook that arrived before the commit.
+         */
+        $result = DB::transaction(function () use (
             $cart,
             $method,
             $tipAmount,
             $promoCode,
-            $paymentPayload,
             $splitWays,
             $idempotencyKey,
-        ): array {
+            &$order,
+            &$payment,
+        ): ?array {
             $cart->load([
                 'restaurant',
                 'tableSession.table',
@@ -278,14 +292,56 @@ final class PlaceOrder
                 ];
             }
 
-            $gateway = $this->payments->driver();
+            // A card or wallet: charged below, once this is committed.
+            return null;
+        });
 
-            $intent = $gateway->createIntent(
+        if ($result !== null) {
+            return $result;
+        }
+
+        if (! $order instanceof Order || ! $payment instanceof Payment) {
+            throw new LogicException('An online order must be placed before it is charged.');
+        }
+
+        return $this->charge($order, $payment, $paymentPayload, $promoCode);
+    }
+
+    /**
+     * Ask the gateway for the money, outside any transaction, then record
+     * what it answered.
+     *
+     * @param  array<string, mixed>  $paymentPayload
+     * @return array{
+     *     order: Order,
+     *     payment: Payment,
+     *     failure: Failure|null,
+     *     requires_action: bool,
+     *     client_secret: string|null
+     * }
+     */
+    private function charge(
+        Order $order,
+        Payment $payment,
+        array $paymentPayload,
+        ?string $promoCode,
+    ): array {
+        try {
+            $intent = $this->payments->driver()->createIntent(
                 order: $order,
-                amount: $totals->total,
+                amount: $payment->amount,
                 meta: $paymentPayload,
             );
+        } catch (Throwable $exception) {
+            // The gateway answered nothing usable: no money moved, so the
+            // order is taken back, as the old single transaction did.
+            $this->promotions->release($order->restaurant_id, $promoCode);
+            app(ResolveAbandonedCheckout::class)->discard($order);
 
+            throw $exception;
+        }
+
+        return DB::transaction(function () use ($order, $payment, $intent, $promoCode): array {
             $payment->update([
                 'gateway' => (string) config(
                     'qresto.payments.driver',
@@ -312,7 +368,7 @@ final class PlaceOrder
                 $order->events()->delete();
 
                 $this->promotions->release(
-                    restaurantId: $cart->restaurant_id,
+                    restaurantId: $order->restaurant_id,
                     code: $promoCode,
                 );
 
