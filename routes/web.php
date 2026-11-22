@@ -10,7 +10,9 @@ use App\Http\Controllers\Auth\ShiftQrAuthController;
 use App\Http\Controllers\Auth\StaffInvitationController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CartLineController;
+use App\Http\Controllers\CheckoutConfirmationController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\CheckoutPromoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailReceiptController;
 use App\Http\Controllers\FloorController;
@@ -21,12 +23,14 @@ use App\Http\Controllers\ManagerDashboardController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MenuItemController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OrderAssignmentController;
 use App\Http\Controllers\OrderStatusController;
 use App\Http\Controllers\QrController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\TablePaymentController;
 use App\Http\Controllers\WaiterOrderController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -180,7 +184,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post(
         '/app/tables/{table}/payments',
-        [FloorController::class, 'payment'],
+        [TablePaymentController::class, 'store'],
     )
         ->middleware('can:take_payment')
         ->name('app.tables.payments');
@@ -253,7 +257,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::patch(
         '/app/orders/{order}/assign',
-        [ManagerDashboardController::class, 'assign'],
+        [OrderAssignmentController::class, 'update'],
     )
         ->middleware('can:manage_waiter_accounts')
         ->name('app.orders.assign');
@@ -410,20 +414,20 @@ Route::middleware('table.session')->group(function () {
         ->middleware('throttle:guest-checkout')
         ->name('checkout.store');
 
-    Route::post('/checkout/confirm', [CheckoutController::class, 'confirm'])
+    Route::post('/checkout/confirm', [CheckoutConfirmationController::class, 'store'])
         ->middleware('throttle:guest-checkout')
         ->name('checkout.confirm');
 
     Route::post(
         '/checkout/promo',
-        [CheckoutController::class, 'applyPromo'],
+        [CheckoutPromoController::class, 'store'],
     )
         ->middleware('throttle:guest-promo')
         ->name('checkout.promo.store');
 
     Route::delete(
         '/checkout/promo',
-        [CheckoutController::class, 'removePromo'],
+        [CheckoutPromoController::class, 'destroy'],
     )->name('checkout.promo.destroy');
 
     Route::post(

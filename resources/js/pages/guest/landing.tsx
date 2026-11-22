@@ -9,6 +9,8 @@ import { Button } from '@/components/qresto/button';
 import { PhoneIcon } from '@/components/qresto/phone-icon';
 import LandingLayout from '@/layouts/landing-layout';
 import { useI18n } from '@/lib/i18n';
+import { update as updateLocale } from '@/routes/locale';
+import { show as showTable } from '@/routes/table';
 import type {
     LandingPageProps,
     LandingSharedProps,
@@ -243,7 +245,9 @@ export default function Landing({
                         scannerInstanceRef.current = null;
 
                         void stopScanner(scanner).finally(() => {
-                            router.visit(`/t/${encodeURIComponent(qrToken)}`);
+                            router.visit(
+                                showTable.url(encodeURIComponent(qrToken)),
+                            );
                         });
                     },
                     () => undefined,
@@ -281,7 +285,7 @@ export default function Landing({
 
     const switchLocale = () => {
         router.post(
-            '/locale',
+            updateLocale.url(),
             {
                 locale: nextLocale,
             },

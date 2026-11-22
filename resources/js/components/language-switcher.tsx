@@ -1,5 +1,7 @@
 import { router, usePage } from '@inertiajs/react';
 
+import { update as updateLocale } from '@/routes/locale';
+
 type PageProps = {
     locale: 'en' | 'ar';
     available_locales: string[];
@@ -19,7 +21,7 @@ export function LanguageSwitcher({ label = 'Language' }: { label?: string }) {
         }
 
         router.post(
-            '/locale',
+            updateLocale.url(),
             {
                 locale: nextLocale,
             },

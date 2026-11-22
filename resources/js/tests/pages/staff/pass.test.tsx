@@ -17,6 +17,12 @@ import { expectNoCriticalA11y } from '@/tests/a11y';
 
 const post = vi.fn();
 const get = vi.fn();
+const requestJson = vi.hoisted(() => vi.fn());
+
+vi.mock('@/lib/http', async (importOriginal) => ({
+    ...(await importOriginal<Record<string, unknown>>()),
+    requestJson,
+}));
 
 vi.mock('@inertiajs/react', () => ({
     Head: () => null,
@@ -76,7 +82,8 @@ const props = {
 beforeEach(() => {
     post.mockReset();
     get.mockReset();
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
+    requestJson.mockReset();
+    requestJson.mockResolvedValue(null);
 });
 afterEach(() => {
     cleanup();
@@ -280,10 +287,7 @@ describe('Kitchen pass (#33)', () => {
     it('reports itself to system health', () => {
         render(<Pass {...props} />);
 
-        expect(fetch).toHaveBeenCalledWith(
-            '/app/kds/heartbeat',
-            expect.objectContaining({ method: 'POST' }),
-        );
+        expect(requestJson).toHaveBeenCalledWith('post', '/app/kds/heartbeat');
     });
 });
 

@@ -23,7 +23,21 @@ import { activeLocale, formatMinor } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 import type { SharedTranslations } from '@/lib/i18n';
 import { failInPlace } from '@/lib/visit-failure';
+import { assign as assignRoute } from '@/routes/app/orders';
+import {
+    deactivate as deactivateStaff,
+    invite as inviteStaff,
+    reactivate as reactivateStaff,
+    store as storeStaff,
+    update as updateStaff,
+} from '@/routes/app/staff';
 import type { OrderStatus } from '@/types';
+
+const staffActions = {
+    deactivate: deactivateStaff,
+    reactivate: reactivateStaff,
+    invite: inviteStaff,
+};
 
 type Stats = {
     covers: number;
@@ -547,7 +561,7 @@ export default function ManagerOverview({
         }
 
         router.patch(
-            `/app/orders/${order.id}/assign`,
+            assignRoute.url(order.id),
             { assigned_user_id: Number(waiterId) },
             {
                 preserveScroll: true,
@@ -636,10 +650,10 @@ export default function ManagerOverview({
         };
 
         if (editing) {
-            router.patch(`/app/staff/${editing.id}`, payload, options);
+            router.patch(updateStaff.url(editing.id), payload, options);
         } else {
             router.post(
-                '/app/staff',
+                storeStaff.url(),
                 {
                     ...payload,
                     email: form.email,
@@ -661,7 +675,7 @@ export default function ManagerOverview({
         }
 
         router.post(
-            `/app/staff/${member.id}/${action}`,
+            staffActions[action].url(member.id),
             {},
             {
                 ...staffVisit,

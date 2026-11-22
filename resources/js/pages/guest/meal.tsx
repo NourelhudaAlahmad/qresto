@@ -10,6 +10,8 @@ import { Tag } from '@/components/qresto/tag';
 import { Textarea } from '@/components/qresto/textarea';
 import GuestLayout from '@/layouts/guest-layout';
 import { formatMoney } from '@/lib/formatMoney';
+import { menu } from '@/routes';
+import { store as storeLine } from '@/routes/cart/lines';
 import type { Money } from '@/types';
 
 type Restaurant = {
@@ -180,7 +182,7 @@ export default function MealPage({ restaurant, item, translations }: Props) {
             return;
         }
 
-        post('/cart/lines', {
+        post(storeLine.url(), {
             preserveScroll: true,
         });
     };
@@ -213,7 +215,7 @@ export default function MealPage({ restaurant, item, translations }: Props) {
                             type="button"
                             variant="ghost"
                             aria-label={translations.back_to_menu}
-                            onClick={() => router.visit('/menu')}
+                            onClick={() => router.visit(menu.url())}
                             className="absolute start-3 top-3 h-10 w-10 rounded-full bg-white/95 p-0 text-stone-900 shadow-sm hover:bg-white"
                         >
                             <CloseIcon />

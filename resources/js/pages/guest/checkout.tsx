@@ -19,6 +19,15 @@ import {
 import type { StripeCardFieldsHandle } from '@/components/qresto/stripe-payment';
 import GuestLayout from '@/layouts/guest-layout';
 import { formatMoney, formatPercent } from '@/lib/formatMoney';
+import { cart as cartRoute } from '@/routes';
+import {
+    confirm as confirmCheckout,
+    store as storeCheckout,
+} from '@/routes/checkout';
+import {
+    destroy as destroyPromo,
+    store as storePromo,
+} from '@/routes/checkout/promo';
 import { fill } from '@/types/checkout';
 import type { CheckoutTranslations } from '@/types/checkout';
 import type { Money } from '@/types/order';
@@ -446,7 +455,7 @@ export default function CheckoutPage({
         }
 
         router.post(
-            '/checkout',
+            storeCheckout.url(),
             {
                 method,
                 tip_pct: tipPct,
@@ -484,7 +493,7 @@ export default function CheckoutPage({
         setPromoBusy(true);
 
         router.post(
-            '/checkout/promo',
+            storePromo.url(),
             {
                 promo_code: code,
             },
@@ -505,7 +514,7 @@ export default function CheckoutPage({
 
         setPromoBusy(true);
 
-        router.delete('/checkout/promo', {
+        router.delete(destroyPromo.url(), {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
@@ -525,7 +534,7 @@ export default function CheckoutPage({
         setConfirming3ds(true);
 
         router.post(
-            '/checkout/confirm',
+            confirmCheckout.url(),
             {
                 order_id: gateway.order_id,
                 confirmed: true,
@@ -588,7 +597,7 @@ export default function CheckoutPage({
         amountMinor: shareMinor,
         onPaymentMethod: (walletEvent) => {
             router.post(
-                '/checkout',
+                storeCheckout.url(),
                 {
                     method: 'wallet',
                     tip_pct: tipPct,
@@ -648,7 +657,9 @@ export default function CheckoutPage({
                                 <button
                                     type="button"
                                     aria-label={t.back}
-                                    onClick={() => router.visit('/cart')}
+                                    onClick={() =>
+                                        router.visit(cartRoute.url())
+                                    }
                                     className="text-text-primary hover:bg-action-ghost-hover -ms-2 flex size-11 shrink-0 items-center justify-center rounded-full transition-colors"
                                 >
                                     <BackIcon />

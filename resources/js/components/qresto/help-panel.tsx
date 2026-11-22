@@ -5,6 +5,7 @@ import { Button } from '@/components/qresto/button';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { showToast } from '@/components/qresto/toast';
 import { useI18n } from '@/lib/i18n';
+import { update as updateLocale } from '@/routes/locale';
 
 type Props = {
     open: boolean;
@@ -30,7 +31,7 @@ export function HelpPanel({
         setChangingLanguage(true);
 
         router.post(
-            '/locale',
+            updateLocale.url(),
             { locale },
             {
                 preserveScroll: true,

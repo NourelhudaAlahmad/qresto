@@ -185,6 +185,21 @@ class Order extends Model
     }
 
     /**
+     * What has been paid on this order so far, in minor units. Uses the
+     * loaded payments when there are some, so a list does not query per row.
+     */
+    public function paidMinor(): int
+    {
+        $payments = $this->relationLoaded('payments')
+            ? $this->payments
+            : $this->payments()->get();
+
+        return (int) $payments
+            ->filter(fn (Payment $payment): bool => $payment->status === PaymentStatus::PAID->value)
+            ->sum(fn (Payment $payment): int => $payment->amount->amount());
+    }
+
+    /**
      * A card or wallet payment the guest has not finished: waiting on 3-D
      * Secure, or created and not yet answered by the gateway (no intent).
      *

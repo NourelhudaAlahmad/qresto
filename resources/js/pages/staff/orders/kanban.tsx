@@ -19,6 +19,10 @@ import { formatMinutes } from '@/lib/elapsed';
 import { formatMinor } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 import { failInPlace } from '@/lib/visit-failure';
+import {
+    advance as advanceOrder,
+    voidMethod as voidRoute,
+} from '@/routes/app/orders';
 
 import OrderList, {
     actionLabel,
@@ -389,7 +393,7 @@ export default function Kanban({
         };
 
         router.patch(
-            `/app/orders/${order.id}/advance`,
+            advanceOrder.url(order.id),
             {},
             {
                 preserveScroll: true,
@@ -428,7 +432,7 @@ export default function Kanban({
         );
 
         router.post(
-            `/app/orders/${target.id}/void`,
+            voidRoute.url(target.id),
             { reason },
             {
                 preserveScroll: true,

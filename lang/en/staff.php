@@ -117,8 +117,6 @@ return [
         'restaurant_sub' => 'Details, opening hours, tables and QR codes',
         'system' => 'System',
         'system_sub' => 'Restaurant administration',
-        'kitchen_pass' => 'Kitchen Pass',
-        'kitchen_pass_sub' => 'Live kitchen order feed',
         'shift_qr' => 'Shift QR',
         'shift_qr_sub' => 'Issue staff sign-in codes',
         'settings' => 'Settings',

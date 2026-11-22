@@ -7,11 +7,19 @@ import {
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { HttpStatusError } from '@/lib/http';
+
 import { ago, NotificationBell } from './notification-bell';
 
 const post = vi.fn();
 const visit = vi.fn();
+const requestJson = vi.hoisted(() => vi.fn());
 const page = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));
+
+vi.mock('@/lib/http', async (importOriginal) => ({
+    ...(await importOriginal<Record<string, unknown>>()),
+    requestJson,
+}));
 
 vi.mock('@inertiajs/react', () => ({
     usePage: () => page,
@@ -43,14 +51,13 @@ const notifications = [
 ];
 
 function respond(body: unknown, ok = true) {
-    vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({
-            ok,
-            status: ok ? 200 : 500,
-            json: async () => body,
-        }),
-    );
+    requestJson.mockReset();
+
+    if (ok) {
+        requestJson.mockResolvedValue(body);
+    } else {
+        requestJson.mockRejectedValue(new HttpStatusError(500));
+    }
 }
 
 beforeEach(() => {
@@ -84,10 +91,7 @@ describe('NotificationBell', () => {
         expect(screen.getByText('4 min ago')).toBeInTheDocument();
         expect(screen.getByText('2h 10m ago')).toBeInTheDocument();
         expect(document.querySelectorAll('[data-unread]')).toHaveLength(1);
-        expect(fetch).toHaveBeenCalledWith(
-            '/app/notifications',
-            expect.objectContaining({ credentials: 'same-origin' }),
-        );
+        expect(requestJson).toHaveBeenCalledWith('get', '/app/notifications');
     });
 
     it('marks an unread one read, then goes where it points', async () => {

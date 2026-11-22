@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 
 import { Button } from '@/components/qresto/button';
 import { useI18n } from '@/lib/i18n';
+import { store as storeShiftQr } from '@/routes/auth/shift-qr';
 
 type ShiftQrPayload = {
     type: 'qresto.shift-sign-in';
@@ -133,7 +134,7 @@ export function ShiftQrScanner({ onClose }: Props) {
                             }
 
                             router.post(
-                                '/auth/shift-qr',
+                                storeShiftQr.url(),
                                 {
                                     token: payload.token,
                                     restaurant_slug: payload.restaurant_slug,

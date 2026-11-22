@@ -25,6 +25,16 @@ import { showToast } from '@/components/qresto/toast';
 import { activeLocale, formatMinor } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 import type { SharedTranslations } from '@/lib/i18n';
+import {
+    reorder as reorderCategories,
+    store as storeCategory,
+} from '@/routes/app/menu/categories';
+import {
+    availability as itemAvailability,
+    destroy as destroyItem,
+    store as storeItem,
+    update as updateItem,
+} from '@/routes/app/menu/items';
 
 type Copy = SharedTranslations['staff']['admin_menu'];
 
@@ -260,7 +270,7 @@ function Categories({
         setOrder(next);
 
         router.put(
-            '/app/menu/categories/order',
+            reorderCategories.url(),
             { ids: next.map((category) => category.id) },
             {
                 preserveScroll: true,
@@ -308,7 +318,7 @@ function Categories({
         }
 
         router.post(
-            '/app/menu/categories',
+            storeCategory.url(),
             { name },
             {
                 preserveScroll: true,
@@ -448,7 +458,7 @@ function DishTable({
         setOptimistic((current) => ({ ...current, [dish.id]: available }));
 
         router.patch(
-            `/app/menu/items/${dish.id}/availability`,
+            itemAvailability.url(dish.id),
             { available },
             {
                 preserveScroll: true,
@@ -1293,11 +1303,11 @@ export default function MenuManagement({
         };
 
         if (selected === 'new') {
-            router.post('/app/menu/items', payload, options);
+            router.post(storeItem.url(), payload, options);
         } else if (dish) {
             // Method spoofing so a photo can travel as multipart.
             router.post(
-                `/app/menu/items/${dish.id}`,
+                updateItem.url(dish.id),
                 { ...payload, _method: 'put' },
                 options,
             );
@@ -1309,7 +1319,7 @@ export default function MenuManagement({
             return;
         }
 
-        router.delete(`/app/menu/items/${dish.id}`, {
+        router.delete(destroyItem.url(dish.id), {
             preserveScroll: true,
             preserveState: true,
             onStart: () => {

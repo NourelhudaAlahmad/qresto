@@ -12,6 +12,8 @@ import { Stat } from '@/components/qresto/stat';
 import { activeLocale, formatMinor } from '@/lib/formatMoney';
 import type { SharedTranslations } from '@/lib/i18n';
 import { fill, useI18n } from '@/lib/i18n';
+import { reports as reportsRoute } from '@/routes/app';
+import { csv, pdf } from '@/routes/app/reports';
 
 type ReportsCopy = SharedTranslations['staff']['reports'];
 
@@ -88,15 +90,10 @@ function shortName(name: string): string {
         : `${parts[0]} ${parts[parts.length - 1].charAt(0)}.`;
 }
 
-function query(range: Props['range']): string {
-    const params = new URLSearchParams({ preset: range.preset });
-
-    if (range.preset === 'custom') {
-        params.set('start', range.start);
-        params.set('end', range.end);
-    }
-
-    return params.toString();
+function exportQuery(range: Props['range']): Record<string, string> {
+    return range.preset === 'custom'
+        ? { preset: range.preset, start: range.start, end: range.end }
+        : { preset: range.preset };
 }
 
 function SalesChart({
@@ -190,7 +187,7 @@ export default function Reports({
     const [error, setError] = useState<string | null>(null);
 
     function load(next: Record<string, string>) {
-        router.get('/app/reports', next, {
+        router.get(reportsRoute.url(), next, {
             preserveScroll: true,
             preserveState: true,
             onError: (errors) => setError(Object.values(errors)[0] ?? null),
@@ -208,7 +205,7 @@ export default function Reports({
         load({ preset: 'custom', start, end });
     }
 
-    const qs = query(range);
+    const exportOptions = { query: exportQuery(range) };
 
     return (
         <>
@@ -278,13 +275,13 @@ export default function Reports({
 
                     <div className="flex gap-2">
                         <Button asChild variant="outline">
-                            <a href={`/app/reports/export.csv?${qs}`}>
+                            <a href={csv.url(exportOptions)}>
                                 <Download className="size-4" aria-hidden />
                                 {t.export_csv}
                             </a>
                         </Button>
                         <Button asChild variant="outline">
-                            <a href={`/app/reports/export.pdf?${qs}`}>
+                            <a href={pdf.url(exportOptions)}>
                                 <FileText className="size-4" aria-hidden />
                                 {t.export_pdf}
                             </a>

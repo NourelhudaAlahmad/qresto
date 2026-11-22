@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { fill, useI18n } from '@/lib/i18n';
+import { logout } from '@/routes';
 
 /**
  * The full-screen shell for the kitchen's wall displays, the pass and the
@@ -102,7 +103,7 @@ export function KitchenSignOut({ signedInAs }: { signedInAs?: string }) {
                     </button>
                     <button
                         type="button"
-                        onClick={() => router.post('/logout')}
+                        onClick={() => router.post(logout.url())}
                         className="text-body min-h-11 min-w-11 rounded-[var(--radius-pill)] bg-[var(--danger-solid)] px-5 font-semibold text-[var(--ink-25)]"
                     >
                         {t.sign_out}

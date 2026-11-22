@@ -13,6 +13,12 @@ import CartPage from '@/pages/guest/cart';
 import { expectNoCriticalA11y } from '@/tests/a11y';
 
 const visit = vi.fn();
+const requestJson = vi.hoisted(() => vi.fn());
+
+vi.mock('@/lib/http', async (importOriginal) => ({
+    ...(await importOriginal<Record<string, unknown>>()),
+    requestJson,
+}));
 
 vi.mock('@inertiajs/react', () => ({
     Head: ({ title }: { title: string }) => <title>{title}</title>,
@@ -270,17 +276,16 @@ describe('Guest cart quantity', () => {
         const bodies: number[] = [];
         let release: () => void = () => undefined;
 
-        vi.stubGlobal(
-            'fetch',
-            vi.fn((_url: string, init: { body: string }) => {
-                bodies.push(JSON.parse(init.body).qty);
+        requestJson.mockImplementation(
+            (method: string, url: string, data: { qty: number }) => {
+                expect([method, url]).toEqual(['patch', '/cart/lines/1']);
+                bodies.push(data.qty);
 
                 // The first request is still on its way when the second tap lands.
                 return new Promise((resolve) => {
-                    release = () =>
-                        resolve({ ok: true, json: async () => ({}) });
+                    release = () => resolve({});
                 });
-            }),
+            },
         );
         vi.mocked(router.reload).mockImplementation((options) => {
             options?.onFinish?.({} as never);

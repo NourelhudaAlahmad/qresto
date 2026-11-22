@@ -5,6 +5,7 @@ import { Button } from '@/components/qresto/button';
 import { ResponsiveOverlay } from '@/components/qresto/responsive-overlay';
 import { showToast } from '@/components/qresto/toast';
 import { useI18n } from '@/lib/i18n';
+import { store as storeServiceRequest } from '@/routes/guest/service-requests';
 
 type RequestKind = 'water' | 'bread' | 'bill' | 'waiter';
 
@@ -37,7 +38,7 @@ export function CallWaiterSheet({
 
         setSubmitting(kind);
         router.post(
-            '/service-requests',
+            storeServiceRequest.url(),
             { kind },
             {
                 preserveScroll: true,

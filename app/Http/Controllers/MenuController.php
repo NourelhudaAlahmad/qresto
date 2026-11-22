@@ -41,34 +41,7 @@ class MenuController extends Controller
                     'name' => $category->translated_name,
                     'sort' => $category->sort_order,
                     'items' => $category->items
-                        ->map(function (MenuItem $item): array {
-                            return [
-                                'id' => $item->id,
-                                'name' => $item->translated_name,
-                                'description' => $item->translated_description,
-                                'price' => $item->price->jsonSerialize(),
-                                'photo' => $item->thumbUrl(),
-                                'tags' => $item->dietary_tags ?? [],
-                                'allergens' => $item->allergens
-                                    ->map(function (Allergen $allergen): array {
-                                        /** @var Pivot $pivot */
-                                        $pivot = $allergen->getRelationValue('pivot');
-
-                                        return [
-                                            'id' => $allergen->id,
-                                            'name' => $allergen->name,
-                                            'may_contain' => (bool) $pivot->getAttribute(
-                                                'may_contain',
-                                            ),
-                                        ];
-                                    })
-                                    ->values()
-                                    ->all(),
-                                'available' => $item->is_available,
-                                'prep_minutes' => $item->prep_minutes,
-                                'flag' => $item->chef_flag,
-                            ];
-                        })
+                        ->map(fn (MenuItem $item): array => $this->dish($item))
                         ->values()
                         ->all(),
                 ];
@@ -147,5 +120,46 @@ class MenuController extends Controller
                 'subtotal' => $cartSubtotal,
             ],
         ]);
+    }
+
+    /**
+     * One dish on the guest menu.
+     *
+     * @return array{id: int, name: string, description: string, price: array<string, int|string>, photo: string|null, tags: array<mixed>, allergens: array<int, array{id: int, name: string, may_contain: bool}>, available: bool, prep_minutes: int|null, flag: bool}
+     */
+    private function dish(MenuItem $item): array
+    {
+        return [
+            'id' => $item->id,
+            'name' => $item->translated_name,
+            'description' => $item->translated_description,
+            'price' => $item->price->jsonSerialize(),
+            'photo' => $item->thumbUrl(),
+            'tags' => $item->dietary_tags ?? [],
+            'allergens' => $item->allergens
+                ->map(fn (Allergen $allergen): array => $this->allergen($allergen))
+                ->values()
+                ->all(),
+            'available' => $item->is_available,
+            'prep_minutes' => $item->prep_minutes,
+            'flag' => $item->chef_flag,
+        ];
+    }
+
+    /**
+     * An allergen on a dish, and whether it only may be present.
+     *
+     * @return array{id: int, name: string, may_contain: bool}
+     */
+    private function allergen(Allergen $allergen): array
+    {
+        /** @var Pivot $pivot */
+        $pivot = $allergen->getRelationValue('pivot');
+
+        return [
+            'id' => $allergen->id,
+            'name' => $allergen->name,
+            'may_contain' => (bool) $pivot->getAttribute('may_contain'),
+        ];
     }
 }

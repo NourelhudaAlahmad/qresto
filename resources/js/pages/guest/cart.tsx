@@ -15,7 +15,15 @@ import { Textarea } from '@/components/qresto/textarea';
 import { showToast } from '@/components/qresto/toast';
 import GuestLayout from '@/layouts/guest-layout';
 import { formatMoney, formatPercent } from '@/lib/formatMoney';
+import { HttpStatusError, requestJson } from '@/lib/http';
 import { fill, useI18n } from '@/lib/i18n';
+import { checkout, menu } from '@/routes';
+import {
+    restore as restoreLineRoute,
+    update as updateLineRoute,
+} from '@/routes/cart/lines';
+import { update as updateNote } from '@/routes/cart/note';
+import { status as orderStatus } from '@/routes/guest/orders';
 import type { Money } from '@/types/order';
 
 type Restaurant = {
@@ -102,72 +110,6 @@ type RemoveResponse = {
     undo_window_seconds: number;
 };
 
-function getCookie(name: string): string | null {
-    const cookie = document.cookie
-        .split('; ')
-        .find((row) => row.startsWith(`${name}=`));
-
-    if (!cookie) {
-        return null;
-    }
-
-    const value = cookie.substring(name.length + 1);
-
-    return decodeURIComponent(value);
-}
-
-async function requestJson<T>(
-    url: string,
-    method: 'PATCH' | 'POST',
-    body: Record<string, unknown>,
-): Promise<T> {
-    const xsrfToken = getCookie('XSRF-TOKEN');
-
-    const headers: Record<string, string> = {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-    };
-
-    if (xsrfToken) {
-        headers['X-XSRF-TOKEN'] = xsrfToken;
-    }
-
-    const response = await fetch(url, {
-        method,
-        credentials: 'same-origin',
-        headers,
-        body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-        const error = new Error(
-            `Request failed with status ${response.status}`,
-        );
-
-        Object.assign(error, {
-            status: response.status,
-        });
-
-        throw error;
-    }
-
-    return (await response.json()) as T;
-}
-
-function errorStatus(error: unknown): number | null {
-    if (
-        typeof error === 'object' &&
-        error !== null &&
-        'status' in error &&
-        typeof error.status === 'number'
-    ) {
-        return error.status;
-    }
-
-    return null;
-}
-
 export default function CartPage({
     restaurant,
     table,
@@ -215,7 +157,7 @@ export default function CartPage({
         try {
             setBusyLineId(lineId);
 
-            await requestJson(`/cart/lines/${lineId}/restore`, 'POST', {
+            await requestJson('post', restoreLineRoute.url(lineId), {
                 undo_token: undoToken,
             });
 
@@ -226,7 +168,7 @@ export default function CartPage({
                 title: g.cart.restored,
             });
         } catch (error: unknown) {
-            if (errorStatus(error) === 410) {
+            if (error instanceof HttpStatusError && error.status === 410) {
                 showToast({
                     type: 'error',
                     title: g.cart.undo_expired,
@@ -255,8 +197,8 @@ export default function CartPage({
             setBusyLineId(line.id);
 
             const response = await requestJson<RemoveResponse>(
-                `/cart/lines/${line.id}`,
-                'PATCH',
+                'patch',
+                updateLineRoute.url(line.id),
                 {
                     qty: 0,
                 },
@@ -316,7 +258,7 @@ export default function CartPage({
             while (targets.current.get(lineId) !== sent) {
                 sent = targets.current.get(lineId) as number;
 
-                await requestJson(`/cart/lines/${lineId}`, 'PATCH', {
+                await requestJson('patch', updateLineRoute.url(lineId), {
                     qty: sent,
                 });
 
@@ -374,7 +316,7 @@ export default function CartPage({
         setSavingNote(true);
 
         router.patch(
-            '/cart/note',
+            updateNote.url(),
             {
                 note: nextNote === '' ? null : nextNote,
             },
@@ -406,12 +348,12 @@ export default function CartPage({
 
     const goToPayment = () => {
         saveLastTab('order');
-        router.visit('/checkout');
+        router.visit(checkout.url());
     };
 
     const goToMenu = () => {
         saveLastTab('menu');
-        router.visit('/menu');
+        router.visit(menu.url());
     };
 
     const goToStatus = () => {
@@ -421,7 +363,7 @@ export default function CartPage({
 
         saveLastTab('status');
 
-        router.visit(`/orders/${latest_order_id}/status`);
+        router.visit(orderStatus.url(latest_order_id));
     };
 
     return (
@@ -431,7 +373,7 @@ export default function CartPage({
             <div className="flex min-h-dvh flex-col bg-[var(--surface-page)]">
                 <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-[var(--border-subtle)] bg-[var(--alpha-paper-88)] px-[var(--gutter-mobile)] backdrop-blur-xl lg:px-[var(--gutter-desktop)]">
                     <Link
-                        href="/menu"
+                        href={menu.url()}
                         aria-label={g.cart.back}
                         className="touch-target -ms-2 grid size-9 shrink-0 place-items-center rounded-full text-[var(--text-primary)] transition-colors hover:bg-[var(--action-ghost-hover)]"
                     >
@@ -477,7 +419,7 @@ export default function CartPage({
                         />
 
                         <Button asChild size="lg" fullWidth>
-                            <Link href="/menu">
+                            <Link href={menu.url()}>
                                 {translations.back_to_menu}
                             </Link>
                         </Button>
@@ -622,7 +564,7 @@ export default function CartPage({
                                 })}
 
                                 <Link
-                                    href="/menu"
+                                    href={menu.url()}
                                     className="flex h-11 items-center justify-center rounded-[var(--radius-pill)] border border-dashed border-[var(--border-strong)] bg-transparent px-4 text-[length:var(--text-body)] font-[var(--weight-medium)] text-[var(--text-secondary)] transition-colors hover:border-[var(--clay-400)] hover:text-[var(--clay-600)]"
                                 >
                                     {g.cart.add_more}

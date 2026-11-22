@@ -6,15 +6,13 @@ use App\Actions\Orders\FinishPlacedOrder;
 use App\Actions\Orders\PlaceOrder;
 use App\Actions\Orders\ResolveAbandonedCheckout;
 use App\Actions\Payments\PromotionValidator;
-use App\Actions\Payments\SettlePayment;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
-use App\Models\Cart;
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\TableSession;
 use App\Payments\PaymentManager;
+use App\Support\GuestCheckout;
 use App\Support\Money;
 use App\Support\OrderTotals;
 use Illuminate\Http\RedirectResponse;
@@ -24,15 +22,23 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * The checkout screen and placing the order. Confirming 3-D Secure and the
+ * promo code have their own controllers; GuestCheckout holds what they share.
+ */
 class CheckoutController extends Controller
 {
+    public function __construct(
+        private readonly GuestCheckout $checkout,
+    ) {}
+
     public function show(
         Request $request,
         PromotionValidator $promotions,
     ): Response|RedirectResponse {
-        $session = $this->tableSession($request);
+        $session = $this->checkout->tableSession($request);
         $restaurant = $session->restaurant;
-        $cart = $this->cartForSession($session);
+        $cart = $this->checkout->cartFor($session);
 
         if ($cart === null) {
             return redirect()->route('cart');
@@ -50,7 +56,7 @@ class CheckoutController extends Controller
         }
 
         $currency = $restaurant->currency;
-        $subtotal = $this->subtotal($cart, $currency);
+        $subtotal = $this->checkout->subtotal($cart, $currency);
 
         $promoCode = $request->session()->get('checkout.promo_code');
 
@@ -93,9 +99,9 @@ class CheckoutController extends Controller
             discountAmount: $discountAmount,
         );
 
-        $enabledMethods = $this->enabledPaymentMethods();
+        $enabledMethods = $this->checkout->enabledPaymentMethods();
 
-        $tipPresets = $this->tipPresets();
+        $tipPresets = $this->checkout->tipPresets();
 
         return Inertia::render('guest/checkout', [
             'restaurant' => [
@@ -137,8 +143,8 @@ class CheckoutController extends Controller
                 ...$this->pendingAuthentication($request),
                 // #35: which driver the page talks to, and Stripe's public
                 // key when it is Stripe. Secret keys never leave the server.
-                'driver' => $this->driver(),
-                'publishable_key' => $this->driver() === 'stripe'
+                'driver' => $this->checkout->driver(),
+                'publishable_key' => $this->checkout->driver() === 'stripe'
                     ? config('qresto.payments.stripe.key')
                     : null,
                 'country' => (string) config('qresto.payments.stripe.country', 'US'),
@@ -160,7 +166,7 @@ class CheckoutController extends Controller
         PlaceOrder $placeOrder,
         ResolveAbandonedCheckout $abandoned,
     ): RedirectResponse {
-        $session = $this->tableSession($request);
+        $session = $this->checkout->tableSession($request);
 
         // A repeat of a checkout that already went through (a double tap,
         // a retried request) lands on that order. The cart is empty by
@@ -174,7 +180,7 @@ class CheckoutController extends Controller
                 ->first();
 
             if ($existing !== null) {
-                return $this->statusRedirect($existing);
+                return $this->checkout->statusRedirect($existing);
             }
         }
 
@@ -185,10 +191,10 @@ class CheckoutController extends Controller
         if ($alreadyPaid !== null) {
             $request->session()->forget('checkout.pending_order_id');
 
-            return $this->statusRedirect($alreadyPaid);
+            return $this->checkout->statusRedirect($alreadyPaid);
         }
 
-        $cart = $this->cartForSession($session);
+        $cart = $this->checkout->cartFor($session);
 
         if ($cart === null) {
             throw ValidationException::withMessages([
@@ -196,8 +202,8 @@ class CheckoutController extends Controller
             ]);
         }
 
-        $enabledMethods = $this->enabledPaymentMethods();
-        $tipPresets = $this->tipPresets();
+        $enabledMethods = $this->checkout->enabledPaymentMethods();
+        $tipPresets = $this->checkout->tipPresets();
 
         $validated = $request->validate([
             'method' => [
@@ -251,7 +257,7 @@ class CheckoutController extends Controller
         // #35: with Stripe, card details are tokenised in the browser and
         // only a PaymentMethod id arrives. Raw card fields are refused, so a
         // card number can never reach this server again.
-        if ($this->driver() === 'stripe' && in_array($method, [PaymentMethod::CARD, PaymentMethod::WALLET], true)) {
+        if ($this->checkout->driver() === 'stripe' && in_array($method, [PaymentMethod::CARD, PaymentMethod::WALLET], true)) {
             $request->validate([
                 'payment_method' => ['required', 'string', 'max:255', 'regex:/^pm_[A-Za-z0-9_]+$/'],
                 'card_number' => ['prohibited'],
@@ -291,7 +297,7 @@ class CheckoutController extends Controller
             ]);
         }
 
-        $subtotal = $this->subtotal(
+        $subtotal = $this->checkout->subtotal(
             $cart,
             $cart->currency,
         );
@@ -311,7 +317,7 @@ class CheckoutController extends Controller
 
         $paymentPayload = [];
 
-        if ($this->driver() === 'stripe' && in_array($method, [PaymentMethod::CARD, PaymentMethod::WALLET], true)) {
+        if ($this->checkout->driver() === 'stripe' && in_array($method, [PaymentMethod::CARD, PaymentMethod::WALLET], true)) {
             $paymentPayload = [
                 'payment_method' => (string) $request->input('payment_method'),
                 'idempotency_key' => (string) $validated['idempotency_key'],
@@ -376,281 +382,9 @@ class CheckoutController extends Controller
 
         $this->afterOrderPlaced($result['order']);
 
-        return $this->statusRedirect(
+        return $this->checkout->statusRedirect(
             $result['order'],
         );
-    }
-
-    public function confirm(
-        Request $request,
-        SettlePayment $settlePayment,
-    ): RedirectResponse {
-        $session = $this->tableSession($request);
-
-        $validated = $request->validate([
-            'order_id' => [
-                'required',
-                'integer',
-            ],
-
-            'confirmed' => [
-                'required',
-                'boolean',
-            ],
-        ]);
-
-        $pendingOrderId = $request->session()->get(
-            'checkout.pending_order_id',
-        );
-
-        if (
-            ! is_numeric($pendingOrderId)
-            || (int) $pendingOrderId !== (int) $validated['order_id']
-        ) {
-            throw ValidationException::withMessages([
-                'payment' => __('messages.checkout.challenge_invalid'),
-            ]);
-        }
-
-        $order = Order::query()
-            ->whereKey(
-                (int) $validated['order_id'],
-            )
-            ->where(
-                'restaurant_id',
-                $session->restaurant_id,
-            )
-            ->where(
-                'table_session_id',
-                $session->id,
-            )
-            ->firstOrFail();
-
-        $payment = $order->payments()
-            ->latest('id')
-            ->firstOrFail();
-
-        if (! $validated['confirmed']) {
-            throw ValidationException::withMessages([
-                'payment' => __('messages.checkout.auth_not_completed'),
-            ]);
-        }
-
-        $result = $settlePayment->handle(
-            payment: $payment,
-            payload: [
-                'three_ds_complete' => true,
-            ],
-        );
-
-        if ($result['failure'] !== null) {
-            throw ValidationException::withMessages([
-                'payment' => $result['failure']->message,
-            ]);
-        }
-
-        if ($result['requires_action']) {
-            throw ValidationException::withMessages([
-                'payment' => __('messages.checkout.auth_required'),
-            ]);
-        }
-
-        $request->session()->forget(
-            'checkout.pending_order_id',
-        );
-
-        $this->afterOrderPlaced($order);
-
-        return $this->statusRedirect(
-            $order->fresh(),
-        );
-    }
-
-    public function applyPromo(
-        Request $request,
-        PromotionValidator $promotions,
-    ): RedirectResponse {
-        $session = $this->tableSession($request);
-        $cart = $this->cartForSession($session);
-
-        if ($cart === null) {
-            throw ValidationException::withMessages([
-                'promo_code' => __('messages.cart.empty'),
-            ]);
-        }
-
-        $validated = $request->validate([
-            'promo_code' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-        ]);
-
-        $cart->load([
-            'lines' => fn ($query) => $query
-                ->whereNull('removed_at')
-                ->with('addons'),
-        ]);
-
-        if ($cart->lines->isEmpty()) {
-            throw ValidationException::withMessages([
-                'promo_code' => __('messages.cart.empty'),
-            ]);
-        }
-
-        $subtotal = $this->subtotal(
-            $cart,
-            $cart->currency,
-        );
-
-        $code = trim(
-            $validated['promo_code'],
-        );
-
-        $promotions->validate(
-            restaurantId: $session->restaurant_id,
-            code: $code,
-            subtotal: $subtotal,
-        );
-
-        $request->session()->put(
-            'checkout.promo_code',
-            $code,
-        );
-
-        return redirect()->route('checkout');
-    }
-
-    public function removePromo(
-        Request $request,
-    ): RedirectResponse {
-        $request->session()->forget(
-            'checkout.promo_code',
-        );
-
-        return redirect()->route('checkout');
-    }
-
-    private function tableSession(
-        Request $request,
-    ): TableSession {
-        /** @var TableSession|null $session */
-        $session = $request->attributes->get(
-            'tableSession',
-        );
-
-        abort_if(
-            $session === null,
-            403,
-        );
-
-        return $session;
-    }
-
-    private function cartForSession(
-        TableSession $session,
-    ): ?Cart {
-        return Cart::query()
-            ->where(
-                'restaurant_id',
-                $session->restaurant_id,
-            )
-            ->where(
-                'table_session_id',
-                $session->id,
-            )
-            ->first();
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function enabledPaymentMethods(): array
-    {
-        $configured = config(
-            'qresto.payments.enabled_methods',
-            ['card', 'wallet', 'cash', 'pos'],
-        );
-
-        if (! is_array($configured)) {
-            $configured = [
-                'card',
-                'wallet',
-                'cash',
-                'pos',
-            ];
-        }
-
-        return array_values(
-            array_filter(
-                $configured,
-                static fn (mixed $method): bool => is_string($method),
-            ),
-        );
-    }
-
-    /**
-     * @return list<float>
-     */
-    private function tipPresets(): array
-    {
-        $configured = config(
-            'qresto.payments.tip_presets',
-            [0, 10, 12.5, 15],
-        );
-
-        if (! is_array($configured)) {
-            $configured = [
-                0,
-                10,
-                12.5,
-                15,
-            ];
-        }
-
-        return array_values(
-            array_map(
-                static fn (mixed $tip): float => (float) $tip,
-                $configured,
-            ),
-        );
-    }
-
-    private function subtotal(
-        Cart $cart,
-        string $currency,
-    ): Money {
-        $subtotal = Money::fromMinor(
-            0,
-            $currency,
-        );
-
-        foreach ($cart->lines as $line) {
-            if ($line->removed_at !== null) {
-                continue;
-            }
-
-            $subtotal = $subtotal->add(
-                $line->line_total,
-            );
-        }
-
-        return $subtotal;
-    }
-
-    private function statusRedirect(
-        Order $order,
-    ): RedirectResponse {
-        return redirect()->route(
-            'guest.orders.status',
-            $order,
-        );
-    }
-
-    private function driver(): string
-    {
-        return (string) config('qresto.payments.driver', 'fake');
     }
 
     /**
@@ -666,7 +400,7 @@ class CheckoutController extends Controller
             return [];
         }
 
-        $session = $this->tableSession($request);
+        $session = $this->checkout->tableSession($request);
 
         $payment = Payment::query()
             ->whereHas('order', fn ($query) => $query

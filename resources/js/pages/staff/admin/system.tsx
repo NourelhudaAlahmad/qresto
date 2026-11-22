@@ -12,6 +12,8 @@ import type { ElapsedCopy } from '@/lib/elapsed';
 import { activeLocale, currencySymbol, formatMinor } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 import type { SharedTranslations } from '@/lib/i18n';
+import { restaurant as restaurantSettings } from '@/routes/app/settings';
+import { update as updatePermissions } from '@/routes/app/system/permissions';
 
 type Copy = SharedTranslations['staff']['admin_system'];
 
@@ -292,7 +294,7 @@ export default function AdminSystem({
         setPending(key);
 
         router.patch(
-            '/app/system/permissions',
+            updatePermissions.url(),
             { role, capability: row.capability, granted },
             {
                 preserveScroll: true,
@@ -587,7 +589,7 @@ export default function AdminSystem({
                             </dl>
 
                             <Link
-                                href="/app/settings/restaurant"
+                                href={restaurantSettings.url()}
                                 className="text-body duration-fast mt-4 flex h-11 w-full items-center justify-center rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--surface-card)] font-semibold transition-colors hover:bg-[var(--ink-50)]"
                             >
                                 {t.edit_details}

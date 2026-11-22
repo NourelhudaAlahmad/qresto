@@ -14,8 +14,11 @@ import { showToast } from '@/components/qresto/toast';
 import { useLiveData } from '@/hooks/useLiveData';
 import { useNewItemAlert } from '@/hooks/useNewItemAlert';
 import { formatMinutes } from '@/lib/elapsed';
+import { requestJson } from '@/lib/http';
 import { fill, useI18n } from '@/lib/i18n';
 import { failInPlace } from '@/lib/visit-failure';
+import { pass as passRoute } from '@/routes/app';
+import { bump as bumpRoute, heartbeat } from '@/routes/app/kds';
 import type { OrderStatus } from '@/types';
 
 type Line = {
@@ -78,14 +81,6 @@ function plural(count: number, one: string, other: string): string {
     return fill(count === 1 ? one : other, { count });
 }
 
-function readCookie(name: string): string {
-    const match = document.cookie
-        .split('; ')
-        .find((row) => row.startsWith(`${name}=`));
-
-    return match ? decodeURIComponent(match.split('=')[1]) : '';
-}
-
 /**
  * The kitchen pass (#33): dark, large type, touch-bumped, viewed from two
  * metres behind a hot line. Nothing is smaller than 15px and nothing needs
@@ -131,15 +126,7 @@ export default function Pass({
     // Tell system health (#30) the pass screen is up while it is open.
     useEffect(() => {
         const beat = () =>
-            void fetch('/app/kds/heartbeat', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-XSRF-TOKEN': readCookie('XSRF-TOKEN'),
-                },
-            }).catch(() => undefined);
+            void requestJson('post', heartbeat.url()).catch(() => undefined);
 
         beat();
         const timer = window.setInterval(beat, heartbeatIntervalMs);
@@ -167,7 +154,7 @@ export default function Pass({
                 });
 
             router.post(
-                `/app/kds/tickets/${ticket.id}/bump`,
+                bumpRoute.url(ticket.id),
                 // The status on screen: a stale tap is refused, not applied.
                 { from: ticket.status },
                 {
@@ -305,7 +292,7 @@ export default function Pass({
                                 aria-pressed={active}
                                 onClick={() =>
                                     router.get(
-                                        '/app/pass',
+                                        passRoute.url(),
                                         value ? { station: value } : {},
                                         {
                                             preserveScroll: true,

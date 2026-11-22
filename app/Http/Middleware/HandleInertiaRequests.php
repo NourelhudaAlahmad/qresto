@@ -172,12 +172,6 @@ class HandleInertiaRequests extends Middleware
                 'staff.pages.system_sub',
             ],
 
-            'app.pass',
-            'kitchen.pass' => [
-                'staff.pages.kitchen_pass',
-                'staff.pages.kitchen_pass_sub',
-            ],
-
             'manager.shift-qr.index' => [
                 'staff.pages.shift_qr',
                 'staff.pages.shift_qr_sub',

@@ -28,8 +28,18 @@ import { Tooltip } from '@/components/qresto/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useLiveData } from '@/hooks/useLiveData';
 import { formatMinor } from '@/lib/formatMoney';
+import { HttpStatusError, requestJson } from '@/lib/http';
 import { fill, useI18n } from '@/lib/i18n';
 import { failInPlace } from '@/lib/visit-failure';
+import {
+    free as freeRoute,
+    payments as paymentsRoute,
+    seat as seatRoute,
+    show as tableShow,
+} from '@/routes/app/tables';
+import { receipt } from '@/routes/app/tables/orders';
+import { email as emailReceipt } from '@/routes/app/tables/orders/receipt';
+import { acknowledge as acknowledgeRoute } from '@/routes/service-requests';
 import type { OrderStatus, TableState } from '@/types';
 
 type PaymentMethod = 'cash' | 'pos';
@@ -216,7 +226,7 @@ function EmailReceiptForm({
         setError(null);
 
         router.post(
-            `/app/tables/${tableId}/orders/${orderId}/receipt/email`,
+            emailReceipt.url({ table: tableId, order: orderId }),
             { email: email.trim() },
             {
                 preserveScroll: true,
@@ -579,7 +589,10 @@ function OrderBill({
 
                     <Button asChild variant="outline">
                         <a
-                            href={`/app/tables/${tableId}/orders/${order.id}/receipt`}
+                            href={receipt.url({
+                                table: tableId,
+                                order: order.id,
+                            })}
                             target="_blank"
                             rel="noopener noreferrer"
                         >
@@ -823,18 +836,10 @@ export function useTableCheckout({
             }
 
             try {
-                const response = await fetch(`/app/tables/${id}`, {
-                    headers: { Accept: 'application/json' },
-                    credentials: 'same-origin',
-                });
-
-                if (!response.ok) {
-                    throw new Error(
-                        fill(t.load_failed, { status: response.status }),
-                    );
-                }
-
-                const data: TableDetail = await response.json();
+                const data = await requestJson<TableDetail>(
+                    'get',
+                    tableShow.url(id),
+                );
 
                 if (
                     selectedIdRef.current === id &&
@@ -848,7 +853,11 @@ export function useTableCheckout({
                         type: 'error',
                         title: t.open_failed,
                         description:
-                            cause instanceof Error ? cause.message : undefined,
+                            cause instanceof HttpStatusError
+                                ? fill(t.load_failed, { status: cause.status })
+                                : cause instanceof Error
+                                  ? cause.message
+                                  : undefined,
                     });
                 }
             } finally {
@@ -951,7 +960,7 @@ export function useTableCheckout({
         }
 
         post(
-            `/app/tables/${selectedId}/seat`,
+            seatRoute.url(selectedId),
             { party_size: count },
             'seat',
             fill(t.seated, { table: tableNumber(detail.table.number) }),
@@ -965,7 +974,7 @@ export function useTableCheckout({
 
         // The server refuses while anything is unpaid; its reason is toasted.
         post(
-            `/app/tables/${selectedId}/free`,
+            freeRoute.url(selectedId),
             {},
             'free',
             fill(t.freed, { table: tableNumber(detail.table.number) }),
@@ -980,7 +989,7 @@ export function useTableCheckout({
         setBusy(`ack-${requestId}`);
 
         router.patch(
-            `/service-requests/${requestId}/acknowledge`,
+            acknowledgeRoute.url(requestId),
             {},
             {
                 preserveScroll: true,
@@ -1015,7 +1024,7 @@ export function useTableCheckout({
         }
 
         post(
-            `/app/tables/${selectedId}/payments`,
+            paymentsRoute.url(selectedId),
             {
                 order_id: order.id,
                 method,

@@ -14,6 +14,7 @@ import { useNewItemAlert } from '@/hooks/useNewItemAlert';
 import { formatMinutes } from '@/lib/elapsed';
 import { fill, useI18n } from '@/lib/i18n';
 import { failInPlace } from '@/lib/visit-failure';
+import { bump as bumpRoute } from '@/routes/app/kds';
 import type { OrderStatus } from '@/types';
 
 type Ticket = {
@@ -67,7 +68,7 @@ export default function Runner({ tickets, pollIntervalMs, signedInAs }: Props) {
             });
 
         router.post(
-            `/app/kds/tickets/${ticket.id}/bump`,
+            bumpRoute.url(ticket.id),
             { from: ticket.status },
             {
                 preserveScroll: true,

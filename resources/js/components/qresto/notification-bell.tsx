@@ -5,7 +5,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Badge } from '@/components/qresto/badge';
 import { formatAgo } from '@/lib/elapsed';
 import type { ElapsedCopy } from '@/lib/elapsed';
+import { requestJson } from '@/lib/http';
 import { fill, useI18n } from '@/lib/i18n';
+import {
+    index as notificationsIndex,
+    read as markRead,
+    readAll as readAllRoute,
+} from '@/routes/app/notifications';
 
 export type StaffNotification = {
     id: string;
@@ -59,21 +65,9 @@ export function NotificationBell({ unread }: { unread: number }) {
         setFailed(false);
 
         try {
-            const response = await fetch('/app/notifications', {
-                headers: {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin',
-            });
-
-            if (!response.ok) {
-                throw new Error(String(response.status));
-            }
-
-            const data = (await response.json()) as {
+            const data = await requestJson<{
                 notifications: StaffNotification[];
-            };
+            }>('get', notificationsIndex.url());
 
             setItems(data.notifications);
         } catch {
@@ -127,7 +121,7 @@ export function NotificationBell({ unread }: { unread: number }) {
         );
 
         router.post(
-            `/app/notifications/${item.id}/read`,
+            markRead.url(item.id),
             {},
             {
                 ...REFRESH_COUNT,
@@ -141,7 +135,7 @@ export function NotificationBell({ unread }: { unread: number }) {
             (current ?? []).map((item) => ({ ...item, read: true })),
         );
 
-        router.post('/app/notifications/read-all', {}, REFRESH_COUNT);
+        router.post(readAllRoute.url(), {}, REFRESH_COUNT);
     }
 
     return (

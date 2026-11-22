@@ -10,6 +10,7 @@ import { Icon } from '@/components/ui/icon';
 import GuestLayout from '@/layouts/guest-layout';
 import { fill, useI18n } from '@/lib/i18n';
 import { readStorage, writeStorage } from '@/lib/safe-storage';
+import { confirm as confirmTable, tables as pickTable } from '@/routes/table';
 
 type TableProps = {
     restaurant: {
@@ -86,7 +87,7 @@ export default function Table({
         writeStorage(FIRST_NAME_STORAGE_KEY, trimmedName);
 
         router.post(
-            `/t/${encodeURIComponent(qr_token)}/confirm`,
+            confirmTable.url(encodeURIComponent(qr_token)),
             {
                 first_name: trimmedName,
             },
@@ -99,7 +100,7 @@ export default function Table({
     };
 
     const openTablePicker = () => {
-        router.visit(`/t/${encodeURIComponent(qr_token)}/tables`);
+        router.visit(pickTable.url(encodeURIComponent(qr_token)));
     };
 
     if (isReading) {

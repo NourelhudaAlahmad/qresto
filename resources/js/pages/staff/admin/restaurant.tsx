@@ -15,6 +15,15 @@ import { showToast } from '@/components/qresto/toast';
 import { Tooltip } from '@/components/qresto/tooltip';
 import { formatMinor } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
+import { update as updateHours } from '@/routes/app/settings/hours';
+import { update as updateRestaurant } from '@/routes/app/settings/restaurant';
+import {
+    qrSheet,
+    reissue as reissueTable,
+    retire as retireTable,
+    store as storeTable,
+    update as updateTable,
+} from '@/routes/app/settings/tables';
 
 type Details = {
     name: string;
@@ -58,8 +67,6 @@ type Props = {
 };
 
 type Errors = Record<string, string>;
-
-const QR_SHEET = '/app/settings/tables/qr-sheet';
 
 const SELECT =
     'text-body h-11 w-full rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-card)] px-3 text-[var(--text-primary)] outline-none focus-visible:border-[var(--border-focus-color)] focus-visible:shadow-[var(--ring-focus)]';
@@ -177,7 +184,7 @@ function DetailsForm({
     }
 
     function save() {
-        router.put('/app/settings/restaurant', form, {
+        router.put(updateRestaurant.url(), form, {
             preserveScroll: true,
             preserveState: true,
             onStart: () => setSaving(true),
@@ -391,7 +398,7 @@ function HoursEditor({ hours }: { hours: Day[] }) {
 
     function save() {
         router.put(
-            '/app/settings/hours',
+            updateHours.url(),
             { hours: days },
             {
                 preserveScroll: true,
@@ -558,7 +565,7 @@ function TablesList({ tables }: { tables: Table[] }) {
 
     function saveRow(table: Table) {
         router.patch(
-            `/app/settings/tables/${table.id}`,
+            updateTable.url(table.id),
             {
                 number: value(table, 'number'),
                 seats: value(table, 'seats'),
@@ -583,7 +590,7 @@ function TablesList({ tables }: { tables: Table[] }) {
 
     function add() {
         router.post(
-            '/app/settings/tables',
+            storeTable.url(),
             adding,
             options('add', () => {
                 showToast({
@@ -604,7 +611,7 @@ function TablesList({ tables }: { tables: Table[] }) {
         const { kind, table } = confirm;
 
         router.post(
-            `/app/settings/tables/${table.id}/${kind}`,
+            (kind === 'reissue' ? reissueTable : retireTable).url(table.id),
             {},
             options(`${kind}-${table.id}`, () => {
                 setConfirm(null);
@@ -703,7 +710,7 @@ function TablesList({ tables }: { tables: Table[] }) {
 
                     <Button asChild size="sm" variant="ghost">
                         <a
-                            href={`${QR_SHEET}?table=${table.id}`}
+                            href={qrSheet.url({ query: { table: table.id } })}
                             target="_blank"
                             rel="noopener"
                             aria-label={labelled(t.print_qr)}
@@ -756,7 +763,7 @@ function TablesList({ tables }: { tables: Table[] }) {
             }
             aside={
                 <Button asChild variant="outline" size="sm">
-                    <a href={QR_SHEET} target="_blank" rel="noopener">
+                    <a href={qrSheet.url()} target="_blank" rel="noopener">
                         <Printer className="size-4" aria-hidden />
                         {t.print_all}
                     </a>

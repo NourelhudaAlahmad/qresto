@@ -78,11 +78,16 @@ const props = {
     lateMinutes: 25,
 };
 
+const requestJson = vi.hoisted(() => vi.fn());
+
+vi.mock('@/lib/http', async (importOriginal) => ({
+    ...(await importOriginal<Record<string, unknown>>()),
+    requestJson,
+}));
+
 beforeEach(() => {
-    vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({ ok: true, json: async () => null }),
-    );
+    requestJson.mockReset();
+    requestJson.mockResolvedValue(null);
 });
 afterEach(() => {
     cleanup();
@@ -118,7 +123,7 @@ describe('Cashier view (#34)', () => {
         );
         fireEvent.click(screen.getByRole('button', { name: 'Take payment' }));
 
-        expect(fetch).toHaveBeenCalledWith('/app/tables/7', expect.any(Object));
+        expect(requestJson).toHaveBeenCalledWith('get', '/app/tables/7');
         expect(
             screen.getByRole('dialog', { name: /Table 07 · A-1041/ }),
         ).toBeInTheDocument();

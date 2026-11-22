@@ -6,6 +6,7 @@ import { Button } from '@/components/qresto/button';
 import { Input } from '@/components/qresto/input';
 import { Label } from '@/components/qresto/label';
 import { useI18n } from '@/lib/i18n';
+import { store as storeInvitation } from '@/routes/staff/invitation';
 
 type Props = {
     token: string;
@@ -39,7 +40,7 @@ export default function SetPassword({ token, email, passwordRules }: Props) {
     const submit = (event: FormEvent) => {
         event.preventDefault();
 
-        form.post('/staff/invitation', {
+        form.post(storeInvitation.url(), {
             onFinish: () => form.reset('password', 'password_confirmation'),
         });
     };

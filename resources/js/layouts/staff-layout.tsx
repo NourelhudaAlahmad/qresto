@@ -28,6 +28,8 @@ import { useLiveConnection } from '@/hooks/useLiveConnection';
 import { useLiveData } from '@/hooks/useLiveData';
 import { activeLocale } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
+import { logout } from '@/routes';
+import { orders, pass } from '@/routes/app';
 import { edit as editProfile } from '@/routes/profile';
 
 type StaffNavItem = {
@@ -206,7 +208,7 @@ function Sidebar({
                 </span>
 
                 <Link
-                    href="/logout"
+                    href={logout.url()}
                     method="post"
                     as="button"
                     aria-label={t.shell.log_out}
@@ -299,7 +301,7 @@ function Topbar({
                         </Link>
 
                         <Link
-                            href="/logout"
+                            href={logout.url()}
                             method="post"
                             as="button"
                             className="text-body mt-1 flex min-h-11 w-full items-center gap-2 rounded-[var(--radius-sm)] px-3 text-start text-[var(--text-link)] hover:bg-[var(--action-ghost-hover)]"
@@ -365,7 +367,7 @@ export default function StaffLayout({
         currentPath === href || currentPath.startsWith(`${href}/`);
 
     const badgeFor = (item: StaffNavItem): number | null =>
-        item.href === '/app/orders' || item.href === '/app/pass'
+        item.href === orders.url() || item.href === pass.url()
             ? openOrders
             : null;
 

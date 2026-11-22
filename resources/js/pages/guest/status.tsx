@@ -25,6 +25,8 @@ import GuestLayout from '@/layouts/guest-layout';
 import { formatMinutes } from '@/lib/elapsed';
 import { activeLocale, formatMoney } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
+import { cart, menu } from '@/routes';
+import { status as orderStatus } from '@/routes/guest/orders';
 import type { Money, OrderStatus } from '@/types';
 
 type GuestStage = 'placed' | 'preparing' | 'ready' | 'served' | 'cancelled';
@@ -234,12 +236,12 @@ export default function Status({
 
     const goToMenu = () => {
         saveLastTab('menu');
-        router.visit('/menu');
+        router.visit(menu.url());
     };
 
     const goToCart = () => {
         saveLastTab('order');
-        router.visit('/cart');
+        router.visit(cart.url());
     };
 
     const stageLabels = {
@@ -626,7 +628,9 @@ export default function Status({
                                                         />
 
                                                         <Link
-                                                            href={`/orders/${round.id}/status`}
+                                                            href={orderStatus.url(
+                                                                round.id,
+                                                            )}
                                                             className="text-body inline-flex min-h-11 items-center font-medium text-[var(--text-link)] underline-offset-2 hover:underline"
                                                         >
                                                             {
@@ -671,7 +675,7 @@ export default function Status({
                             fullWidth
                             className="rounded-full"
                         >
-                            <Link href="/menu">{g.status.order_more}</Link>
+                            <Link href={menu.url()}>{g.status.order_more}</Link>
                         </Button>
                     </div>
                 </StickyDock>

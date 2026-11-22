@@ -23,6 +23,9 @@ import GuestLayout from '@/layouts/guest-layout';
 import { formatMoney } from '@/lib/formatMoney';
 import { fill, useI18n } from '@/lib/i18n';
 import { readStorage, writeStorage } from '@/lib/safe-storage';
+import { cart as cartRoute } from '@/routes';
+import { status as orderStatus } from '@/routes/guest/orders';
+import { show as showMenuItem } from '@/routes/menu/items';
 import type { Money } from '@/types';
 
 type Allergen = {
@@ -128,9 +131,9 @@ export default function Menu({
         const lastTab = readStorage(`qresto_last_tab_${session.id}`);
 
         if (lastTab === 'order') {
-            router.visit('/cart');
+            router.visit(cartRoute.url());
         } else if (lastTab === 'status' && latest_order_id != null) {
-            router.visit(`/orders/${latest_order_id}/status`);
+            router.visit(orderStatus.url(latest_order_id));
         }
     }, [restore_guest_tab, session.id, session.active, latest_order_id]);
 
@@ -343,7 +346,9 @@ export default function Menu({
                                                     available={item.available}
                                                     onClick={() =>
                                                         router.visit(
-                                                            `/menu/${item.id}`,
+                                                            showMenuItem.url(
+                                                                item.id,
+                                                            ),
                                                         )
                                                     }
                                                 />
@@ -388,7 +393,7 @@ export default function Menu({
                             <Button
                                 size="lg"
                                 fullWidth
-                                onClick={() => router.visit('/cart')}
+                                onClick={() => router.visit(cartRoute.url())}
                                 className="h-14 rounded-full text-base font-semibold shadow-sm"
                             >
                                 {cart.count === 1
@@ -419,7 +424,7 @@ export default function Menu({
                                 badge: cart.count > 0 ? cart.count : undefined,
                                 onClick: () => {
                                     saveLastTab(session.id, 'order');
-                                    router.visit('/cart');
+                                    router.visit(cartRoute.url());
                                 },
                             },
                             {
@@ -439,7 +444,7 @@ export default function Menu({
                                         saveLastTab(session.id, 'status');
 
                                         router.visit(
-                                            `/orders/${latest_order_id}/status`,
+                                            orderStatus.url(latest_order_id),
                                         );
                                     }
                                 },

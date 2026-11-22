@@ -7,6 +7,8 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/qresto/button';
 import { Label } from '@/components/qresto/label';
 import { fill, useI18n } from '@/lib/i18n';
+import { dashboard } from '@/routes';
+import { issue as issueShiftQr } from '@/routes/auth/shift-qr';
 
 type StaffMember = {
     id: number;
@@ -60,7 +62,7 @@ export default function ManagerShiftQr({
             return;
         }
 
-        post('/auth/shift-qr/issue', {
+        post(issueShiftQr.url(), {
             preserveScroll: true,
         });
     }
@@ -72,7 +74,7 @@ export default function ManagerShiftQr({
             <main className="bg-surface-page font-ui min-h-screen px-5 py-10 sm:px-8">
                 <div className="mx-auto w-full max-w-3xl">
                     <a
-                        href="/dashboard"
+                        href={dashboard.url()}
                         className="text-label text-text-secondary hover:text-text-primary mb-8 inline-flex items-center gap-2"
                     >
                         <ArrowLeft
